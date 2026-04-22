@@ -1,12 +1,12 @@
 type WeeklyComparisonItem = {
   label: string;
-  plannedKm?: number;
-  actualKm?: number;
-  executedKm?: number;
-  completedKm?: number;
-  adherencePct?: number;
-  isCurrentWeek?: boolean;
-  current?: boolean;
+  plannedKm?: number | null;
+  actualKm?: number | null;
+  executedKm?: number | null;
+  completedKm?: number | null;
+  adherencePct?: number | null;
+  isCurrentWeek?: boolean | null;
+  current?: boolean | null;
 };
 
 type Props = {
@@ -52,9 +52,7 @@ function getProgressPct(actualKm: number, plannedKm: number) {
 }
 
 function parseWeekLabel(label: string) {
-  const match = label.match(
-    /^(\d{2})\/(\d{2})\s*[-–]\s*(\d{2})\/(\d{2})$/
-  );
+  const match = label.match(/^(\d{2})\/(\d{2})\s*[-–]\s*(\d{2})\/(\d{2})$/);
 
   if (!match) return null;
 
