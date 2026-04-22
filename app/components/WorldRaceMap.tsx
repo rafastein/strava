@@ -1,141 +1,26 @@
 "use client";
 
-import { ComposableMap, Geographies, Geography } from "@vnedyalk0v/react19-simple-maps";
-import worldGeo from "world-atlas/countries-110m.json";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ComposableMap,
+  Geographies,
+  Geography,
+} from "@vnedyalk0v/react19-simple-maps";
+import { feature } from "topojson-client";
 
 type Props = {
   counts: Record<string, number>;
 };
 
+const geoUrl = "/maps/world-countries.json";
+const MAP_CENTER = [0, 20] as any;
+
 function normalizeText(value: string) {
   return String(value ?? "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[’']/g, "")
-    .replace(/[^a-zA-Z0-9\s-]/g, " ")
-    .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
-}
-
-const COUNTRY_ALIASES: Record<string, string> = {
-  brasil: "brazil",
-  brazil: "brazil",
-
-  alemanha: "germany",
-  germany: "germany",
-  deutschland: "germany",
-
-  "estados unidos": "united states of america",
-  "estados unidos da america": "united states of america",
-  eua: "united states of america",
-  usa: "united states of america",
-  "united states": "united states of america",
-  "united states of america": "united states of america",
-
-  japao: "japan",
-  japão: "japan",
-  japan: "japan",
-
-  portugal: "portugal",
-
-  "reino unido": "united kingdom",
-  "united kingdom": "united kingdom",
-  uk: "united kingdom",
-  inglaterra: "united kingdom",
-
-  espanha: "spain",
-  spain: "spain",
-
-  franca: "france",
-  frança: "france",
-  france: "france",
-
-  italia: "italy",
-  itália: "italy",
-  italy: "italy",
-
-  holanda: "netherlands",
-  "paises baixos": "netherlands",
-  "países baixos": "netherlands",
-  netherlands: "netherlands",
-
-  argentina: "argentina",
-  chile: "chile",
-
-  paraguai: "paraguay",
-  paraguay: "paraguay",
-
-  peru: "peru",
-
-  mexico: "mexico",
-  méxico: "mexico",
-  canada: "canada",
-  canad\u00e1: "canada",
-  australia: "australia",
-  austrália: "australia",
-  irlanda: "ireland",
-  ireland: "ireland",
-  suica: "switzerland",
-  suíça: "switzerland",
-  switzerland: "switzerland",
-  austria: "austria",
-  áustria: "austria",
-  belgica: "belgium",
-  bélgica: "belgium",
-  belgium: "belgium",
-  dinamarca: "denmark",
-  denmark: "denmark",
-  suecia: "sweden",
-  suécia: "sweden",
-  sweden: "sweden",
-  noruega: "norway",
-  norway: "norway",
-  finlandia: "finland",
-  finlândia: "finland",
-  finland: "finland",
-  polonia: "poland",
-  polônia: "poland",
-  poland: "poland",
-  "republica tcheca": "czechia",
-  "república tcheca": "czechia",
-  tchequia: "czechia",
-  tchéquia: "czechia",
-  czechia: "czechia",
-  "czech republic": "czechia",
-  hungria: "hungary",
-  hungary: "hungary",
-  grecia: "greece",
-  grécia: "greece",
-  greece: "greece",
-  turquia: "turkey",
-  turkey: "turkey",
-  "emirados arabes unidos": "united arab emirates",
-  "emirados árabes unidos": "united arab emirates",
-  uae: "united arab emirates",
-  "united arab emirates": "united arab emirates",
-  "africa do sul": "south africa",
-  "áfrica do sul": "south africa",
-  "south africa": "south africa",
-  "nova zelandia": "new zealand",
-  "nova zelândia": "new zealand",
-  "new zealand": "new zealand",
-};
-
-function canonicalCountryName(value: string) {
-  const normalized = normalizeText(value);
-  return COUNTRY_ALIASES[normalized] ?? normalized;
-}
-
-function buildCanonicalCounts(counts: Record<string, number>) {
-  const result: Record<string, number> = {};
-
-  for (const [country, count] of Object.entries(counts)) {
-    const canonical = canonicalCountryName(country);
-    result[canonical] = (result[canonical] ?? 0) + count;
-  }
-
-  return result;
 }
 
 function getFill(count: number) {
@@ -146,65 +31,137 @@ function getFill(count: number) {
   return "#e5e7eb";
 }
 
+function isFeatureCollection(data: any) {
+  return data?.type === "FeatureCollection" && Array.isArray(data.features);
+}
+
+function isTopology(data: any) {
+  return data?.type === "Topology" && data.objects;
+}
+
 export default function WorldRaceMap({ counts }: Props) {
-  const canonicalCounts = buildCanonicalCounts(counts);
-  const hasHighlights = Object.values(canonicalCounts).some((value) => value > 0);
+  const [worldGeo, setWorldGeo] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const hasHighlights = useMemo(
+    () => Object.values(counts).some((v) => v > 0),
+    [counts]
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    async function load() {
+      try {
+        setError(null);
+
+        const res = await fetch(geoUrl, { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+
+        // GeoJSON
+        if (isFeatureCollection(data)) {
+          if (active) setWorldGeo(data);
+          return;
+        }
+
+        // TopoJSON
+        if (isTopology(data)) {
+          const key = Object.keys(data.objects)[0];
+          if (!key) throw new Error("TopoJSON inválido");
+
+          const converted = feature(data, data.objects[key]);
+          if (active) setWorldGeo(converted);
+          return;
+        }
+
+        throw new Error("Formato não suportado");
+      } catch (err) {
+        console.error("Erro mapa mundo:", err);
+        if (active) {
+          setWorldGeo(null);
+          setError("Não foi possível carregar o mapa.");
+        }
+      }
+    }
+
+    load();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <div className="rounded-3xl bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-semibold text-gray-900">Mapa-múndi</h2>
+      <h2 className="text-xl font-semibold text-gray-900">
+        Mapa-múndi
+      </h2>
+
       <p className="mt-1 text-sm text-gray-500">
-        Visualização geográfica das corridas identificadas por país.
+        Visualização das corridas por país.
       </p>
 
-      <div className="mt-4 overflow-hidden rounded-2xl border border-gray-200 bg-[linear-gradient(180deg,#fff,#f8fafc)] px-2 py-1">
+      <div className="mt-4 overflow-hidden rounded-2xl border border-gray-200 bg-[linear-gradient(180deg,#fff,#f8fafc)] p-1">
         <div className="w-full rounded-xl bg-white">
-          <ComposableMap
-            projection="geoEqualEarth"
-            projectionConfig={{ scale: 175 }}
-            width={980}
-            height={380}
-            style={{ width: "100%", height: "auto", display: "block" }}
-          >
-            <Geographies geography={worldGeo}>
-              {({ geographies }) =>
-                geographies.map((geo, index) => {
-                  const rawName = String(geo.properties?.name ?? "");
-                  const canonicalName = canonicalCountryName(rawName);
-                  const count = canonicalCounts[canonicalName] ?? 0;
-                  const isHighlighted = count > 0;
+          {error ? (
+            <div className="flex h-[500px] items-center justify-center text-sm text-gray-500">
+              {error}
+            </div>
+          ) : !worldGeo ? (
+            <div className="flex h-[500px] items-center justify-center text-sm text-gray-400">
+              Carregando mapa...
+            </div>
+          ) : (
+            <ComposableMap
+              projection="geoMercator"
+              projectionConfig={{
+                scale: 150,
+                center: MAP_CENTER,
+              }}
+              width={800}
+              height={400}
+              style={{ width: "100%", height: "auto" }}
+            >
+              <Geographies geography={worldGeo as any}>
+                {({ geographies }) =>
+                  geographies.map((geo: any, index: number) => {
+                    const rawName = String(
+                      geo?.properties?.name ??
+                      geo?.properties?.NAME ??
+                      ""
+                    );
 
-                  return (
-                    <Geography
-                      key={`${rawName}-${geo.rsmKey ?? index}-${index}`}
-                      geography={geo}
-                      fill={getFill(count)}
-                      stroke="#f8fafc"
-                      strokeWidth={0.7}
-                      style={{
-                        default: {
-                          outline: "none",
-                          transition: "all 0.2s ease",
-                          filter: isHighlighted
-                            ? "drop-shadow(0 3px 6px rgba(0,0,0,0.08))"
-                            : "none",
-                        },
-                        hover: {
-                          outline: "none",
-                          fill: isHighlighted ? "#f97316" : "#d1d5db",
-                        },
-                        pressed: {
-                          outline: "none",
-                        },
-                      }}
-                    >
-                      <title>{`${rawName}: ${count} corrida(s)`}</title>
-                    </Geography>
-                  );
-                })
-              }
-            </Geographies>
-          </ComposableMap>
+                    const name = normalizeText(rawName);
+                    const count = counts[name] ?? 0;
+
+                    return (
+                      <Geography
+                        key={`${rawName}-${index}`}
+                        geography={geo}
+                        fill={getFill(count)}
+                        stroke="#f8fafc"
+                        strokeWidth={0.5}
+                        style={{
+                          default: { outline: "none" },
+                          hover: {
+                            outline: "none",
+                            fill: count > 0 ? "#f97316" : "#d1d5db",
+                          },
+                          pressed: { outline: "none" },
+                        }}
+                      >
+                        <title>
+                          {`${rawName}: ${count} corrida(s)`}
+                        </title>
+                      </Geography>
+                    );
+                  })
+                }
+              </Geographies>
+            </ComposableMap>
+          )}
         </div>
       </div>
 
@@ -216,20 +173,26 @@ export default function WorldRaceMap({ counts }: Props) {
         <Legend color="#9a3412" label="8+" />
       </div>
 
-      {!hasHighlights && (
+      {!error && !hasHighlights && (
         <p className="mt-3 text-sm text-gray-500">
-          O mapa carregou, mas nenhum país recebeu destaque ainda.
+          Nenhum país com corridas ainda.
         </p>
       )}
     </div>
   );
 }
 
-function Legend({ color, label }: { color: string; label: string }) {
+function Legend({
+  color,
+  label,
+}: {
+  color: string;
+  label: string;
+}) {
   return (
     <div className="flex items-center gap-2">
       <span
-        className="inline-block h-3 w-3 rounded-sm border border-gray-200"
+        className="h-3 w-3 rounded-sm border border-gray-200"
         style={{ backgroundColor: color }}
       />
       <span>{label}</span>
