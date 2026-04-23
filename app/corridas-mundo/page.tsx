@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import { formatBRDate } from "../lib/date-utils";
 import WorldRaceMap from "../components/WorldRaceMap";
 import {
   getRaceLikeActivitiesFromStrava,
@@ -402,7 +403,7 @@ export default async function CorridasMundoPage() {
                             <p className="text-gray-500">
                               {race.city || "Não identificado"}
                               {race.state ? `, ${race.state}` : ""} •{" "}
-                              {new Date(race.date).toLocaleDateString("pt-BR")} •{" "}
+                              {formatBRDate(race.date)} •{" "}
                               {race.distanceKm.toFixed(2)} km • {race.time} •{" "}
                               {formatPaceFromRace(race)}
                             </p>

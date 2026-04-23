@@ -1,3 +1,5 @@
+import { getActivityDate } from "./date-utils";
+
 type ActivityLike = {
   id: number | string;
   name?: string;
@@ -136,7 +138,7 @@ export function getLongRunsFromActivities(
       return {
         id: activity.id,
         name: activity.name ?? "Longão",
-        date: String(activity.start_date_local ?? activity.start_date ?? ""),
+        date: getActivityDate(activity),
         city: String(activity.location_city ?? "Não identificado"),
         state: String(activity.location_state ?? ""),
         distanceKm,

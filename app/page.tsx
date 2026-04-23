@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import { formatBRDate } from "./lib/date-utils";
 import Link from "next/link";
 import ActivitiesPanel from "./components/ActivitiesPanel";
 import WeeklyComparisonChart from "./components/WeeklyComparisonChart";
@@ -138,11 +139,7 @@ function formatDuration(seconds: number) {
 }
 
 function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  return formatBRDate(dateString);
 }
 
 function formatPace(distance: number, time: number) {

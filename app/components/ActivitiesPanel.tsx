@@ -1,3 +1,5 @@
+import { formatBRDate, getActivityDate } from "../lib/date-utils";
+
 type Activity = {
   id: number;
   name?: string;
@@ -34,17 +36,7 @@ function formatDuration(seconds?: number | null) {
 }
 
 function formatDate(date?: string | null) {
-  if (!date) return "Data indisponível";
-
-  try {
-    return new Date(date).toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  } catch {
-    return "Data indisponível";
-  }
+  return formatBRDate(date);
 }
 
 function formatPace(distance?: number | null, movingTime?: number | null) {
@@ -67,8 +59,8 @@ function formatPace(distance?: number | null, movingTime?: number | null) {
 export default function ActivitiesPanel({ activities }: Props) {
   const recentActivities = [...activities]
     .sort((a, b) => {
-      const da = new Date(a.start_date_local ?? a.start_date ?? 0).getTime();
-      const db = new Date(b.start_date_local ?? b.start_date ?? 0).getTime();
+      const da = new Date(getActivityDate(a)).getTime();
+      const db = new Date(getActivityDate(b)).getTime();
       return db - da;
     })
     .slice(0, 12);
@@ -87,7 +79,7 @@ export default function ActivitiesPanel({ activities }: Props) {
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {recentActivities.map((activity) => {
-            const date = activity.start_date_local ?? activity.start_date;
+            const date = getActivityDate(activity);
 
             return (
               <div

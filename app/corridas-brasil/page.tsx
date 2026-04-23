@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import { formatBRDate } from "../lib/date-utils";
 import BrazilRaceMap from "../components/BrazilRaceMap";
 import {
   getRaceLikeActivitiesFromStrava,
@@ -223,7 +224,7 @@ export default async function CorridasBrasilPage() {
                         <p className="text-gray-500">
                           {race.city || "Não identificado"}
                           {race.state ? `, ${race.state}` : ""} •{" "}
-                          {new Date(race.date).toLocaleDateString("pt-BR")} •{" "}
+                          {formatBRDate(race.date)} •{" "}
                           {race.distanceKm.toFixed(2)} km • {race.time} •{" "}
                           {formatPaceFromRace(race)}
                         </p>
@@ -279,7 +280,7 @@ function TopDistanceCard({
                 <p className="mt-1 text-gray-500">
                   {race.city || "Não identificado"}
                   {race.state ? `, ${race.state}` : ""} •{" "}
-                  {new Date(race.date).toLocaleDateString("pt-BR")}
+                  {formatBRDate(race.date)}
                 </p>
 
                 <p className="mt-1 text-gray-500">

@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { getValidStravaAccessToken } from "./strava-auth";
+import { getActivityDate } from "./date-utils";
 
 export type StravaRaceActivity = {
   id: number;
@@ -441,7 +442,7 @@ export async function getRaceLikeActivitiesFromStrava(): Promise<RaceLikeEntry[]
         source: "strava" as const,
         stravaId: activity.id,
         name: cleanDisplayedRaceName(activity.name),
-        date: activity.start_date_local,
+        date: getActivityDate(activity),
         city,
         state,
         country,

@@ -1,5 +1,7 @@
 export const dynamic = "force-dynamic";
 
+
+import { formatBRDate, getBRDate, getActivityDate } from "../lib/date-utils";
 import fs from "fs/promises";
 import path from "path";
 import Link from "next/link";
@@ -109,11 +111,7 @@ async function getManualPredictions(): Promise<ManualPredictions> {
 }
 
 function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  return formatBRDate(dateString);
 }
 
 function formatFullDuration(seconds: number) {
@@ -449,7 +447,8 @@ export default async function BuenosAiresPage() {
   const weekMap = new Map<string, { label: string; distanceKm: number }>();
 
   runs.forEach((activity) => {
-    const date = new Date(activity.start_date_local);
+    const date = getBRDate(getActivityDate(activity));
+    if (!date) return;
     const weekStart = getWeekStart(date);
     const key = weekStart.toISOString();
     const current = weekMap.get(key);
@@ -522,8 +521,8 @@ export default async function BuenosAiresPage() {
     .filter((activity) => activity.distance >= 18000)
     .sort(
       (a, b) =>
-        new Date(b.start_date_local).getTime() -
-        new Date(a.start_date_local).getTime()
+        new Date(getActivityDate(b)).getTime() -
+        new Date(getActivityDate(a)).getTime()
     )
     .slice(0, 5);
 

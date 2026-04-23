@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { getValidStravaAccessToken } from "../lib/strava-auth";
+import { formatBRDate } from "../lib/date-utils";
 import {
   formatEfficiency,
   formatLongRunDuration,
@@ -79,13 +80,7 @@ async function getActivities(): Promise<StravaActivity[]> {
 }
 
 function formatDate(dateString: string) {
-  if (!dateString) return "Data indisponível";
-
-  return new Date(dateString).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  return formatBRDate(dateString);
 }
 
 function InfoCard({ title, value }: { title: string; value: React.ReactNode }) {
