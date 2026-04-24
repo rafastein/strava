@@ -58,10 +58,7 @@ const YEAR_END_EPOCH = Math.floor(
 async function getActivities(): Promise<StravaActivity[]> {
   try {
     const accessToken = await getValidStravaAccessToken();
-    if (!accessToken) {
-      console.warn("[HOME] sem access token para atividades");
-      return [];
-    }
+    if (!accessToken) return [];
 
     const allActivities: StravaActivity[] = [];
     const perPage = 200;
@@ -75,35 +72,21 @@ async function getActivities(): Promise<StravaActivity[]> {
       url.searchParams.set("before", String(YEAR_END_EPOCH));
 
       const res = await fetch(url.toString(), {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { Authorization: `Bearer ${accessToken}` },
         cache: "no-store",
       });
 
-      if (!res.ok) {
-        const text = await res.text();
-        console.warn("[HOME] falha ao buscar activities:", res.status, text);
-        break;
-      }
+      if (!res.ok) break;
 
       const pageActivities = (await res.json()) as StravaActivity[];
-
-      if (!Array.isArray(pageActivities) || pageActivities.length === 0) {
-        break;
-      }
+      if (!Array.isArray(pageActivities) || pageActivities.length === 0) break;
 
       allActivities.push(...pageActivities);
-
-      if (pageActivities.length < perPage) {
-        break;
-      }
+      if (pageActivities.length < perPage) break;
     }
 
-    console.log("[HOME] atividades carregadas:", allActivities.length);
     return allActivities;
-  } catch (error) {
-    console.warn("Erro ao buscar atividades:", error);
+  } catch {
     return [];
   }
 }
@@ -114,20 +97,14 @@ async function getAthlete(): Promise<Athlete | null> {
     if (!accessToken) return null;
 
     const res = await fetch("https://www.strava.com/api/v3/athlete", {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store",
     });
 
-    if (!res.ok) {
-      console.warn("Falha Strava athlete:", res.status);
-      return null;
-    }
+    if (!res.ok) return null;
 
     return res.json();
-  } catch (error) {
-    console.warn("Erro ao buscar atleta:", error);
+  } catch {
     return null;
   }
 }
@@ -235,7 +212,10 @@ export default async function Home() {
 
   const totalKm = runs.reduce((acc, a) => acc + a.distance, 0) / 1000;
   const totalTime = runs.reduce((acc, a) => acc + a.moving_time, 0);
-  const totalElevation = runs.reduce((acc, a) => acc + a.total_elevation_gain, 0);
+  const totalElevation = runs.reduce(
+    (acc, a) => acc + a.total_elevation_gain,
+    0
+  );
 
   const pace = formatPace(totalKm * 1000, totalTime);
 
@@ -253,7 +233,7 @@ export default async function Home() {
     plannedWeekKm > 0 ? Math.min((currentWeekKm / plannedWeekKm) * 100, 100) : 0;
 
   const weeklyComparison = buildWeeklyComparison(sisrunData, activities, 6);
-  const longRuns = getLongRunsFromActivities(activities);
+  const longRuns = await getLongRunsFromActivities(activities);
   const longRunSummary = getLongRunSummary(longRuns);
 
   const connected = Boolean(athlete) || activities.length > 0;
@@ -286,7 +266,11 @@ export default async function Home() {
               {athlete?.profile_medium ? (
                 <img
                   src={athlete.profile_medium}
-                  alt={athlete ? `${athlete.firstname} ${athlete.lastname}` : "Atleta"}
+                  alt={
+                    athlete
+                      ? `${athlete.firstname} ${athlete.lastname}`
+                      : "Atleta"
+                  }
                   className="h-20 w-20 rounded-full object-cover"
                 />
               ) : (
@@ -296,9 +280,13 @@ export default async function Home() {
               )}
 
               <div>
-                <p className="text-sm font-medium text-orange-600">Strava Dashboard</p>
+                <p className="text-sm font-medium text-orange-600">
+                  Strava Dashboard
+                </p>
                 <h1 className="text-3xl font-bold">
-                  {athlete ? `${athlete.firstname} ${athlete.lastname}` : "Atleta"}
+                  {athlete
+                    ? `${athlete.firstname} ${athlete.lastname}`
+                    : "Atleta"}
                 </h1>
 
                 <p className="text-gray-500">
@@ -308,7 +296,8 @@ export default async function Home() {
 
                 {!connected && (
                   <p className="mt-2 text-sm text-red-500">
-                    Strava não conectado. Faça a autorização novamente para gerar o token automático.
+                    Strava não conectado. Faça a autorização novamente para gerar
+                    o token automático.
                   </p>
                 )}
               </div>
@@ -352,7 +341,10 @@ export default async function Home() {
             title="Km previstos (SisRUN)"
             value={sisrunWeek ? `${plannedWeekKm.toFixed(1)} km` : "-"}
           />
-          <Card title="Km feitos (Strava)" value={`${currentWeekKm.toFixed(1)} km`} />
+          <Card
+            title="Km feitos (Strava)"
+            value={`${currentWeekKm.toFixed(1)} km`}
+          />
           <Card
             title="Aderência semanal"
             value={sisrunWeek ? `${weeklyAdherencePct.toFixed(0)}%` : "-"}
@@ -361,7 +353,9 @@ export default async function Home() {
             title="Longão previsto x feito"
             value={
               sisrunWeek
-                ? `${(sisrunWeek.longRunPlannedKm ?? 0).toFixed(1)} / ${currentWeekLongestRunKm.toFixed(1)} km`
+                ? `${(sisrunWeek.longRunPlannedKm ?? 0).toFixed(
+                    1
+                  )} / ${currentWeekLongestRunKm.toFixed(1)} km`
                 : `${currentWeekLongestRunKm.toFixed(1)} km`
             }
           />
@@ -451,12 +445,14 @@ export default async function Home() {
                 </p>
 
                 <p className="mt-3 text-xs text-gray-400">
-                  Quanto maior o número, melhor a relação entre velocidade e esforço cardíaco.
+                  Quanto maior o número, melhor a relação entre velocidade e
+                  esforço cardíaco.
                 </p>
               </>
             ) : (
               <p className="text-sm text-gray-500">
-                Nenhum longão encontrado ainda. Renomeie as atividades como “Longão”.
+                Nenhum longão encontrado ainda. Renomeie as atividades como
+                “Longão”.
               </p>
             )}
           </div>
@@ -477,7 +473,7 @@ export default async function Home() {
           </Link>
         </section>
 
-        <section className="mb-8 grid gap-4 md:grid-cols-2">
+        <section className="mb-8 grid gap-4 md:grid-cols-3">
           <Link
             href="/corridas-brasil"
             className="rounded-3xl bg-white p-6 shadow-sm transition hover:bg-gray-50"
@@ -514,11 +510,29 @@ export default async function Home() {
               Explore o mapa-múndi com a quantidade de corridas por país.
             </p>
           </Link>
+
+          <Link
+            href="/equipamentos"
+            className="rounded-3xl bg-white p-6 shadow-sm transition hover:bg-gray-50"
+          >
+            <p className="text-xs font-medium uppercase tracking-wide text-orange-500">
+              Strava
+            </p>
+            <h3 className="mt-2 text-2xl font-bold text-gray-900">
+              Equipamentos
+            </h3>
+            <p className="mt-2 text-sm text-gray-500">
+              Acompanhe quilometragem, desgaste e eficiência por tênis.
+            </p>
+          </Link>
         </section>
 
         <section className="mb-8 grid gap-4 md:grid-cols-2">
           {alerts.map((alert, index) => (
-            <div key={index} className={`rounded-3xl p-5 shadow-sm ${alert.tone}`}>
+            <div
+              key={index}
+              className={`rounded-3xl p-5 shadow-sm ${alert.tone}`}
+            >
               <p className="font-semibold">{alert.title}</p>
               <p className="mt-2 text-sm">{alert.text}</p>
             </div>

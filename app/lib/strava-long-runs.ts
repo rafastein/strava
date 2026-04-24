@@ -1,11 +1,13 @@
+import fs from "fs";
+import path from "path";
 import { getActivityDate } from "./date-utils";
 
 type ActivityLike = {
   id: number | string;
   name?: string;
   type?: string;
-  distance?: number | null; // metros
-  moving_time?: number | null; // segundos
+  distance?: number | null;
+  moving_time?: number | null;
   elapsed_time?: number | null;
   total_elevation_gain?: number | null;
   average_heartrate?: number | null;
@@ -14,6 +16,7 @@ type ActivityLike = {
   start_date_local?: string | null;
   location_city?: string | null;
   location_state?: string | null;
+  start_latlng?: [number, number] | [] | null;
 };
 
 export type LongRunEntry = {
@@ -30,7 +33,7 @@ export type LongRunEntry = {
   paceSecPerKm: number | null;
   adjustedPaceSecPerKm: number | null;
   elevationFactor: number;
-  efficiency: number | null; // velocidade ajustada por bpm
+  efficiency: number | null;
 };
 
 export type LongRunSummary = {
@@ -46,6 +49,19 @@ export type LongRunSummary = {
   bestEfficiency: number | null;
   lastLongRun: LongRunEntry | null;
 };
+
+type ReverseGeocodeResult = {
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  status?: "ok" | "rate_limited";
+  cachedAt?: number;
+};
+
+const cachePath = path.join(process.cwd(), "app/data/geocode-cache.json");
+const isProduction = process.env.NODE_ENV === "production";
+const memoryCache: Record<string, ReverseGeocodeResult | null> = {};
+const GEOCODE_RATE_LIMIT_TTL_MS = 1000 * 60 * 30;
 
 function normalizeText(value: string) {
   return String(value ?? "")
@@ -63,6 +79,177 @@ function parseDateValue(value?: string | null) {
   if (!value) return 0;
   const time = new Date(value).getTime();
   return Number.isFinite(time) ? time : 0;
+}
+
+function cleanCity(value?: string | null) {
+  if (!value?.trim()) return "Não identificado";
+  return value.trim();
+}
+
+function cleanState(value?: string | null) {
+  if (!value?.trim()) return "";
+  return value.trim();
+}
+
+function coordKey(lat: number, lon: number) {
+  return `${lat.toFixed(3)},${lon.toFixed(3)}`;
+}
+
+function ensureCacheDir() {
+  const dir = path.dirname(cachePath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
+
+function loadFileCache(): Record<string, ReverseGeocodeResult | null> {
+  if (isProduction) return memoryCache;
+
+  try {
+    ensureCacheDir();
+
+    if (!fs.existsSync(cachePath)) {
+      fs.writeFileSync(cachePath, "{}");
+      return {};
+    }
+
+    return JSON.parse(fs.readFileSync(cachePath, "utf-8"));
+  } catch {
+    return {};
+  }
+}
+
+function saveFileCache(cache: Record<string, ReverseGeocodeResult | null>) {
+  if (isProduction) {
+    Object.assign(memoryCache, cache);
+    return;
+  }
+
+  try {
+    ensureCacheDir();
+    fs.writeFileSync(cachePath, JSON.stringify(cache, null, 2));
+  } catch (error) {
+    console.warn("Erro ao salvar geocode-cache.json:", error);
+  }
+}
+
+async function getOrFetchGeocode(
+  lat: number,
+  lon: number
+): Promise<ReverseGeocodeResult | null> {
+  const key = coordKey(lat, lon);
+  const cache = loadFileCache();
+  const cached = cache[key];
+
+  if (cached) {
+    if (
+      cached.status === "rate_limited" &&
+      cached.cachedAt &&
+      Date.now() - cached.cachedAt < GEOCODE_RATE_LIMIT_TTL_MS
+    ) {
+      return null;
+    }
+
+    if (cached.status !== "rate_limited") return cached;
+  }
+
+  try {
+    const url = new URL("https://nominatim.openstreetmap.org/reverse");
+    url.searchParams.set("format", "json");
+    url.searchParams.set("lat", String(lat));
+    url.searchParams.set("lon", String(lon));
+    url.searchParams.set("zoom", "10");
+    url.searchParams.set("addressdetails", "1");
+
+    const res = await fetch(url.toString(), {
+      headers: {
+        "User-Agent": "strava-long-runs/1.0",
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    });
+
+    if (res.status === 429) {
+      cache[key] = {
+        city: null,
+        state: null,
+        country: null,
+        status: "rate_limited",
+        cachedAt: Date.now(),
+      };
+      saveFileCache(cache);
+      return null;
+    }
+
+    if (!res.ok) {
+      cache[key] = null;
+      saveFileCache(cache);
+      return null;
+    }
+
+    const data = await res.json();
+
+    const result: ReverseGeocodeResult = {
+      city:
+        data?.address?.city ||
+        data?.address?.town ||
+        data?.address?.village ||
+        data?.address?.municipality ||
+        null,
+      state:
+        data?.address?.state ||
+        data?.address?.region ||
+        data?.address?.state_district ||
+        null,
+      country: data?.address?.country || null,
+      status: "ok",
+      cachedAt: Date.now(),
+    };
+
+    cache[key] = result;
+    saveFileCache(cache);
+
+    return result;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveActivityLocation(activity: ActivityLike) {
+  const stravaCity = cleanCity(activity.location_city);
+  const stravaState = cleanState(activity.location_state);
+
+  if (stravaCity !== "Não identificado") {
+    return {
+      city: stravaCity,
+      state: stravaState,
+    };
+  }
+
+  const coords = activity.start_latlng;
+
+  if (Array.isArray(coords) && coords.length === 2) {
+    const [lat, lon] = coords;
+
+    if (
+      typeof lat === "number" &&
+      typeof lon === "number" &&
+      Number.isFinite(lat) &&
+      Number.isFinite(lon)
+    ) {
+      const geo = await getOrFetchGeocode(lat, lon);
+
+      return {
+        city: cleanCity(geo?.city),
+        state: cleanState(geo?.state),
+      };
+    }
+  }
+
+  return {
+    city: "Não identificado",
+    state: "",
+  };
 }
 
 export function isLongRunActivityName(name?: string | null) {
@@ -99,7 +286,10 @@ export function formatEfficiency(value: number | null) {
   return value.toFixed(3);
 }
 
-export function calculateElevationFactor(distanceKm: number, elevationGain: number) {
+export function calculateElevationFactor(
+  distanceKm: number,
+  elevationGain: number
+) {
   if (!distanceKm || distanceKm <= 0 || !elevationGain || elevationGain <= 0) {
     return 1;
   }
@@ -136,62 +326,73 @@ export function calculateEfficiency(
   return (adjustedSpeedKmh / averageHeartrate) * 1000;
 }
 
-export function getLongRunsFromActivities(
+export async function getLongRunsFromActivities(
   activities: ActivityLike[]
-): LongRunEntry[] {
-  return activities
-    .filter((activity) => activity.type === "Run")
-    .filter((activity) => isLongRunActivityName(activity.name))
-    .map((activity) => {
-      const distanceKm = safeNumber(activity.distance) / 1000;
-      const movingTimeSec = safeNumber(activity.moving_time);
-      const elevationGain = safeNumber(activity.total_elevation_gain);
+): Promise<LongRunEntry[]> {
+  const longRuns = await Promise.all(
+    activities
+      .filter((activity) => activity.type === "Run")
+      .filter((activity) => isLongRunActivityName(activity.name))
+      .map(async (activity) => {
+        const location = await resolveActivityLocation(activity);
 
-      const averageHeartrate =
-        typeof activity.average_heartrate === "number" &&
-        Number.isFinite(activity.average_heartrate)
-          ? activity.average_heartrate
-          : null;
+        const distanceKm = safeNumber(activity.distance) / 1000;
+        const movingTimeSec = safeNumber(activity.moving_time);
+        const elevationGain = safeNumber(activity.total_elevation_gain);
 
-      const maxHeartrate =
-        typeof activity.max_heartrate === "number" &&
-        Number.isFinite(activity.max_heartrate)
-          ? activity.max_heartrate
-          : null;
+        const averageHeartrate =
+          typeof activity.average_heartrate === "number" &&
+          Number.isFinite(activity.average_heartrate)
+            ? activity.average_heartrate
+            : null;
 
-      const paceSecPerKm =
-        distanceKm > 0 && movingTimeSec > 0 ? movingTimeSec / distanceKm : null;
+        const maxHeartrate =
+          typeof activity.max_heartrate === "number" &&
+          Number.isFinite(activity.max_heartrate)
+            ? activity.max_heartrate
+            : null;
 
-      const elevationFactor = calculateElevationFactor(distanceKm, elevationGain);
-      const adjustedPaceSecPerKm = calculateAdjustedPace(
-        paceSecPerKm,
-        distanceKm,
-        elevationGain
-      );
+        const paceSecPerKm =
+          distanceKm > 0 && movingTimeSec > 0
+            ? movingTimeSec / distanceKm
+            : null;
 
-      return {
-        id: activity.id,
-        name: activity.name ?? "Longão",
-        date: getActivityDate(activity),
-        city: String(activity.location_city ?? "Não identificado"),
-        state: String(activity.location_state ?? ""),
-        distanceKm,
-        movingTimeSec,
-        elevationGain,
-        averageHeartrate,
-        maxHeartrate,
-        paceSecPerKm,
-        adjustedPaceSecPerKm,
-        elevationFactor,
-        efficiency: calculateEfficiency(
+        const elevationFactor = calculateElevationFactor(
+          distanceKm,
+          elevationGain
+        );
+
+        const adjustedPaceSecPerKm = calculateAdjustedPace(
+          paceSecPerKm,
+          distanceKm,
+          elevationGain
+        );
+
+        return {
+          id: activity.id,
+          name: activity.name ?? "Longão",
+          date: getActivityDate(activity),
+          city: location.city,
+          state: location.state,
           distanceKm,
           movingTimeSec,
+          elevationGain,
           averageHeartrate,
-          elevationGain
-        ),
-      };
-    })
-    .sort((a, b) => parseDateValue(b.date) - parseDateValue(a.date));
+          maxHeartrate,
+          paceSecPerKm,
+          adjustedPaceSecPerKm,
+          elevationFactor,
+          efficiency: calculateEfficiency(
+            distanceKm,
+            movingTimeSec,
+            averageHeartrate,
+            elevationGain
+          ),
+        };
+      })
+  );
+
+  return longRuns.sort((a, b) => parseDateValue(b.date) - parseDateValue(a.date));
 }
 
 function average(numbers: number[]) {
@@ -241,9 +442,7 @@ export function getLongRunSummary(longRuns: LongRunEntry[]): LongRunSummary {
     longRuns.map((run) => run.averageHeartrate)
   );
 
-  const averageElevationGain = average(
-    longRuns.map((run) => run.elevationGain)
-  );
+  const averageElevationGain = average(longRuns.map((run) => run.elevationGain));
 
   const averageElevationFactor = average(
     longRuns.map((run) => run.elevationFactor)
@@ -253,9 +452,7 @@ export function getLongRunSummary(longRuns: LongRunEntry[]): LongRunSummary {
     longRuns.map((run) => run.efficiency)
   );
 
-  const bestEfficiency = Math.max(
-    ...longRuns.map((run) => run.efficiency ?? 0)
-  );
+  const bestEfficiency = Math.max(...longRuns.map((run) => run.efficiency ?? 0));
 
   return {
     totalLongRuns: longRuns.length,

@@ -23,6 +23,7 @@ type StravaActivity = {
   type: string;
   start_date: string;
   start_date_local: string;
+  start_latlng?: [number, number] | [] | null;
   location_city?: string | null;
   location_state?: string | null;
 };
@@ -128,7 +129,7 @@ function MetricCard({ label, value }: { label: string; value: string }) {
 
 export default async function LongoesPage() {
   const activities = await getActivities();
-  const longRuns = getLongRunsFromActivities(activities);
+  const longRuns = await getLongRunsFromActivities(activities);
   const summary = getLongRunSummary(longRuns);
 
   const lastLongRun = longRuns[0] ?? null;
