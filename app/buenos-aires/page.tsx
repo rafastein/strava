@@ -19,6 +19,7 @@ import {
   getCurrentWeekLongestRunKm,
   getWeekStart,
   formatWeekLabel,
+  buildWeeklyComparison,
   type SisrunWeek,
 } from "../lib/sisrun-utils";
 
@@ -675,16 +676,11 @@ export default async function BuenosAiresPage() {
         {weeklyData.length > 0 && (
           <section className="mb-8">
             <WeeklyPlanVsActualChart
-              weeks={weeklyData.map((w) => {
-                const sisrunWeekForLabel = sisrunData?.weeks?.find(
-                  (sw: { label: string }) => sw.label === w.label
-                );
-                return {
-                  label: w.label,
-                  planned: sisrunWeekForLabel?.totalPlannedKm ?? 0,
-                  actual: w.distanceKm,
-                };
-              })}
+              weeks={buildWeeklyComparison(sisrunData, activities, 16).map((w) => ({
+                label: w.label,
+                planned: w.plannedKm,
+                actual: w.executedKm,
+              }))}
               title="Volume semanal — planejado vs. executado"
             />
           </section>
