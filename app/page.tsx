@@ -560,6 +560,21 @@ export default async function Home() {
           </Link>
 
           <Link
+            href="/treinos-qualidade"
+            className="rounded-3xl bg-white p-6 shadow-sm transition hover:bg-gray-50"
+          >
+            <p className="text-xs font-medium uppercase tracking-wide text-orange-500">
+              Treinos
+            </p>
+            <h3 className="mt-2 text-2xl font-bold text-gray-900">
+              Treinos de qualidade
+            </h3>
+            <p className="mt-2 text-sm text-gray-500">
+              Intervalados, fartleks, progressivos — detectados automaticamente pelo padrão de velocidade.
+            </p>
+          </Link>
+
+          <Link
             href="/equipamentos"
             className="rounded-3xl bg-white p-6 shadow-sm transition hover:bg-gray-50"
           >
