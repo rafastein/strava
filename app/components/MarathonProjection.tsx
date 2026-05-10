@@ -31,9 +31,17 @@ type LongRunPoint = {
   fc: number | null;
 };
 
+type RacePoint = {
+  date: string;
+  name: string;
+  distanceKm: number;
+  paceSeconds: number;
+};
+
 type Props = {
   longRuns: LongRunPoint[];
   weeksToRace: number;
+  races?: RacePoint[];
 };
 
 const DIST_MARATHON = 42.195;
@@ -73,7 +81,7 @@ function formatDateLabel(iso: string) {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
 }
 
-export default function MarathonProjection({ longRuns, weeksToRace }: Props) {
+export default function MarathonProjection({ longRuns, weeksToRace, races = [] }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef  = useRef<unknown>(null);
 
@@ -117,6 +125,25 @@ export default function MarathonProjection({ longRuns, weeksToRace }: Props) {
     const gridColor = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)";
     const labels    = longRuns.map((l) => formatDateLabel(l.date));
 
+    // Map race dates to nearest longão index for categorical x-axis
+    const raceDataOnAxis: (number | null)[] = longRuns.map(() => null);
+    const raceLabelsOnAxis: (string | null)[] = longRuns.map(() => null);
+
+    races.forEach((race) => {
+      const raceTime = new Date(race.date).getTime();
+      let nearest = 0;
+      let minDiff = Infinity;
+      longRuns.forEach((l, i) => {
+        const diff = Math.abs(new Date(l.date).getTime() - raceTime);
+        if (diff < minDiff) { minDiff = diff; nearest = i; }
+      });
+      // Only plot if within ~45 days of a longão
+      if (minDiff < 45 * 86400000) {
+        raceDataOnAxis[nearest] = race.paceSeconds;
+        raceLabelsOnAxis[nearest] = race.name;
+      }
+    });
+
     const config: ChartConfiguration = {
       type: "line",
       data: {
@@ -144,6 +171,23 @@ export default function MarathonProjection({ longRuns, weeksToRace }: Props) {
                 pointHoverRadius: 6,
               }]
             : []),
+          ...(races.length > 0
+            ? [{
+                label: "Provas",
+                data: raceDataOnAxis,
+                borderColor: "transparent",
+                backgroundColor: "transparent",
+                pointRadius: raceDataOnAxis.map((v) => v !== null ? 8 : 0),
+                pointHoverRadius: raceDataOnAxis.map((v) => v !== null ? 10 : 0),
+                pointBackgroundColor: "#8b5cf6",
+                pointBorderColor: isDark ? "#1f2937" : "#fff",
+                pointBorderWidth: 2,
+                pointStyle: "rectRot",
+                yAxisID: "yPace",
+                tension: 0,
+                spanGaps: false,
+              }]
+            : []),
         ],
       },
       options: {
@@ -154,6 +198,12 @@ export default function MarathonProjection({ longRuns, weeksToRace }: Props) {
           tooltip: {
             callbacks: {
               label: (ctx) => {
+                if (ctx.dataset.label === "Provas") {
+                  const s = ctx.raw as number | null;
+                  if (!s) return "";
+                  const name = raceLabelsOnAxis[ctx.dataIndex] ?? "Prova";
+                  return ` ${name}: ${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}/km`;
+                }
                 if (ctx.dataset.yAxisID === "yPace") {
                   const s = ctx.raw as number;
                   return ` Pace: ${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}/km`;
@@ -185,7 +235,7 @@ export default function MarathonProjection({ longRuns, weeksToRace }: Props) {
     return () => {
       if (chartRef.current) { (chartRef.current as Chart).destroy(); chartRef.current = null; }
     };
-  }, [longRuns, effData.length]);
+  }, [longRuns, effData.length, races]);
 
   if (longRuns.length === 0) return null;
 
