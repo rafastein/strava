@@ -308,27 +308,75 @@ export default function QualityWorkoutsChart({ workouts }: Props) {
     return acc;
   }, {});
 
+  // Per-type aggregated stats
+  const typeStats = Object.keys(TYPE_COLORS).reduce<Record<string, {
+    avgDist: number | null;
+    avgFc: number | null;
+    avgPace: number | null;
+  }>>((acc, tipo) => {
+    const group = workouts.filter((w) => w.label === tipo);
+    if (group.length === 0) {
+      acc[tipo] = { avgDist: null, avgFc: null, avgPace: null };
+      return acc;
+    }
+    const dists = group.map((w) => w.distKm).filter((d) => d > 0);
+    const fcs = group.map((w) => w.fcAvg).filter((f): f is number => f !== null);
+    const paces = group.flatMap((w) =>
+      w.kmSplits
+        .map((s) => s.pace)
+        .filter((p): p is number => p !== null && p > 3 && p < 10)
+    );
+    acc[tipo] = {
+      avgDist: dists.length ? dists.reduce((a, b) => a + b, 0) / dists.length : null,
+      avgFc: fcs.length ? Math.round(fcs.reduce((a, b) => a + b, 0) / fcs.length) : null,
+      avgPace: paces.length ? paces.reduce((a, b) => a + b, 0) / paces.length : null,
+    };
+    return acc;
+  }, {});
+
   return (
     <div className="space-y-6">
       {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
-        {Object.entries(TYPE_COLORS).map(([tipo, color]) => (
-          <button
-            key={tipo}
-            onClick={() => setFilter(filter === tipo ? "Todos" : tipo)}
-            className={`rounded-2xl p-3 text-center transition-all ${
-              filter === tipo ? "ring-2 shadow-sm" : "bg-white shadow-sm hover:shadow"
-            }`}
-            style={filter === tipo ? { outline: `2px solid ${color}`, background: color + "18" } : {}}
-          >
-            <span
-              className="inline-block h-2.5 w-2.5 rounded-full mb-1"
-              style={{ background: color }}
-            />
-            <p className="text-xs text-gray-500">{tipo}</p>
-            <p className="text-lg font-bold text-gray-900">{counts[tipo] || 0}</p>
-          </button>
-        ))}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        {Object.entries(TYPE_COLORS).map(([tipo, color]) => {
+          const stats = typeStats[tipo];
+          const count = counts[tipo] || 0;
+          return (
+            <button
+              key={tipo}
+              onClick={() => setFilter(filter === tipo ? "Todos" : tipo)}
+              className={`rounded-2xl p-3 text-left transition-all ${
+                filter === tipo ? "ring-2 shadow-sm" : "bg-white shadow-sm hover:shadow"
+              }`}
+              style={filter === tipo ? { outline: `2px solid ${color}`, background: color + "18" } : {}}
+            >
+              <div className="flex items-center gap-1.5 mb-2">
+                <span className="inline-block h-2.5 w-2.5 rounded-full shrink-0" style={{ background: color }} />
+                <span className="text-xs font-medium text-gray-600">{tipo}</span>
+              </div>
+              <p className="text-2xl font-bold text-gray-900 mb-2">{count}</p>
+              {count > 0 && (
+                <div className="space-y-0.5 border-t border-gray-100 pt-2">
+                  {stats.avgDist !== null && (
+                    <p className="text-xs text-gray-400">
+                      dist <span className="font-medium text-gray-600">{stats.avgDist.toFixed(1)} km</span>
+                    </p>
+                  )}
+                  {stats.avgPace !== null && (
+                    <p className="text-xs text-gray-400">
+                      pace <span className="font-medium text-gray-600">{formatPace(stats.avgPace)}/km</span>
+                    </p>
+                  )}
+                  {stats.avgFc !== null && (
+                    <p className="text-xs text-gray-400">
+                      FC <span className="font-medium text-gray-600">{stats.avgFc} bpm</span>
+                    </p>
+                  )}
+                </div>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Charts row */}
