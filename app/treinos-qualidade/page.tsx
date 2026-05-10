@@ -100,18 +100,19 @@ function classifyBySplits(
   const avgLast = last.reduce((a, b) => a + b, 0) / last.length;
   const isProgressive = avgLast - avgFirst > 0.8;
 
-  if (fastCount >= 4 && pctFast > 0.3 && std > 1.5)
-    return { label: "Intervalado", confidence: Math.min(0.92, 0.65 + fastCount * 0.04) };
-  if (fastCount >= 2 && pctFast > 0.2 && std > 1.2)
-    return { label: "Fartlek", confidence: 0.78 };
-  if (max > 15.0 && fastCount >= 1)
-    return { label: "Tiro", confidence: 0.80 };
-  if (isProgressive && std < 1.0)
-    return { label: "Progressivo", confidence: 0.75 };
-  if (avg > 11.5 && std < 0.8 && pctFast > 0.3)
-    return { label: "Tempo Run", confidence: 0.72 };
-  if (avg < 10.5 && std < 0.7)
-    return { label: "Regenerativo", confidence: 0.68 };
+  // Splits por km têm variação interna suavizada — thresholds menores que análise .fit
+  if (fastCount >= 3 && pctFast > 0.2 && std > 0.8)
+    return { label: "Intervalado", confidence: Math.min(0.90, 0.65 + fastCount * 0.04) };
+  if (fastCount >= 2 && pctFast > 0.15 && std > 0.6)
+    return { label: "Fartlek", confidence: 0.75 };
+  if (fastCount >= 1 && max > 14.5)
+    return { label: "Tiro", confidence: 0.78 };
+  if (isProgressive && std < 1.2)
+    return { label: "Progressivo", confidence: 0.72 };
+  if (avg > 11.5 && std < 0.6 && pctFast > 0.2)
+    return { label: "Tempo Run", confidence: 0.70 };
+  if (avg < 10.5 && std < 0.5)
+    return { label: "Regenerativo", confidence: 0.65 };
 
   return { label: "Corrida base", confidence: 0.60 };
 }
