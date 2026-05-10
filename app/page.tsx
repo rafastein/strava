@@ -4,6 +4,7 @@ import Link from "next/link";
 import { formatBRDate } from "./lib/date-utils";
 import ActivitiesPanel from "./components/ActivitiesPanel";
 import WeeklyComparisonChart from "./components/WeeklyComparisonChart";
+import NextRaceCard from "./components/NextRaceCard";
 import {
   buildWeeklyComparison,
   getCurrentWeek,
@@ -336,6 +337,38 @@ export default async function Home() {
           </div>
         </section>
 
+        <section className="mb-8">
+          <NextRaceCard
+            races={[
+              {
+                name: "Lima Running Festival",
+                date: "2026-05-23T07:00:00-05:00",
+                location: "Lima, Peru",
+                distanceKm: 21.1,
+                objective: "Pace de maratona (5:20/km)",
+                targetPaceSecPerKm: 320,
+              },
+              {
+                name: "Meia Maratona do Rio",
+                date: "2026-06-06T07:00:00-03:00",
+                location: "Rio de Janeiro, Brasil",
+                distanceKm: 21.1,
+                objective: "Sub-1:45 (4:58/km)",
+                targetPaceSecPerKm: 298,
+              },
+              {
+                name: "Maratona de Buenos Aires",
+                date: "2026-09-20T06:00:00-03:00",
+                location: "Buenos Aires, Argentina",
+                distanceKm: 42.195,
+                objective: "Sub-3:45 (5:20/km)",
+                targetPaceSecPerKm: 320,
+                href: "/buenos-aires",
+              },
+            ]}
+          />
+        </section>
+
         <section className="mb-8 grid gap-4 md:grid-cols-4">
           <Card
             title="Km previstos (SisRUN)"
@@ -508,6 +541,21 @@ export default async function Home() {
             </h3>
             <p className="mt-2 text-sm text-gray-500">
               Explore o mapa-múndi com a quantidade de corridas por país.
+            </p>
+          </Link>
+
+          <Link
+            href="/meias"
+            className="rounded-3xl bg-white p-6 shadow-sm transition hover:bg-gray-50"
+          >
+            <p className="text-xs font-medium uppercase tracking-wide text-orange-500">
+              Análise
+            </p>
+            <h3 className="mt-2 text-2xl font-bold text-gray-900">
+              Meias maratonas
+            </h3>
+            <p className="mt-2 text-sm text-gray-500">
+              Splits km a km sobrepostos de todas as meias — compare evolução prova a prova.
             </p>
           </Link>
 

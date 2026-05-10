@@ -5,6 +5,9 @@ import path from "path";
 import Link from "next/link";
 import ManualPredictionForm from "../components/ManualPredictionForm";
 import MarathonProjection from "../components/MarathonProjection";
+import RaceCountdown from "../components/RaceCountdown";
+import ActivitySplitsChart from "../components/ActivitySplitsChart";
+import WeeklyPlanVsActualChart from "../components/WeeklyPlanVsActualChart";
 import { getValidStravaAccessToken } from "../lib/strava-auth";
 import { getDynamicAthleteProfile, formatPrTime } from "../lib/strava-prs";
 import {
@@ -421,7 +424,10 @@ export default async function BuenosAiresPage() {
               <h2 className="mt-2 text-4xl font-bold md:text-5xl">{marathonGoal.raceName}</h2>
               <p className="mt-4 max-w-2xl text-orange-50">Painel dedicado ao ciclo com foco em volume, longão, especificidade e prontidão para a maratona.</p>
               <div className="mt-8 grid gap-4 sm:grid-cols-3">
-                <div className="rounded-2xl bg-white/15 p-5 backdrop-blur-sm"><p className="text-sm text-orange-100">Dias para a prova</p><p className="mt-1 text-3xl font-bold">{daysToRace}</p></div>
+                <div className="rounded-2xl bg-white/15 p-5 backdrop-blur-sm col-span-full md:col-span-1">
+                  <p className="text-sm text-orange-100 mb-3">Contagem regressiva</p>
+                  <RaceCountdown targetDate="2026-09-20T06:00:00-03:00" raceName="Buenos Aires" />
+                </div>
                 <div className="rounded-2xl bg-white/15 p-5 backdrop-blur-sm"><p className="text-sm text-orange-100">Pace-alvo</p><p className="mt-1 text-3xl font-bold">{targetPaceLabel}</p></div>
                 <div className="rounded-2xl bg-white/15 p-5 backdrop-blur-sm"><p className="text-sm text-orange-100">Tempo projetado</p><p className="mt-1 text-3xl font-bold">{formatFullDuration(targetPredictionSeconds)}</p></div>
               </div>
@@ -643,6 +649,14 @@ export default async function BuenosAiresPage() {
                       )}
                       {run.total_elevation_gain > 0 && <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600">+{Math.round(run.total_elevation_gain)}m alt.</span>}
                     </div>
+                    <div className="mt-3">
+                      <ActivitySplitsChart
+                        activityId={run.id}
+                        activityName={run.name}
+                        targetPaceSecPerKm={run.moving_time / km}
+                        goalPaceSecPerKm={320}
+                      />
+                    </div>
                   </div>
                 );
               }) : <p className="text-gray-500">Nenhum longão identificado ainda.</p>}
@@ -654,6 +668,25 @@ export default async function BuenosAiresPage() {
         {projectionLongRuns.length >= 3 && (
           <section className="mb-8">
             <MarathonProjection longRuns={projectionLongRuns} weeksToRace={weeksToRace} />
+          </section>
+        )}
+
+        {/* Volume planejado vs. executado */}
+        {weeklyData.length > 0 && (
+          <section className="mb-8">
+            <WeeklyPlanVsActualChart
+              weeks={weeklyData.map((w) => {
+                const sisrunWeekForLabel = sisrunData?.weeks?.find(
+                  (sw: { label: string }) => sw.label === w.label
+                );
+                return {
+                  label: w.label,
+                  planned: sisrunWeekForLabel?.totalPlannedKm ?? 0,
+                  actual: w.distanceKm,
+                };
+              })}
+              title="Volume semanal — planejado vs. executado"
+            />
           </section>
         )}
 

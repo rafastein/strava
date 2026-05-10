@@ -5,6 +5,7 @@ import BrandIcon from "../components/BrandIcon";
 import { getValidStravaAccessToken } from "../lib/strava-auth";
 import { formatBRDate } from "../lib/date-utils";
 import { formatEfficiency, formatLongRunPace } from "../lib/strava-long-runs";
+import ShoeUsageChart from "../components/ShoeUsageChart";
 
 type StravaActivity = {
   id: number;
@@ -417,6 +418,18 @@ export default async function EquipamentosPage() {
           </section>
         ) : (
           <>
+            <section className="mb-8">
+              <ShoeUsageChart
+                shoes={grouped.map((g) => ({
+                  name: g.name,
+                  totalKm: g.totalKm,
+                  maxKm: g.maxKm,
+                  lastUse: g.lastUse,
+                  activities: g.activities,
+                }))}
+              />
+            </section>
+
             <section className="mb-8 rounded-3xl bg-white p-6 shadow-sm">
               <h2 className="text-xl font-bold text-gray-900">
                 Recomendação automática
