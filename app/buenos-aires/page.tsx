@@ -676,7 +676,7 @@ export default async function BuenosAiresPage() {
         {weeklyData.length > 0 && (
           <section className="mb-8">
             <WeeklyPlanVsActualChart
-              weeks={buildWeeklyComparison(sisrunData, activities, 16).map((w) => ({
+              weeks={buildWeeklyComparison(sisrunData, activities, 16).reverse().map((w) => ({
                 label: w.label,
                 planned: w.plannedKm,
                 actual: w.executedKm,
