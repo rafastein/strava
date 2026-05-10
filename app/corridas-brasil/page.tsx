@@ -265,6 +265,7 @@ export default async function CorridasBrasilPage() {
                               activityId={Number(String(race.id).replace("strava-", ""))}
                               activityName={race.name}
                               targetPaceSecPerKm={race.paceSecPerKm ?? undefined}
+                              goalPaceSecPerKm={320}
                             />
                           </div>
                         </div>

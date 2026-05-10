@@ -522,6 +522,7 @@ export default async function LongoesPage() {
                         activityId={Number(run.id)}
                         activityName={run.name}
                         targetPaceSecPerKm={run.paceSecPerKm ?? undefined}
+                        goalPaceSecPerKm={320}
                       />
                     </div>
                   </div>

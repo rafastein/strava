@@ -16,6 +16,7 @@ type Props = {
   activityId: number;
   activityName?: string;
   targetPaceSecPerKm?: number | null;
+  goalPaceSecPerKm?: number | null;
 };
 
 function formatPace(secPerKm: number): string {
@@ -36,6 +37,7 @@ export default function ActivitySplitsChart({
   activityId,
   activityName,
   targetPaceSecPerKm,
+  goalPaceSecPerKm,
 }: Props) {
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstance = useRef<unknown>(null);
@@ -134,11 +136,26 @@ export default function ActivitySplitsChart({
         });
       }
 
-      if (targetPaceSecPerKm && targetPaceSecPerKm > 0) {
+      // Linha de média da corrida
+      datasets.push({
+        type: "line" as const,
+        label: "Média da corrida",
+        data: splits.map(() => avgPace / 60),
+        borderColor: "#6366f1",
+        backgroundColor: "transparent",
+        borderDash: [4, 3],
+        pointRadius: 0,
+        tension: 0,
+        yAxisID: "yPace",
+        order: 0,
+      });
+
+      // Linha de meta (Buenos Aires)
+      if (goalPaceSecPerKm && goalPaceSecPerKm > 0) {
         datasets.push({
           type: "line" as const,
-          label: "Meta",
-          data: splits.map(() => targetPaceSecPerKm / 60),
+          label: "Meta BsAs",
+          data: splits.map(() => goalPaceSecPerKm / 60),
           borderColor: "#f97316",
           backgroundColor: "transparent",
           borderDash: [6, 4],
@@ -226,10 +243,15 @@ export default function ActivitySplitsChart({
                   if (ctx.dataset.label === "FC (bpm)") {
                     return `FC: ${ctx.raw} bpm`;
                   }
-                  if (ctx.dataset.label === "Meta") {
+                  if (ctx.dataset.label === "Média da corrida") {
                     const val = ctx.raw as number | null;
                     if (!val) return "-";
-                    return `Meta: ${formatPace(val * 60)} min/km`;
+                    return `Média: ${formatPace(val * 60)} min/km`;
+                  }
+                  if (ctx.dataset.label === "Meta BsAs") {
+                    const val = ctx.raw as number | null;
+                    if (!val) return "-";
+                    return `Meta BsAs: ${formatPace(val * 60)} min/km`;
                   }
                   return String(ctx.raw);
                 },
@@ -349,10 +371,10 @@ export default function ActivitySplitsChart({
               {formatPace(bestPace)}/km
             </span>
           </span>
-          {targetPaceSecPerKm && (
+          {goalPaceSecPerKm && (
             <span>
               <span className="inline-block h-2 w-4 border-b-2 border-dashed border-orange-400 align-middle" />{" "}
-              Meta: {formatPace(targetPaceSecPerKm)}/km
+              Meta BsAs: {formatPace(goalPaceSecPerKm)}/km
             </span>
           )}
         </div>
@@ -383,6 +405,16 @@ export default function ActivitySplitsChart({
           <span className="flex items-center gap-1">
             <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-500" />
             Frequência cardíaca
+          </span>
+        )}
+        <span className="flex items-center gap-1">
+          <span className="inline-block h-2 w-4 border-b-2 border-dashed border-indigo-400 align-middle" />
+          Média da corrida
+        </span>
+        {goalPaceSecPerKm && (
+          <span className="flex items-center gap-1">
+            <span className="inline-block h-2 w-4 border-b-2 border-dashed border-orange-400 align-middle" />
+            Meta BsAs
           </span>
         )}
       </div>
