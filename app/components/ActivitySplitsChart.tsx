@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import type { ChartDataset } from "chart.js";
 
 type SplitEntry = {
   km: number;
@@ -95,7 +96,8 @@ export default function ActivitySplitsChart({
         s.distanceM < 900 ? `~${s.distanceM}m` : `${s.km}km`
       );
 
-      const datasets: object[] = [
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const datasets: ChartDataset<any, any>[] = [
         {
           type: "bar" as const,
           label: "Ritmo (min/km)",
