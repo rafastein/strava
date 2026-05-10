@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { TooltipItem } from "chart.js";
 
 export type LongRunChartEntry = {
   id: number | string;
@@ -191,7 +192,7 @@ export default function LongRunCharts({ longRuns }: Props) {
             legend: { display: datasets.length > 1 },
             tooltip: {
               callbacks: {
-                label: (ctx) => {
+                label: (ctx: TooltipItem<"line">) => {
                   if (mode === "pace") {
                     const val = ctx.raw as number | null;
                     if (!val) return "-";
@@ -205,7 +206,7 @@ export default function LongRunCharts({ longRuns }: Props) {
                   const val = ctx.raw as number | null;
                   return `Eficiência: ${val?.toFixed(3) ?? "-"}`;
                 },
-                afterLabel: (ctx) => {
+                afterLabel: (ctx: TooltipItem<"line">) => {
                   const run = sorted[ctx.dataIndex];
                   return `${run.distanceKm.toFixed(1)} km`;
                 },
