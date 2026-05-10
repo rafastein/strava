@@ -318,7 +318,7 @@ export default function QualityWorkoutsChart({ workouts }: Props) {
             className={`rounded-2xl p-3 text-center transition-all ${
               filter === tipo ? "ring-2 shadow-sm" : "bg-white shadow-sm hover:shadow"
             }`}
-            style={filter === tipo ? { ringColor: color, background: color + "18" } : {}}
+            style={filter === tipo ? { outline: `2px solid ${color}`, background: color + "18" } : {}}
           >
             <span
               className="inline-block h-2.5 w-2.5 rounded-full mb-1"
