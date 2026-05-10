@@ -47,13 +47,14 @@ function formatPace(v: number): string {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("pt-BR", {
+  // Add T12:00:00 to avoid UTC midnight shifting date by timezone
+  return new Date(iso + "T12:00:00").toLocaleDateString("pt-BR", {
     day: "2-digit", month: "2-digit", year: "2-digit",
   });
 }
 
 function formatMonthYear(iso: string): string {
-  return new Date(iso).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+  return new Date(iso + "T12:00:00").toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
 }
 
 // ── Volume chart ─────────────────────────────────────────────────────────────
@@ -82,7 +83,7 @@ function VolumeChart({ workouts }: { workouts: QualityWorkout[] }) {
       });
 
       const labels = Object.keys(months).sort().map((m) =>
-        new Date(m + "-01").toLocaleDateString("pt-BR", { month: "short", year: "2-digit" })
+        new Date(m + "-15").toLocaleDateString("pt-BR", { month: "short", year: "2-digit" })
       );
       const keys = Object.keys(months).sort();
 
@@ -150,7 +151,7 @@ function FcTrendChart({ workouts }: { workouts: QualityWorkout[] }) {
             label: tipo,
             data: sorted
               .filter((w) => w.label === tipo)
-              .map((w) => ({ x: new Date(w.date).getTime(), y: w.fcMax })),
+              .map((w) => ({ x: new Date(w.date + "T12:00:00").getTime(), y: w.fcMax })),
             backgroundColor: TYPE_COLORS[tipo] + "cc",
             pointRadius: 5,
             pointHoverRadius: 7,
