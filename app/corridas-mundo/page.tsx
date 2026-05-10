@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { formatBRDate } from "../lib/date-utils";
 import WorldRaceMap from "../components/WorldRaceMap";
+import ActivitySplitsChart from "../components/ActivitySplitsChart";
 import {
   getRaceLikeActivitiesFromStrava,
   groupStravaRacesByCountry,
@@ -454,6 +455,14 @@ export default async function CorridasMundoPage() {
                               {formatRaceEfficiency(race.efficiency ?? null)} •{" "}
                               {getTrend(race.efficiency, previous?.efficiency)}
                             </p>
+
+                            <div className="mt-3">
+                              <ActivitySplitsChart
+                                activityId={Number(String(race.id).replace("strava-", ""))}
+                                activityName={race.name}
+                                targetPaceSecPerKm={race.paceSecPerKm ?? undefined}
+                              />
+                            </div>
                           </div>
                         );
                       })}
