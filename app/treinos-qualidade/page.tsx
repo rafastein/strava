@@ -6,6 +6,7 @@ import { getLongRunsFromActivities } from "../lib/strava-long-runs";
 import QualityWorkoutsChart, {
   type QualityWorkout,
 } from "../components/QualityWorkoutsChart";
+import RevalidateButton from "../components/RevalidateButton";
 
 type StravaActivity = {
   id: number;
@@ -220,12 +221,15 @@ export default async function TreinosQualidadePage() {
               Classificação automática por padrão de velocidade — intervalados, fartleks, progressivos e mais.
             </p>
           </div>
-          <Link
-            href="/"
-            className="rounded-full bg-white px-5 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            ← Voltar ao dashboard
-          </Link>
+          <div className="flex items-center gap-3">
+            <RevalidateButton path="/treinos-qualidade" />
+            <Link
+              href="/"
+              className="rounded-full bg-white px-5 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+            >
+              ← Voltar ao dashboard
+            </Link>
+          </div>
         </div>
 
         {/* Summary */}
