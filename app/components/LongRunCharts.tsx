@@ -213,12 +213,9 @@ export default function LongRunCharts({ longRuns }: Props) {
               },
             },
           },
-          scales: scales as Parameters<
-            InstanceType<typeof Chart>["update"]
-          >[0] extends undefined
-            ? never
-            : never,
-        } as Parameters<typeof Chart>[1]["options"],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          scales: scales as any,
+        },
       });
     }
 
