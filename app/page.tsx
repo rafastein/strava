@@ -350,13 +350,12 @@ export default async function Home() {
         {/* ── GRÁFICO SEMANAL ── */}
         <section style={{ marginBottom: "1.75rem" }}>
           <SectionLabel>Planejado × executado</SectionLabel>
-          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, overflow: "hidden" }}>
-            <WeeklyComparisonChart
-              items={weeklyComparison}
-              title="Planejado x executado por semana"
-              subtitle="Volume planejado no SisRUN comparado com o executado no Strava."
-            />
-          </div>
+          <WeeklyComparisonChart
+            items={weeklyComparison}
+            title="Planejado x executado por semana"
+            subtitle="Volume planejado no SisRUN comparado com o executado no Strava."
+            dark
+          />
         </section>
 
         {/* ── NAVEGAÇÃO ── */}
