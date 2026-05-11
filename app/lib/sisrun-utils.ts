@@ -74,8 +74,20 @@ function getDateKey(date: Date) {
   return date.toLocaleDateString("sv-SE");
 }
 
+const SISRUN_KEY = "sisrun:latest";
+
 export async function getSisrunData(): Promise<SisrunParsedData | null> {
   try {
+    // Em produção (Vercel), lê do KV store
+    if (process.env.KV_REST_API_URL) {
+      const { kv } = await import("@vercel/kv");
+      const raw = await kv.get<string>(SISRUN_KEY);
+      if (!raw) return null;
+      const data = typeof raw === "string" ? JSON.parse(raw) : raw;
+      return data as SisrunParsedData;
+    }
+
+    // Em desenvolvimento local, lê do arquivo
     const filePath = path.join(process.cwd(), "data", "sisrun-latest.json");
     const content = await fs.readFile(filePath, "utf-8");
     return JSON.parse(content);
