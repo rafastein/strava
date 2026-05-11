@@ -147,12 +147,11 @@ function extractPRsFromRuns(runs: StravaActivity[]): {
       ageMonths:  ageInMonths(best.run.start_date_local ?? best.run.start_date),
     };
 
-    // VDOT ponderado: cada corrida contribui com peso temporal × peso distância
-    for (const c of candidates) {
-      const vdot = calculateVdot(range.target, c.normalizedTime);
-      if (vdot !== null && vdot > 20) {
-        vdotInputs.push({ vdot, weight: c.tw * DISTANCE_WEIGHTS[key] });
-      }
+    // VDOT ponderado: usa apenas o MELHOR tempo por distância (não todas as corridas)
+    // Usar todas puxaria o VDOT para baixo por causa dos treinos leves
+    const vdot = calculateVdot(range.target, best.normalizedTime);
+    if (vdot !== null && vdot > 20) {
+      vdotInputs.push({ vdot, weight: best.tw * DISTANCE_WEIGHTS[key] });
     }
   }
 
