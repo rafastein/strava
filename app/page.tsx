@@ -196,6 +196,10 @@ export default async function Home() {
   return (
     <main className="min-h-screen" style={{ background: "#0d0d0d", fontFamily: "'DM Sans', sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+      <style>{`
+        .nav-link:hover { color: #fff !important; }
+        .explore-card:hover { border-color: rgba(245,166,35,0.3) !important; background: rgba(245,166,35,0.04) !important; }
+      `}</style>
 
       {/* ── NAV ── */}
       <nav style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(13,13,13,0.95)", backdropFilter: "blur(12px)", position: "sticky", top: 0, zIndex: 50 }}>
@@ -211,9 +215,8 @@ export default async function Home() {
           </div>
           <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
             {NAV_LINKS.map((l) => (
-              <Link key={l.href} href={l.href} style={{ fontSize: 11, fontWeight: 500, letterSpacing: "0.07em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)", padding: "6px 10px", borderRadius: 6, textDecoration: "none", transition: "color 0.2s" }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "#fff")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.45)")}
+              <Link key={l.href} href={l.href} className="nav-link" style={{ fontSize: 11, fontWeight: 500, letterSpacing: "0.07em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)", padding: "6px 10px", borderRadius: 6, textDecoration: "none", transition: "color 0.2s" }}
+
               >
                 {l.label}
               </Link>
@@ -368,9 +371,8 @@ export default async function Home() {
               { href: "/equipamentos", label: "Equipamentos", desc: "Km, desgaste e eficiência por tênis.", tag: "Strava" },
               { href: "/sisrun", label: "SisRUN", desc: "Atualize o planejamento e acompanhe aderência semanal.", tag: "Planejamento" },
             ].map((c) => (
-              <Link key={c.href} href={c.href} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "1.5rem", textDecoration: "none", transition: "border-color 0.2s, background 0.2s", display: "block" }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(245,166,35,0.3)"; e.currentTarget.style.background = "rgba(245,166,35,0.04)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+              <Link key={c.href} href={c.href} className="explore-card" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "1.5rem", textDecoration: "none", transition: "border-color 0.2s, background 0.2s", display: "block" }}
+
               >
                 <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#f5a623", marginBottom: "0.6rem" }}>{c.tag}</p>
                 <p style={{ fontSize: 16, fontWeight: 600, color: "#fff", marginBottom: "0.5rem" }}>{c.label}</p>
