@@ -4,23 +4,6 @@ import { parseSisrunWorkbook } from "@/app/lib/sisrun-xls-parser";
 
 const SISRUN_KEY = "sisrun:latest";
 
-async function saveToKV(data: unknown): Promise<void> {
-  const { kv } = await import("@vercel/kv");
-  await kv.set(SISRUN_KEY, JSON.stringify(data));
-}
-
-async function saveToFile(data: unknown): Promise<void> {
-  const fs = await import("fs/promises");
-  const path = await import("path");
-  const outputDir = path.join(process.cwd(), "data");
-  await fs.mkdir(outputDir, { recursive: true });
-  await fs.writeFile(
-    path.join(outputDir, "sisrun-latest.json"),
-    JSON.stringify(data, null, 2),
-    "utf-8"
-  );
-}
-
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
@@ -32,27 +15,32 @@ export async function POST(req: Request) {
 
     const lowerName = file.name.toLowerCase();
     if (!lowerName.endsWith(".xls") && !lowerName.endsWith(".xlsx")) {
-      return NextResponse.json(
-        { error: "Envie um arquivo .xls ou .xlsx" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Envie um arquivo .xls ou .xlsx" }, { status: 400 });
     }
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const workbook = XLSX.read(buffer, { type: "buffer" });
     const parsedData = parseSisrunWorkbook(workbook, file.name);
+    const json = JSON.stringify(parsedData);
 
-    const isVercel = !!process.env.KV_REST_API_URL;
+    const isVercel = !!process.env.UPSTASH_REDIS_REST_URL;
+
     if (isVercel) {
-      await saveToKV(parsedData);
+      const { Redis } = await import("@upstash/redis");
+      const redis = Redis.fromEnv();
+      await redis.set(SISRUN_KEY, json);
     } else {
-      await saveToFile(parsedData);
+      const fs = await import("fs/promises");
+      const path = await import("path");
+      const dir = path.join(process.cwd(), "data");
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(path.join(dir, "sisrun-latest.json"), json, "utf-8");
     }
 
     return NextResponse.json({
       success: true,
-      storage: isVercel ? "kv" : "file",
+      storage: isVercel ? "upstash" : "file",
       fileName: parsedData.fileName,
       athleteName: parsedData.athleteName,
       weeks: parsedData.weeks.length,
