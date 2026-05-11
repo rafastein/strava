@@ -125,7 +125,8 @@ export default function WeeklyComparisonChart({
   items,
   title = "Planejado x executado por semana",
   subtitle,
-, dark: Props) {
+  dark = false,
+}: Props) {
   return (
     <div style={{ background: dark ? "rgba(255,255,255,0.04)" : "#fff", border: dark ? "1px solid rgba(255,255,255,0.08)" : "none", borderRadius: 16, padding: "1.25rem 1.5rem" }}>
       <h2 style={{ fontSize: 18, fontWeight: 700, color: dark ? "#fff" : "#111", marginBottom: 4 }}>{title}</h2>
