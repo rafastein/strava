@@ -78,10 +78,14 @@ const SISRUN_KEY = "sisrun:latest";
 
 export async function getSisrunData(): Promise<SisrunParsedData | null> {
   try {
-    // Em produção (Vercel + Upstash), lê do Redis
-    if (process.env.UPSTASH_REDIS_REST_URL) {
+    // Em produção (Vercel + Upstash)
+    // A Vercel cria as vars como KV_REST_API_URL e KV_REST_API_TOKEN
+    const redisUrl   = process.env.KV_REST_API_URL   ?? process.env.UPSTASH_REDIS_REST_URL;
+    const redisToken = process.env.KV_REST_API_TOKEN  ?? process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    if (redisUrl && redisToken) {
       const { Redis } = await import("@upstash/redis");
-      const redis = Redis.fromEnv();
+      const redis = new Redis({ url: redisUrl, token: redisToken });
       const raw = await redis.get<string>(SISRUN_KEY);
       if (!raw) return null;
       const data = typeof raw === "string" ? JSON.parse(raw) : raw;

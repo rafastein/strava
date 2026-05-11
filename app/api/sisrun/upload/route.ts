@@ -24,11 +24,13 @@ export async function POST(req: Request) {
     const parsedData = parseSisrunWorkbook(workbook, file.name);
     const json = JSON.stringify(parsedData);
 
-    const isVercel = !!process.env.UPSTASH_REDIS_REST_URL;
+    const redisUrl = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL;
+    const redisToken = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN;
+    const isVercel = !!(redisUrl && redisToken);
 
     if (isVercel) {
       const { Redis } = await import("@upstash/redis");
-      const redis = Redis.fromEnv();
+      const redis = new Redis({ url: redisUrl!, token: redisToken! });
       await redis.set(SISRUN_KEY, json);
     } else {
       const fs = await import("fs/promises");
