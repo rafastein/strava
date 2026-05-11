@@ -199,6 +199,35 @@ export default async function Home() {
       <style>{`
         .nav-link:hover { color: #fff !important; }
         .explore-card:hover { border-color: rgba(245,166,35,0.3) !important; background: rgba(245,166,35,0.04) !important; }
+        .nav-links-wrap { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+        @media (max-width: 640px) {
+          .nav-links-wrap { display: none; }
+          :root {
+            --hero-cols: 1fr;
+            --metrics-cols: repeat(2, 1fr);
+            --longoes-cols: repeat(2, 1fr);
+            --explore-cols: 1fr;
+            --today-cols: 1fr;
+          }
+        }
+        @media (min-width: 641px) and (max-width: 1023px) {
+          :root {
+            --hero-cols: 1fr;
+            --metrics-cols: repeat(2, 1fr);
+            --longoes-cols: repeat(2, 1fr);
+            --explore-cols: repeat(2, 1fr);
+            --today-cols: 1fr 2fr;
+          }
+        }
+        @media (min-width: 1024px) {
+          :root {
+            --hero-cols: 1fr 1fr;
+            --metrics-cols: repeat(4, 1fr);
+            --longoes-cols: repeat(3, 1fr) 1.2fr;
+            --explore-cols: repeat(3, 1fr);
+            --today-cols: 1fr 2fr;
+          }
+        }
       `}</style>
 
       {/* ── NAV ── */}
@@ -231,7 +260,7 @@ export default async function Home() {
         <div style={{ position: "absolute", top: -100, right: -100, width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(245,166,35,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: -150, left: -50, width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(232,69,74,0.05) 0%, transparent 70%)", pointerEvents: "none" }} />
 
-        <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2.5rem", alignItems: "center" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "var(--hero-cols, 1fr)", gap: "2rem", alignItems: "center" }}>
           <div>
             <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: "#f5a623", marginBottom: "1rem" }}>
               Temporada 2026 · Buenos Aires 20/09
@@ -262,7 +291,7 @@ export default async function Home() {
               <RaceCountdown targetDate="2026-09-20T06:00:00-03:00" raceName="Buenos Aires" />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10 }}>
               {[
                 { label: "km em 2026", value: totalKm.toFixed(0) },
                 { label: "corridas", value: String(runs.length) },
@@ -284,7 +313,7 @@ export default async function Home() {
         {/* ── SEMANA ATUAL ── */}
         <section style={{ marginBottom: "1.75rem" }}>
           <SectionLabel>Esta semana</SectionLabel>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "var(--metrics-cols, repeat(2,1fr))", gap: 10 }}>
             {[
               { label: "Planejado (SisRUN)", value: sisrunWeek ? `${plannedWeekKm.toFixed(1)} km` : "—", accent: false },
               { label: "Executado (Strava)", value: `${currentWeekKm.toFixed(1)} km`, accent: true },
@@ -313,7 +342,7 @@ export default async function Home() {
             </span>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10 }}>
             {alerts.map((a, i) => (
               <div key={i} style={{ background: a.ok ? "rgba(16,185,129,0.06)" : "rgba(245,166,35,0.06)", border: `1px solid ${a.ok ? "rgba(16,185,129,0.15)" : "rgba(245,166,35,0.15)"}`, borderRadius: 16, padding: "1.25rem 1.5rem" }}>
                 <p style={{ fontSize: 13, fontWeight: 600, color: a.ok ? "#10b981" : "#f5a623", marginBottom: 4 }}>{a.title}</p>
@@ -332,7 +361,7 @@ export default async function Home() {
         {/* ── LONGÕES ── */}
         <section style={{ marginBottom: "1.75rem" }}>
           <SectionLabel>Longões</SectionLabel>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr) 1.2fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "var(--longoes-cols, repeat(2,1fr))", gap: 10 }}>
             {[
               { label: "Total de longões", value: String(longRunSummary.totalLongRuns) },
               { label: "Pace médio", value: formatLongRunPace(longRunSummary.averagePaceSecPerKm) },
@@ -361,7 +390,7 @@ export default async function Home() {
         {/* ── NAVEGAÇÃO ── */}
         <section style={{ marginBottom: "1.75rem" }}>
           <SectionLabel>Explorar</SectionLabel>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "var(--explore-cols, 1fr)", gap: 10 }}>
             {[
               { href: "/treinos-qualidade", label: "Treinos de qualidade", desc: "Intervalados, fartleks e progressivos detectados automaticamente.", tag: "Treinos" },
               { href: "/meias", label: "Meias maratonas", desc: "Splits km a km sobrepostos — compare evolução prova a prova.", tag: "Análise" },
