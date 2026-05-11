@@ -226,21 +226,21 @@ export default async function Home() {
       </nav>
 
       {/* ── HERO ── */}
-      <section style={{ position: "relative", overflow: "hidden", padding: "5rem 1.5rem 4rem", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      <section style={{ position: "relative", overflow: "hidden", padding: "3rem 1.5rem 2.5rem", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         {/* Background glow */}
         <div style={{ position: "absolute", top: -100, right: -100, width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(245,166,35,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: -150, left: -50, width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(232,69,74,0.05) 0%, transparent 70%)", pointerEvents: "none" }} />
 
-        <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4rem", alignItems: "center" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2.5rem", alignItems: "center" }}>
           <div>
             <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: "#f5a623", marginBottom: "1rem" }}>
               Temporada 2026 · Buenos Aires 20/09
             </p>
-            <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(4rem, 8vw, 7rem)", lineHeight: 0.9, letterSpacing: "0.02em", color: "#fff", marginBottom: "1.5rem" }}>
+            <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(2.8rem, 6vw, 5rem)", lineHeight: 0.9, letterSpacing: "0.02em", color: "#fff", marginBottom: "1rem" }}>
               {athlete?.firstname ?? "Atleta"}<br />
               <span style={{ color: "#f5a623" }}>Cabral</span>
             </h1>
-            <p style={{ fontSize: 15, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, maxWidth: 380, marginBottom: "2rem" }}>
+            <p style={{ fontSize: 15, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, maxWidth: 380, marginBottom: "1.25rem" }}>
               Dashboard de treinos, projeções e análise de corrida. Powered by Strava + SisRUN.
             </p>
             <div style={{ display: "flex", gap: 12 }}>
@@ -255,7 +255,7 @@ export default async function Home() {
 
           {/* Countdown + Stats */}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ background: "rgba(245,166,35,0.07)", border: "1px solid rgba(245,166,35,0.2)", borderRadius: 16, padding: "1.5rem" }}>
+            <div style={{ background: "rgba(245,166,35,0.07)", border: "1px solid rgba(245,166,35,0.2)", borderRadius: 14, padding: "1rem 1.25rem" }}>
               <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "#f5a623", marginBottom: "0.75rem" }}>
                 Buenos Aires — 20 set 2026
               </p>
@@ -279,10 +279,10 @@ export default async function Home() {
         </div>
       </section>
 
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "1.75rem 1.5rem" }}>
 
         {/* ── SEMANA ATUAL ── */}
-        <section style={{ marginBottom: "2.5rem" }}>
+        <section style={{ marginBottom: "1.75rem" }}>
           <SectionLabel>Esta semana</SectionLabel>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
             {[
@@ -297,7 +297,7 @@ export default async function Home() {
         </section>
 
         {/* ── HOJE + ALERTAS ── */}
-        <section style={{ marginBottom: "2.5rem", display: "grid", gridTemplateColumns: "1fr 2fr", gap: 12 }}>
+        <section style={{ marginBottom: "1.75rem", display: "grid", gridTemplateColumns: "1fr 2fr", gap: 12 }}>
           <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "1.5rem" }}>
             <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: "0.75rem" }}>Hoje</p>
             {todaySisrunRow ? (
@@ -324,13 +324,13 @@ export default async function Home() {
         </section>
 
         {/* ── PRÓXIMA PROVA ── */}
-        <section style={{ marginBottom: "2.5rem" }}>
+        <section style={{ marginBottom: "1.75rem" }}>
           <SectionLabel>Calendário de provas</SectionLabel>
-          <NextRaceCard races={RACES} />
+          <NextRaceCard races={RACES} dark />
         </section>
 
         {/* ── LONGÕES ── */}
-        <section style={{ marginBottom: "2.5rem" }}>
+        <section style={{ marginBottom: "1.75rem" }}>
           <SectionLabel>Longões</SectionLabel>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr) 1.2fr", gap: 12 }}>
             {[
@@ -348,7 +348,7 @@ export default async function Home() {
         </section>
 
         {/* ── GRÁFICO SEMANAL ── */}
-        <section style={{ marginBottom: "2.5rem" }}>
+        <section style={{ marginBottom: "1.75rem" }}>
           <SectionLabel>Planejado × executado</SectionLabel>
           <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, overflow: "hidden" }}>
             <WeeklyComparisonChart
@@ -360,7 +360,7 @@ export default async function Home() {
         </section>
 
         {/* ── NAVEGAÇÃO ── */}
-        <section style={{ marginBottom: "2.5rem" }}>
+        <section style={{ marginBottom: "1.75rem" }}>
           <SectionLabel>Explorar</SectionLabel>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
             {[
@@ -371,11 +371,11 @@ export default async function Home() {
               { href: "/equipamentos", label: "Equipamentos", desc: "Km, desgaste e eficiência por tênis.", tag: "Strava" },
               { href: "/sisrun", label: "SisRUN", desc: "Atualize o planejamento e acompanhe aderência semanal.", tag: "Planejamento" },
             ].map((c) => (
-              <Link key={c.href} href={c.href} className="explore-card" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "1.5rem", textDecoration: "none", transition: "border-color 0.2s, background 0.2s", display: "block" }}
+              <Link key={c.href} href={c.href} className="explore-card" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "1.1rem 1.25rem", textDecoration: "none", transition: "border-color 0.2s, background 0.2s", display: "block" }}
 
               >
                 <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#f5a623", marginBottom: "0.6rem" }}>{c.tag}</p>
-                <p style={{ fontSize: 16, fontWeight: 600, color: "#fff", marginBottom: "0.5rem" }}>{c.label}</p>
+                <p style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: "0.35rem" }}>{c.label}</p>
                 <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", lineHeight: 1.5 }}>{c.desc}</p>
               </Link>
             ))}
@@ -383,7 +383,7 @@ export default async function Home() {
         </section>
 
         {/* ── ATIVIDADES ── */}
-        <section style={{ marginBottom: "2.5rem" }}>
+        <section style={{ marginBottom: "1.75rem" }}>
           <SectionLabel>Atividades recentes</SectionLabel>
           <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, overflow: "hidden" }}>
             <ActivitiesPanel activities={activities} />
@@ -412,9 +412,9 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function MetricCard({ label, value, accent }: { label: string; value: string; accent: boolean }) {
   return (
-    <div style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${accent ? "rgba(245,166,35,0.25)" : "rgba(255,255,255,0.07)"}`, borderRadius: 16, padding: "1.25rem 1.5rem" }}>
+    <div style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${accent ? "rgba(245,166,35,0.25)" : "rgba(255,255,255,0.07)"}`, borderRadius: 12, padding: "1rem 1.25rem" }}>
       <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 6 }}>{label}</p>
-      <p style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 32, letterSpacing: "0.04em", color: accent ? "#f5a623" : "#fff", lineHeight: 1 }}>{value}</p>
+      <p style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: "0.04em", color: accent ? "#f5a623" : "#fff", lineHeight: 1 }}>{value}</p>
     </div>
   );
 }

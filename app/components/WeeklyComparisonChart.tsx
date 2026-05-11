@@ -13,6 +13,7 @@ type Props = {
   items: WeeklyComparisonItem[];
   title?: string;
   subtitle?: string;
+  dark?: boolean;
 };
 
 function safeNumber(value: unknown) {
@@ -124,14 +125,14 @@ export default function WeeklyComparisonChart({
   items,
   title = "Planejado x executado por semana",
   subtitle,
-}: Props) {
+, dark: Props) {
   return (
-    <div className="rounded-3xl bg-white p-6 shadow-sm">
-      <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+    <div style={{ background: dark ? "rgba(255,255,255,0.04)" : "#fff", border: dark ? "1px solid rgba(255,255,255,0.08)" : "none", borderRadius: 16, padding: "1.25rem 1.5rem" }}>
+      <h2 style={{ fontSize: 18, fontWeight: 700, color: dark ? "#fff" : "#111", marginBottom: 4 }}>{title}</h2>
 
-      {subtitle ? <p className="mt-1 text-sm text-gray-500">{subtitle}</p> : null}
+      {subtitle ? <p style={{ fontSize: 12, color: dark ? "rgba(255,255,255,0.4)" : "#6b7280", marginTop: 2 }}>{subtitle}</p> : null}
 
-      <p className="mt-2 text-sm font-medium uppercase tracking-wide text-gray-400">
+      <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: dark ? "rgba(255,255,255,0.25)" : "#9ca3af", marginTop: 8 }}>
         Da semana mais recente para a mais antiga
       </p>
 
@@ -149,12 +150,12 @@ export default function WeeklyComparisonChart({
               className={`rounded-2xl border p-4 ${
                 currentWeek
                   ? "border-orange-200 bg-orange-50/40"
-                  : "border-gray-200 bg-gray-50"
+                  : dark ? "border-white/10 bg-white/5" : "border-gray-200 bg-gray-50"
               }`}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-2">
-                  <p className="text-lg font-semibold text-gray-900">
+                  <p style={{ fontSize: 14, fontWeight: 600, color: dark ? "#fff" : "#111" }}>
                     {item.label}
                   </p>
 
@@ -165,27 +166,27 @@ export default function WeeklyComparisonChart({
                   ) : null}
                 </div>
 
-                <p className="text-sm font-medium text-gray-700">
+                <p style={{ fontSize: 12, fontWeight: 500, color: dark ? "rgba(255,255,255,0.6)" : "#374151" }}>
                   {actualKm.toFixed(1)} / {plannedKm.toFixed(1)} km
                 </p>
               </div>
 
               <div className="mt-4">
-                <div className="mb-2 flex items-center justify-between text-sm text-gray-600">
+                <div style={{ marginBottom: 6, display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12, color: dark ? "rgba(255,255,255,0.5)" : "#4b5563" }}>
                   <span>Progresso real</span>
                   <span>
                     {actualKm.toFixed(1)} / {plannedKm.toFixed(1)} km
                   </span>
                 </div>
 
-                <div className="h-4 overflow-hidden rounded-full bg-gray-200">
+                <div style={{ height: 6, overflow: "hidden", borderRadius: 999, background: dark ? "rgba(255,255,255,0.1)" : "#e5e7eb" }}>
                   <div
                     className="h-full rounded-full bg-orange-500 transition-all"
                     style={{ width: `${progressPct}%` }}
                   />
                 </div>
 
-                <div className="mt-3 text-sm text-gray-600">
+                <div style={{ marginTop: 10, fontSize: 12, color: dark ? "rgba(255,255,255,0.4)" : "#4b5563" }}>
                   {plannedKm > 0 ? (
                     actualKm >= plannedKm ? (
                       <p>
