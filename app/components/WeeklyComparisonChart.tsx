@@ -148,10 +148,9 @@ export default function WeeklyComparisonChart({
           return (
             <div
               key={item.label}
-              className={`rounded-2xl border p-4 ${
+              style={{ borderRadius: 14, padding: "1rem", background: currentWeek ? "rgba(245,166,35,0.06)" : dark ? "rgba(255,255,255,0.04)" : "#f9fafb", border: currentWeek ? "1px solid rgba(245,166,35,0.25)" : dark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e5e7eb" }} className={`${
                 currentWeek
-                  ? "border-orange-200 bg-orange-50/40"
-                  : dark ? "border-white/10 bg-white/5" : "border-gray-200 bg-gray-50"
+                  ? "" : ""
               }`}
             >
               <div className="flex items-start justify-between gap-4">

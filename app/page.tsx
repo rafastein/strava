@@ -386,7 +386,7 @@ export default async function Home() {
         <section style={{ marginBottom: "1.75rem" }}>
           <SectionLabel>Atividades recentes</SectionLabel>
           <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, overflow: "hidden" }}>
-            <ActivitiesPanel activities={activities} />
+            <ActivitiesPanel activities={activities} dark />
           </div>
         </section>
 
