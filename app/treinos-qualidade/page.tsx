@@ -161,9 +161,10 @@ export default async function TreinosQualidadePage() {
         const { label, confidence } = classifyBySplits(splits, activity.name);
 
         const kmSplits = splits.map((s) => {
+          // moving_time em segundos, distance em metros → pace em min/km
           const paceMinPerKm =
             s.distance > 0 && s.moving_time > 0
-              ? s.moving_time / s.distance
+              ? (s.moving_time / s.distance) * (1000 / 60)
               : null;
           return {
             km: s.split,
