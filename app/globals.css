@@ -130,3 +130,38 @@ body {
 @media (max-width: 480px) {
   .stat-grid--3, .stat-grid--4, .stat-grid--5 { grid-template-columns: 1fr 1fr; }
 }
+/* ── SISTEMA DE DESIGN PADRÃO (baseado na Buenos Aires) ── */
+.ba-page { max-width: 1180px; margin: 0 auto; padding: 2.4rem 1.5rem 4rem; }
+.ba-eyebrow { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: #f5a623; }
+.ba-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 5.4vw, 4.85rem); line-height: .94; letter-spacing: .018em; color: #fff; }
+.ba-card { background: linear-gradient(180deg, rgba(255,255,255,.048), rgba(255,255,255,.022)); border: 1px solid rgba(255,255,255,.085); border-radius: 22px; box-shadow: 0 18px 60px rgba(0,0,0,.20); }
+.ba-card-soft { background: rgba(255,255,255,.032); border: 1px solid rgba(255,255,255,.07); border-radius: 18px; }
+.ba-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.34); }
+.ba-value { font-family: 'Bebas Neue', sans-serif; letter-spacing: .035em; color: #fff; line-height: .95; }
+.ba-muted { color: rgba(255,255,255,.50); font-size: 13px; }
+.ba-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: .9rem; }
+.ba-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: .9rem; }
+.ba-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.ba-week { display: grid; grid-template-columns: .78fr 1.22fr; gap: 1rem; }
+.ba-two { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.ba-progress { height: 8px; border-radius: 999px; background: rgba(255,255,255,.07); overflow: hidden; }
+.ba-progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #f5a623, #ff6b00); }
+.ba-pill { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .75rem; border-radius: 999px; font-size: 12px; font-weight: 700; text-decoration: none; }
+.ba-pill-orange { background: #f5a623; color: #111; }
+.ba-pill-dark { background: rgba(255,255,255,.06); color: rgba(255,255,255,.72); border: 1px solid rgba(255,255,255,.08); }
+.ba-section { margin-bottom: 1rem; }
+.ba-page-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; }
+.ba-back { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); border-radius: 999px; padding: 8px 18px; font-size: 13px; font-weight: 500; color: rgba(255,255,255,.55); text-decoration: none; transition: color .15s, border-color .15s; white-space: nowrap; }
+.ba-back:hover { color: #fff; border-color: rgba(245,166,35,.4); }
+
+@media (max-width: 1020px) {
+  .ba-hero, .ba-week, .ba-two { grid-template-columns: 1fr; }
+  .ba-grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .ba-grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .ba-page { padding: 2rem 1rem 3rem; }
+  .ba-grid-4, .ba-grid-3, .ba-grid-2 { grid-template-columns: 1fr; }
+  .ba-title { font-size: 3.2rem; }
+  .ba-page-header { flex-direction: column; }
+}

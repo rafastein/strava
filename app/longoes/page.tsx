@@ -137,19 +137,19 @@ function InfoCard({
   }[accent ?? "accent"];
 
   return (
-    <div className="card">
-      <p className="card__label">{title}</p>
-      <h2 className={`card__value ${accent ? valueClass : ""}`}>{value}</h2>
-      {sub && <p className="card__sub">{sub}</p>}
+    <div className="ba-card" style={{ padding: "1.2rem 1.4rem", textAlign: "center" }}>
+      <p className="ba-label">{title}</p>
+      <h2 className={`card__value ${accent ? valueClass : ""}`} style={{ marginTop: ".4rem", fontSize: "clamp(1.4rem, 2.5vw, 2rem)" }}>{value}</h2>
+      {sub && <p className="ba-muted" style={{ marginTop: ".3rem" }}>{sub}</p>}
     </div>
   );
 }
 
 function MetricPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="metric-pill">
+    <div className="ba-card-soft" style={{ padding: ".65rem 1rem" }}>
       <p className="metric-pill__label">{label}</p>
-      <p className="metric-pill__value">{value}</p>
+      <p className="metric-pill__value" style={{ marginTop: ".25rem" }}>{value}</p>
     </div>
   );
 }
@@ -171,7 +171,7 @@ function PaceBar({
 
   return (
     <div className="progress-bar mt-3">
-      <div className="progress-bar__fill" style={{ width: `${pct}%` }} />
+      <div className="ba-progress-fill" style={{ width: `${pct}%` }} />
     </div>
   );
 }
@@ -227,23 +227,23 @@ export default async function LongoesPage() {
     <main className="page">
       <Navbar />
       <div className="page__inner pb-24">
-        <div className="page-header">
+        <div className="ba-page-header">
           <div>
-            <p className="page-header__eyebrow">Treinos</p>
-            <h1 className="page-header__title">Análise de longões</h1>
-            <p className="page-header__sub">
+            <p className="ba-eyebrow">Treinos</p>
+            <h1 className="ba-title">Análise de longões</h1>
+            <p className="ba-muted" style={{ marginTop: ".5rem" }}>
               Histórico completo com evolução de distância, ritmo, frequência cardíaca,
               elevação, eficiência e splits km a km.
             </p>
           </div>
 
-          <Link href="/" className="btn-back">
+          <Link href="/" className="ba-back">
             ← Voltar ao dashboard
           </Link>
         </div>
 
         <section style={{ marginBottom: "4rem" }}>
-          <p className="section-label">Resumo geral</p>
+          <p className="ba-eyebrow" style={{ marginBottom: ".75rem" }}>Resumo geral</p>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
             <InfoCard title="Total de longões" value={String(summary.totalLongRuns)} sub="desde jan/2024" />
             <InfoCard title="Maior distância" value={`${summary.longestRunKm.toFixed(1)} km`} accent="accent" />
@@ -255,9 +255,9 @@ export default async function LongoesPage() {
 
         <section className="grid gap-8 lg:grid-cols-3" style={{ marginBottom: "3.5rem" }}>
           <div className="card card--accent min-h-[340px]" style={{ padding: "2rem" }}>
-            <p className="section-label mb-8">Último longão</p>
+            <p className="section-label ba-section">Último longão</p>
             {lastLongRun ? (
-              <div className="space-y-8">
+              <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", height: "calc(100% - 2rem)" }}>
                 <div>
                   <h2 className="max-w-[92%] text-xl font-semibold leading-snug text-white/90">
                     {lastLongRun.name}
@@ -265,7 +265,7 @@ export default async function LongoesPage() {
                   <p className="mt-3 text-sm text-white/45">{formatBRDate(lastLongRun.date)}</p>
                 </div>
 
-                <div className="mt-2 flex flex-wrap gap-3">
+                <div className="mt-6 flex flex-wrap gap-3">
                   <span className="badge badge--accent">{lastLongRun.distanceKm.toFixed(2)} km</span>
                   <span className="badge badge--blue">{formatLongRunPace(lastLongRun.paceSecPerKm)}</span>
                   {lastLongRun.averageHeartrate && (
@@ -273,9 +273,9 @@ export default async function LongoesPage() {
                   )}
                 </div>
 
-                <div className="pt-3">
+                <div className="pt-4">
                   <PaceBar paceSecPerKm={lastLongRun.paceSecPerKm} best={bestPace} worst={worstPace} />
-                  <p className="mt-5 text-xs text-white/35">Posição relativa de ritmo no histórico.</p>
+                  <p className="mt-3 text-xs text-white/35">Posição relativa de ritmo no histórico.</p>
                 </div>
               </div>
             ) : (
@@ -302,7 +302,7 @@ export default async function LongoesPage() {
 
           <div className="card min-h-[340px]" style={{ padding: "2rem" }}>
             <p className="section-label mb-7">Padrões identificados</p>
-            <div className="space-y-4">
+            <div className="space-y-5">
               <MetricPill label="Longões com melhora" value={`${progressiveRuns} em relação ao anterior`} />
               <MetricPill label="Longões 25 km+" value={`${longRuns25Plus} treinos`} />
               <MetricPill label="Distância média" value={`${avgDistance.toFixed(1)} km por longão`} />
@@ -312,14 +312,14 @@ export default async function LongoesPage() {
         </section>
 
         <section style={{ marginBottom: "3.5rem" }}>
-          <p className="section-label" style={{ marginBottom: "1.25rem" }}>Evolução</p>
+          <p className="ba-eyebrow" style={{ marginBottom: ".75rem" }} style={{ marginBottom: "1.25rem" }}>Evolução</p>
           <LongRunCharts longRuns={chartData} />
         </section>
 
-        <section className="card" style={{ padding: "2rem", marginTop: "0" }}>
+        <section className="ba-card" style={{ padding: "2rem", marginTop: "0" }}>
           <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="section-label">Histórico completo</p>
+              <p className="ba-eyebrow" style={{ marginBottom: ".75rem" }}>Histórico completo</p>
               <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white/90">
                 Longões registrados
               </h2>

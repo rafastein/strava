@@ -212,7 +212,7 @@ export default async function TreinosQualidadePage() {
       <div className="mx-auto max-w-5xl">
 
         {/* Header */}
-        <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+        <div className="ba-section flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm font-medium text-orange-600">Treinos</p>
             <h1 className="text-3xl font-bold text-gray-900 md:text-4xl">
@@ -234,7 +234,7 @@ export default async function TreinosQualidadePage() {
         </div>
 
         {/* Summary */}
-        <section className="mb-6 grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+        <section className="ba-section grid gap-4 sm:grid-cols-2 md:grid-cols-4">
           <div className="rounded-3xl bg-white p-6 shadow-sm">
             <p className="text-sm text-gray-500">Treinos de qualidade</p>
             <p className="mt-2 text-2xl font-bold text-orange-600">{totalQuality}</p>

@@ -145,7 +145,7 @@ export default async function CorridasBrasilPage() {
   return (
     <main className="min-h-screen bg-gray-100 p-6 md:p-10">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="ba-section flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-orange-600">Corridas</p>
             <h1 className="text-3xl font-bold text-gray-900 md:text-4xl">
@@ -164,7 +164,7 @@ export default async function CorridasBrasilPage() {
           </Link>
         </div>
 
-        <section className="mb-8 grid gap-4 md:grid-cols-4">
+        <section className="ba-section grid gap-4 md:grid-cols-4">
           <InfoCard title="Corridas no Brasil" value={String(stats.totalRaces)} />
           <InfoCard
             title="Estados com corridas"
@@ -180,7 +180,7 @@ export default async function CorridasBrasilPage() {
           />
         </section>
 
-        <section className="mb-8 rounded-3xl bg-white p-6 shadow-sm">
+        <section className="ba-section rounded-3xl bg-white p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-gray-900">
             Top 3 por distância
           </h2>
@@ -196,7 +196,7 @@ export default async function CorridasBrasilPage() {
           </div>
         </section>
 
-        <section className="mb-8">
+        <section className="ba-section">
           <BrazilRaceMap counts={counts} />
         </section>
 

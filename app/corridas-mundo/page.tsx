@@ -342,7 +342,7 @@ export default async function CorridasMundoPage() {
   return (
     <main className="min-h-screen bg-gray-100 p-6 md:p-10">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="ba-section flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-orange-600">Corridas</p>
             <h1 className="text-3xl font-bold text-gray-900 md:text-4xl">
@@ -361,7 +361,7 @@ export default async function CorridasMundoPage() {
           </Link>
         </div>
 
-        <section className="mb-8 grid gap-4 md:grid-cols-4">
+        <section className="ba-section grid gap-4 md:grid-cols-4">
           <InfoCard title="Corridas 21k+" value={String(stats.totalRaces)} />
           <InfoCard
             title="Países com corridas"
@@ -377,7 +377,7 @@ export default async function CorridasMundoPage() {
           />
         </section>
 
-        <section className="mb-8">
+        <section className="ba-section">
           <WorldRaceMap counts={counts} />
         </section>
 

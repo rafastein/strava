@@ -112,7 +112,7 @@ export default async function MeiasPage() {
   return (
     <main className="min-h-screen bg-gray-100 p-6 md:p-10">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+        <div className="ba-section flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm font-medium text-orange-600">Análise</p>
             <h1 className="text-3xl font-bold text-gray-900 md:text-4xl">
@@ -138,7 +138,7 @@ export default async function MeiasPage() {
           </div>
         ) : (
           <>
-            <section className="mb-6 grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+            <section className="ba-section grid gap-4 sm:grid-cols-2 md:grid-cols-4">
               <div className="rounded-3xl bg-white p-6 shadow-sm">
                 <p className="text-sm text-gray-500">Total de meias</p>
                 <p className="mt-2 text-2xl font-bold text-gray-900">{halves.length}</p>

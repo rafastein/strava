@@ -10,7 +10,7 @@ export default async function SisrunPage() {
   return (
     <main className="min-h-screen bg-gray-100 p-6 md:p-10">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="ba-section flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-orange-600">SisRUN</p>
             <h1 className="text-3xl font-bold text-gray-900 md:text-4xl">
@@ -26,7 +26,7 @@ export default async function SisrunPage() {
           </Link>
         </div>
 
-        <section className="mb-8 grid gap-4 lg:grid-cols-[1fr_.9fr]">
+        <section className="ba-section grid gap-4 lg:grid-cols-[1fr_.9fr]">
           <SisrunUploadForm />
 
           <div className="rounded-3xl bg-white p-6 shadow-sm">

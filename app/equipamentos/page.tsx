@@ -390,7 +390,7 @@ export default async function EquipamentosPage() {
   return (
     <main className="min-h-screen bg-gray-100 p-6 md:p-10">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="ba-section flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-orange-600">Strava</p>
             <h1 className="text-3xl font-bold text-gray-900 md:text-4xl">
@@ -418,7 +418,7 @@ export default async function EquipamentosPage() {
           </section>
         ) : (
           <>
-            <section className="mb-8">
+            <section className="ba-section">
               <ShoeUsageChart
                 shoes={grouped.map((g) => ({
                   name: g.name,
@@ -430,7 +430,7 @@ export default async function EquipamentosPage() {
               />
             </section>
 
-            <section className="mb-8 rounded-3xl bg-white p-6 shadow-sm">
+            <section className="ba-section rounded-3xl bg-white p-6 shadow-sm">
               <h2 className="text-xl font-bold text-gray-900">
                 Recomendação automática
               </h2>
