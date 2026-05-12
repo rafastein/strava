@@ -4,7 +4,6 @@ import { formatBRDate, getBRDate, getActivityDate } from "../lib/date-utils";
 import path from "path";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
-import Navbar from "../components/Navbar";
 import ManualPredictionForm from "../components/ManualPredictionForm";
 import MarathonProjection from "../components/MarathonProjection";
 import RaceCountdown from "../components/RaceCountdown";
