@@ -542,7 +542,7 @@ export default async function BuenosAiresPage() {
                   <h3 style={{ fontSize: 16, fontWeight: 600, color: "var(--text)" }}>VO2max estimado</h3>
                   <p className="mt-1 text-sm text-white/40">Calculado automaticamente a partir dos PRs do Strava (best efforts).</p>
                 </div>
-                <span className="badge badge--blue">VDOT {vdot.toFixed(1)</span>
+                <span className="badge badge--blue">VDOT {vdot.toFixed(1)}</span>
               </div>
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <div className="rounded-2xl p-4" style={{ background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.2)" }}><p className="text-sm text-blue-600">VO2max</p><p className="mt-1 text-3xl font-bold text-blue-700">{vo2max?.toFixed(1)}</p><p className="text-xs text-blue-500">ml/kg/min</p></div>
