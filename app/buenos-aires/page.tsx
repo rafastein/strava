@@ -698,11 +698,11 @@ export default async function BuenosAiresPage() {
       />
 
       <style>{`
-        .ba-page { max-width: 1200px; margin: 0 auto; padding: 3rem 1.5rem 4rem; }
+        .ba-page { max-width: 1180px; margin: 0 auto; padding: 2.4rem 1.5rem 4rem; }
         .ba-hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 2rem; align-items: stretch; }
         .ba-eyebrow { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: #f5a623; }
-        .ba-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(4.5rem, 10vw, 8.5rem); line-height: .86; letter-spacing: .02em; color: #fff; }
-        .ba-card { background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.028)); border: 1px solid rgba(255,255,255,.09); border-radius: 22px; box-shadow: 0 18px 60px rgba(0,0,0,.22); }
+        .ba-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3.6rem, 7.2vw, 6.2rem); line-height: .9; letter-spacing: .02em; color: #fff; }
+        .ba-card { background: linear-gradient(180deg, rgba(255,255,255,.052), rgba(255,255,255,.026)); border: 1px solid rgba(255,255,255,.09); border-radius: 22px; box-shadow: 0 18px 60px rgba(0,0,0,.22); }
         .ba-card-soft { background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.075); border-radius: 18px; }
         .ba-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.38); }
         .ba-value { font-family: 'Bebas Neue', sans-serif; letter-spacing: .035em; color: #fff; line-height: .95; }
@@ -717,7 +717,7 @@ export default async function BuenosAiresPage() {
         .ba-pill-dark { background: rgba(255,255,255,.06); color: rgba(255,255,255,.72); border: 1px solid rgba(255,255,255,.08); }
         .ba-race-glow { position: absolute; inset: -120px -120px auto auto; width: 520px; height: 520px; border-radius: 50%; background: radial-gradient(circle, rgba(245,166,35,.16), transparent 68%); pointer-events: none; }
         @media (max-width: 1020px) { .ba-hero, .ba-week, .ba-two { grid-template-columns: 1fr; } .ba-grid-4 { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 640px) { .ba-page { padding: 2rem 1rem 3rem; } .ba-grid-4 { grid-template-columns: 1fr; } .ba-title { font-size: 4.4rem; } }
+        @media (max-width: 640px) { .ba-page { padding: 2rem 1rem 3rem; } .ba-grid-4 { grid-template-columns: 1fr; } .ba-title { font-size: 3.8rem; } }
       `}</style>
 
       <div className="ba-page">
@@ -726,7 +726,7 @@ export default async function BuenosAiresPage() {
             style={{
               position: "relative",
               overflow: "hidden",
-              padding: "2.25rem",
+              padding: "2rem",
               borderRadius: 28,
               background:
                 "linear-gradient(135deg, rgba(245,166,35,.18), rgba(255,255,255,.03) 42%, rgba(255,255,255,.015))",
@@ -743,10 +743,10 @@ export default async function BuenosAiresPage() {
               </h1>
               <p
                 style={{
-                  maxWidth: 620,
-                  marginTop: "1rem",
-                  fontSize: 16,
-                  lineHeight: 1.7,
+                  maxWidth: 600,
+                  marginTop: ".9rem",
+                  fontSize: 15,
+                  lineHeight: 1.65,
                 }}
                 className="ba-muted"
               >
@@ -758,7 +758,7 @@ export default async function BuenosAiresPage() {
                   display: "flex",
                   gap: ".7rem",
                   flexWrap: "wrap",
-                  marginTop: "1.75rem",
+                  marginTop: "1.4rem",
                 }}
               >
                 <Link href="/" className="ba-pill ba-pill-orange">
