@@ -147,10 +147,10 @@ function marathonTimeFromPace(secondsPerKm: number) {
 
 function getCyclePhase(today: Date, raceDate: Date) {
   const days = daysUntil(raceDate);
-  if (days > 140) return { name: "Base",       description: "Consolidar consistência, volume e resistência geral.",                       color: "bg-sky-100 text-sky-700"     };
-  if (days > 70)  return { name: "Construção", description: "Aumentar volume e trazer mais especificidade para a maratona.",              color: "bg-amber-100 text-amber-700" };
-  if (days > 21)  return { name: "Pico",       description: "Bloco mais específico, com longões fortes e sessões-chave.",                 color: "bg-orange-100 text-[#f5a623]" };
-  return               { name: "Taper",      description: "Redução de carga para chegar descansado e afiado.",                          color: "bg-emerald-100 text-emerald-700" };
+  if (days > 140) return { name: "Base",       description: "Consolidar consistência, volume e resistência geral.",                       color: "bg-sky-500/10 text-sky-200 border border-sky-400/20"     };
+  if (days > 70)  return { name: "Construção", description: "Aumentar volume e trazer mais especificidade para a maratona.",              color: "bg-amber-500/10 text-amber-300" };
+  if (days > 21)  return { name: "Pico",       description: "Bloco mais específico, com longões fortes e sessões-chave.",                 color: "bg-orange-500/10 text-orange-200 border border-orange-400/20" };
+  return               { name: "Taper",      description: "Redução de carga para chegar descansado e afiado.",                          color: "bg-emerald-500/10 text-emerald-300" };
 }
 
 function getIdealWeeklyVolume(daysToRace: number) {
@@ -165,10 +165,10 @@ function getIdealWeeklyVolume(daysToRace: number) {
 function getReadinessStatus(params: { currentWeekKm: number; idealWeekKm: number; longestRunKm: number; longRuns28Plus: number }) {
   const ratio = params.idealWeekKm > 0 ? params.currentWeekKm / params.idealWeekKm : 0;
   if (ratio >= 0.9 && params.longestRunKm >= 28 && params.longRuns28Plus >= 2)
-    return { label: "Verde",    title: "Prontidão forte",         description: "Seu ciclo mostra bons sinais de especificidade para sustentar a maratona.",              card: "bg-emerald-50 border-emerald-200", dot: "bg-emerald-500", text: "text-emerald-700" };
+    return { label: "Verde",    title: "Prontidão forte",         description: "Seu ciclo mostra bons sinais de especificidade para sustentar a maratona.",              card: "bg-emerald-500/10 border-emerald-400/20", dot: "bg-emerald-500", text: "text-emerald-300" };
   if (ratio >= 0.7 && params.longestRunKm >= 24 && params.longRuns28Plus >= 1)
-    return { label: "Amarelo",  title: "Prontidão em construção", description: "O caminho está bom, mas ainda faltam mais base e longões específicos.",                  card: "bg-amber-50 border-amber-200",    dot: "bg-amber-500",   text: "text-amber-700"   };
-  return   { label: "Vermelho", title: "Prontidão baixa",         description: "Ainda falta especificidade de maratona para sustentar o alvo com segurança.",            card: "bg-red-50 border-red-200",        dot: "bg-red-500",     text: "text-red-700"     };
+    return { label: "Amarelo",  title: "Prontidão em construção", description: "O caminho está bom, mas ainda faltam mais base e longões específicos.",                  card: "bg-amber-500/10 border-amber-400/20",    dot: "bg-amber-400",   text: "text-amber-300"   };
+  return   { label: "Vermelho", title: "Prontidão baixa",         description: "Ainda falta especificidade de maratona para sustentar o alvo com segurança.",            card: "bg-red-500/10 border-red-400/20",        dot: "bg-red-400",     text: "text-red-300"     };
 }
 
 function predictFromHalf(half: StravaActivity | null) {
@@ -206,16 +206,16 @@ function getHrPctMax(bpm: number, hrMax: number) { return Math.round((bpm / hrMa
 
 function buildMarathonAlerts(params: { hasPlan: boolean; plannedWeekKm: number; currentWeekKm: number; adherencePct: number; plannedLongRunKm: number; currentWeekLongestRunKm: number; todayStatus: string; marathonPaceMin: number | null; vdot: number | null }) {
   const alerts: { title: string; text: string; tone: string }[] = [];
-  if (!params.hasPlan) { alerts.push({ title: "Planejamento ausente", text: "Carregue uma planilha do SisRUN para comparar a semana atual.", tone: "bg-white/[0.03] text-white/60" }); return alerts; }
-  if (params.adherencePct < 70)      alerts.push({ title: "Semana abaixo da meta",            text: `Você executou ${params.currentWeekKm.toFixed(1)} km de ${params.plannedWeekKm.toFixed(1)} km planejados.`,                                                    tone: "bg-red-50 text-red-700"         });
-  else if (params.adherencePct < 90) alerts.push({ title: "Semana em construção",             text: `Boa evolução, mas ainda faltam ${Math.max(params.plannedWeekKm - params.currentWeekKm, 0).toFixed(1)} km para a meta da semana.`,                           tone: "bg-amber-50 text-amber-700"     });
-  else                               alerts.push({ title: "Volume da semana bem encaminhado", text: "A execução está acompanhando bem o planejado do SisRUN.",                                                                                                     tone: "bg-emerald-50 text-emerald-700" });
+  if (!params.hasPlan) { alerts.push({ title: "Planejamento ausente", text: "Carregue uma planilha do SisRUN para comparar a semana atual.", tone: "bg-white/[0.03] text-zinc-100" }); return alerts; }
+  if (params.adherencePct < 70)      alerts.push({ title: "Semana abaixo da meta",            text: `Você executou ${params.currentWeekKm.toFixed(1)} km de ${params.plannedWeekKm.toFixed(1)} km planejados.`,                                                    tone: "soft-danger"         });
+  else if (params.adherencePct < 90) alerts.push({ title: "Semana em construção",             text: `Boa evolução, mas ainda faltam ${Math.max(params.plannedWeekKm - params.currentWeekKm, 0).toFixed(1)} km para a meta da semana.`,                           tone: "soft-alert"     });
+  else                               alerts.push({ title: "Volume da semana bem encaminhado", text: "A execução está acompanhando bem o planejado do SisRUN.",                                                                                                     tone: "soft-success" });
   if (params.plannedLongRunKm > 0 && params.currentWeekLongestRunKm < params.plannedLongRunKm)
-    alerts.push({ title: "Longão ainda não cumprido", text: `Previsto: ${params.plannedLongRunKm.toFixed(1)} km • maior treino da semana: ${params.currentWeekLongestRunKm.toFixed(1)} km.`, tone: "bg-amber-50 text-amber-700" });
+    alerts.push({ title: "Longão ainda não cumprido", text: `Previsto: ${params.plannedLongRunKm.toFixed(1)} km • maior treino da semana: ${params.currentWeekLongestRunKm.toFixed(1)} km.`, tone: "soft-alert" });
   else if (params.plannedLongRunKm > 0)
-    alerts.push({ title: "Longão da semana cumprido", text: `Previsto: ${params.plannedLongRunKm.toFixed(1)} km • maior treino da semana: ${params.currentWeekLongestRunKm.toFixed(1)} km.`, tone: "bg-emerald-50 text-emerald-700" });
+    alerts.push({ title: "Longão da semana cumprido", text: `Previsto: ${params.plannedLongRunKm.toFixed(1)} km • maior treino da semana: ${params.currentWeekLongestRunKm.toFixed(1)} km.`, tone: "soft-success" });
   if (params.todayStatus === "Pendente")
-    alerts.push({ title: "Treino de hoje pendente", text: "A sessão de hoje ainda não aparece como cumprida no Strava.", tone: "bg-amber-50 text-amber-700" });
+    alerts.push({ title: "Treino de hoje pendente", text: "A sessão de hoje ainda não aparece como cumprida no Strava.", tone: "soft-alert" });
   if (params.marathonPaceMin && params.vdot) {
     const gap = 320 - params.marathonPaceMin;
     if (gap > 20) alerts.push({ title: "Pace-alvo conservador vs. VO2max", text: `Seu VDOT ${params.vdot.toFixed(1)} indica potencial para ${formatSecondsPerKm(params.marathonPaceMin)} na maratona. Considere ajustar a meta conforme o ciclo avança.`, tone: "bg-[rgba(59,130,246,0.1)] text-[#93c5fd]" });
@@ -257,20 +257,20 @@ function InfoCard({ title, value }: { title: string; value: string }) {
   return (
     <div className="card">
       <p className="text-sm" style={{ color: "var(--text-muted)" }}>{title}</p>
-      <h3 className="mt-2 text-3xl font-bold text-white/60">{value}</h3>
+      <h3 className="mt-2 text-3xl font-bold text-zinc-100">{value}</h3>
     </div>
   );
 }
 
 function ProjectionCard({ title, value, caption, highlight = false, badge }: { title: string; value: string; caption: string; highlight?: boolean; badge?: string }) {
   return (
-    <div className={`rounded-2xl p-4 ${highlight ? "bg-[rgba(245,166,35,0.1)] ring-1 ring-orange-200" : "bg-white/[0.03]"}`}>
+    <div className={`rounded-2xl p-4 ${highlight ? "bg-[rgba(245,166,35,0.1)] ring-1 ring-orange-400/20" : "bg-white/[0.03]"}`}>
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>{title}</p>
         {badge && <span className="shrink-0 rounded-full bg-[rgba(59,130,246,0.15)] px-2 py-0.5 text-xs font-medium text-[#93c5fd]">{badge}</span>}
       </div>
-      <p className="mt-2 text-2xl font-bold text-white/60">{value}</p>
-      <p className="mt-1 text-sm text-white/60">{caption}</p>
+      <p className="mt-2 text-2xl font-bold text-zinc-100">{value}</p>
+      <p className="mt-1 text-sm text-zinc-100">{caption}</p>
     </div>
   );
 }
@@ -281,7 +281,7 @@ function HrZoneBadge({ bpm, zones, hrMax }: { bpm: number; zones: HrZone[]; hrMa
   return (
     <div className="flex flex-col items-end gap-1">
       <span className="rounded-full px-2 py-0.5 text-xs font-medium text-white" style={{ backgroundColor: zone?.color ?? "#888" }}>{zone?.name ?? "—"}</span>
-      <span className="text-xs text-white/60">{pct}% FCmáx</span>
+      <span className="text-xs text-zinc-100">{pct}% FCmáx</span>
     </div>
   );
 }
@@ -422,14 +422,14 @@ export default async function BuenosAiresPage() {
 
   return (
     <div className="page"><Navbar />
-    <main>
-      <div className="mx-auto max-w-7xl">
+    <main className="page-shell">
+      <div>
 
         {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-medium text-orange-600">Road to Buenos Aires</p>
-            <h1 className="text-3xl font-bold text-white/60 md:text-4xl">
+            <p className="text-sm font-medium text-orange-400">Road to Buenos Aires</p>
+            <h1 className="text-4xl font-black tracking-tight text-zinc-100 md:text-6xl">
               {athlete ? `${athlete.firstname} ${athlete.lastname}` : "Atleta"}
             </h1>
           </div>
@@ -439,19 +439,19 @@ export default async function BuenosAiresPage() {
         </div>
 
         {/* Hero */}
-        <section className="mb-8 rounded-[32px] bg-gradient-to-r from-orange-500 to-red-500 p-6 text-white md:p-10">
-          <div className="grid gap-6 lg:grid-cols-[1.2fr_.8fr]">
+        <section className="mb-8 overflow-hidden rounded-[32px] border border-orange-400/20 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.65),rgba(127,29,29,0.35)_42%,rgba(255,255,255,0.04)_100%)] p-6 text-white shadow-2xl shadow-orange-950/20 md:p-8">
+          <div className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]">
             <div>
               <p className="text-sm uppercase tracking-wide text-orange-100">Prova-alvo</p>
-              <h2 className="mt-2 text-4xl font-bold md:text-5xl">{marathonGoal.raceName}</h2>
+              <h2 className="mt-2 text-4xl font-black tracking-tight md:text-6xl">{marathonGoal.raceName}</h2>
               <p className="mt-4 max-w-2xl text-orange-50">Painel dedicado ao ciclo com foco em volume, longão, especificidade e prontidão para a maratona.</p>
-              <div className="mt-8 grid gap-4 sm:grid-cols-3">
-                <div className="rounded-2xl bg-white/15 p-5 backdrop-blur-sm col-span-full md:col-span-1">
+              <div className="mt-8 grid gap-3 md:grid-cols-3">
+                <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm col-span-full md:col-span-1">
                   <p className="text-sm text-orange-100 mb-3">Contagem regressiva</p>
                   <RaceCountdown targetDate="2026-09-20T06:00:00-03:00" raceName="Buenos Aires" />
                 </div>
-                <div className="rounded-2xl bg-white/15 p-5 backdrop-blur-sm"><p className="text-sm text-orange-100">Pace-alvo</p><p className="mt-1 text-3xl font-bold">{targetPaceLabel}</p></div>
-                <div className="rounded-2xl bg-white/15 p-5 backdrop-blur-sm"><p className="text-sm text-orange-100">Tempo projetado</p><p className="mt-1 text-3xl font-bold">{formatFullDuration(targetPredictionSeconds)}</p></div>
+                <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm"><p className="text-sm text-orange-100">Pace-alvo</p><p className="mt-1 text-3xl font-bold">{targetPaceLabel}</p></div>
+                <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm"><p className="text-sm text-orange-100">Tempo projetado</p><p className="mt-1 text-3xl font-bold">{formatFullDuration(targetPredictionSeconds)}</p></div>
               </div>
             </div>
             <div className="rounded-3xl p-6" style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.15)" }}>
@@ -475,7 +475,7 @@ export default async function BuenosAiresPage() {
         </section>
 
         {/* Info cards */}
-        <section className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <InfoCard title="Semana planejada (SisRUN)" value={sisrunWeek ? `${plannedWeekKm.toFixed(1)} km` : "-"} />
           <InfoCard title="Semana feita (Strava)"     value={`${currentWeekKm.toFixed(1)} km`} />
           <InfoCard title="Aderência real"             value={sisrunWeek ? `${Math.min(weeklyAdherencePct, 100).toFixed(0)}%` : "-"} />
@@ -483,41 +483,41 @@ export default async function BuenosAiresPage() {
         </section>
 
         {/* Treino de hoje + Meta semanal */}
-        <section className="grid gap-4 mb-8 md:grid-cols-2">
+        <section className="mb-6 grid gap-4 lg:grid-cols-2">
           <div className="card">
-            <h3 className="text-xl font-semibold text-white/60">Treino de hoje</h3>
+            <h3 className="text-xl font-semibold text-zinc-100">Treino de hoje</h3>
             {todaySisrunRow ? (
               <div className="mt-4 space-y-2">
-                <p className="text-sm text-white/60">Planejado: <span className="font-semibold">{todaySisrunRow.plannedDistanceKm.toFixed(1)} km</span></p>
-                <p className="text-sm text-white/60">Feito no Strava: <span className="font-semibold">{todayStravaKm.toFixed(1)} km</span></p>
-                <p className="text-sm text-white/60">Janela de tempo: <span className="font-semibold">{todaySisrunRow.minPlannedTime ?? "-"} / {todaySisrunRow.maxPlannedTime ?? "-"}</span></p>
+                <p className="text-sm text-zinc-100">Planejado: <span className="font-semibold">{todaySisrunRow.plannedDistanceKm.toFixed(1)} km</span></p>
+                <p className="text-sm text-zinc-100">Feito no Strava: <span className="font-semibold">{todayStravaKm.toFixed(1)} km</span></p>
+                <p className="text-sm text-zinc-100">Janela de tempo: <span className="font-semibold">{todaySisrunRow.minPlannedTime ?? "-"} / {todaySisrunRow.maxPlannedTime ?? "-"}</span></p>
                 <p className="inline-flex rounded-full bg-orange-100 px-3 py-1 text-sm font-medium text-[#f5a623]">{todayStatus}</p>
               </div>
             ) : (
-              <p className="mt-4 text-sm text-white/60">Nenhum treino previsto para hoje.</p>
+              <p className="mt-4 text-sm text-zinc-100">Nenhum treino previsto para hoje.</p>
             )}
           </div>
 
           <div className="card">
-            <h3 className="text-xl font-semibold text-white/60">Meta semanal</h3>
-            <p className="mt-1 text-sm text-white/60">Planejado no SisRUN x executado no Strava.</p>
+            <h3 className="text-xl font-semibold text-zinc-100">Meta semanal</h3>
+            <p className="mt-1 text-sm text-zinc-100">Planejado no SisRUN x executado no Strava.</p>
             <div className="mt-4 rounded-2xl bg-white/[0.03] p-5">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-white/60">Progresso real</span>
-                <span className="font-medium text-white/60">{currentWeekKm.toFixed(1)} / {sisrunWeek ? plannedWeekKm.toFixed(1) : weeklyGoalKm.toFixed(1)} km</span>
+                <span className="text-zinc-100">Progresso real</span>
+                <span className="font-medium text-zinc-100">{currentWeekKm.toFixed(1)} / {sisrunWeek ? plannedWeekKm.toFixed(1) : weeklyGoalKm.toFixed(1)} km</span>
               </div>
               <div className="mt-3 h-4 w-full rounded-full bg-white/[0.04]">
-                <div className="h-4 rounded-full bg-[rgba(245,166,35,0.1)]0" style={{ width: `${sisrunWeek ? Math.min(weeklyAdherencePct, 100) : weeklyProgress}%` }} />
+                <div className="h-4 rounded-full bg-orange-400" style={{ width: `${sisrunWeek ? Math.min(weeklyAdherencePct, 100) : weeklyProgress}%` }} />
               </div>
               {sisrunWeek ? (
                 <>
-                  <p className="mt-3 text-sm text-white/60">Faltam {Math.max(plannedWeekKm - currentWeekKm, 0).toFixed(1)} km para cumprir o planejado da semana.</p>
-                  <p className="mt-2 text-sm text-white/60">Planejado: {plannedWeekKm.toFixed(1)} km • Executado: {currentWeekKm.toFixed(1)} km</p>
+                  <p className="mt-3 text-sm text-zinc-100">Faltam {Math.max(plannedWeekKm - currentWeekKm, 0).toFixed(1)} km para cumprir o planejado da semana.</p>
+                  <p className="mt-2 text-sm text-zinc-100">Planejado: {plannedWeekKm.toFixed(1)} km • Executado: {currentWeekKm.toFixed(1)} km</p>
                 </>
               ) : (
                 <>
-                  <p className="mt-3 text-sm text-white/60">Faltam {Math.max(weeklyGoalKm - currentWeekKm, 0).toFixed(1)} km para cumprir a meta configurada.</p>
-                  <p className="mt-2 text-sm text-white/60">Você está {Math.abs(weekVsIdealDifference).toFixed(1)} km {weekVsIdealDifference >= 0 ? "acima" : "abaixo"} da referência ideal da fase atual.</p>
+                  <p className="mt-3 text-sm text-zinc-100">Faltam {Math.max(weeklyGoalKm - currentWeekKm, 0).toFixed(1)} km para cumprir a meta configurada.</p>
+                  <p className="mt-2 text-sm text-zinc-100">Você está {Math.abs(weekVsIdealDifference).toFixed(1)} km {weekVsIdealDifference >= 0 ? "acima" : "abaixo"} da referência ideal da fase atual.</p>
                 </>
               )}
             </div>
@@ -525,7 +525,7 @@ export default async function BuenosAiresPage() {
         </section>
 
         {/* Alertas */}
-        <section className="grid gap-4 mb-8 md:grid-cols-2">
+        <section className="mb-6 grid gap-4 lg:grid-cols-2">
           {alerts.map((alert, i) => (
             <div key={i} className={`rounded-3xl p-5 ${alert.tone}`}>
               <p className="font-semibold">{alert.title}</p>
@@ -536,25 +536,25 @@ export default async function BuenosAiresPage() {
 
         {/* VO2max dinâmico — PRs do Strava */}
         {athleteProfile && vdot && (
-          <section className="mb-8 grid gap-4 lg:grid-cols-2">
+          <section className="mb-6 grid gap-4 xl:grid-cols-2">
             <div className="card">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-xl font-semibold text-white/60">VO2max estimado</h3>
-                  <p className="mt-1 text-sm text-white/60">Calculado automaticamente a partir dos PRs do Strava (best efforts).</p>
+                  <h3 className="text-xl font-semibold text-zinc-100">VO2max estimado</h3>
+                  <p className="mt-1 text-sm text-zinc-100">Calculado automaticamente a partir dos PRs do Strava (best efforts).</p>
                 </div>
                 <span className="rounded-full bg-[rgba(59,130,246,0.15)] px-3 py-1 text-xs font-medium text-[#93c5fd]">VDOT {vdot.toFixed(1)}</span>
               </div>
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <div className="rounded-2xl p-4" style={{ background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.2)" }}><p style={{ fontSize: 12, color: "#60a5fa" }}>VO2max</p><p style={{ fontSize: 28, fontWeight: 700, color: "#60a5fa", marginTop: 4 }}>{vo2max?.toFixed(1)}</p><p style={{ fontSize: 11, color: "#93c5fd" }}>ml/kg/min</p></div>
                 <div className="rounded-2xl p-4" style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.2)" }}><p style={{ fontSize: 12, color: "var(--accent)" }}>Pace maratona</p><p style={{ fontSize: 20, fontWeight: 700, color: "var(--accent)", marginTop: 4 }}>{marathonPaces ? `${formatSecondsPerKm(marathonPaces.min)}–${formatSecondsPerKm(marathonPaces.max)}` : "—"}</p><p style={{ fontSize: 11, color: "rgba(245,166,35,0.6)" }}>pelo VDOT</p></div>
-                {athleteProfile.paces.km10 && <div className="rounded-2xl bg-white/[0.03] p-4"><p className="text-sm" style={{ color: "var(--text-muted)" }}>Pace 10km (VDOT)</p><p className="mt-1 text-2xl font-bold text-white">{formatSecondsPerKm(athleteProfile.paces.km10)}</p><p className="text-xs text-white/30">potencial estimado</p></div>}
-                {athleteProfile.paces.half && <div className="rounded-2xl bg-white/[0.03] p-4"><p className="text-sm" style={{ color: "var(--text-muted)" }}>Pace meia (VDOT)</p><p className="mt-1 text-2xl font-bold text-white">{formatSecondsPerKm(athleteProfile.paces.half.min)}–{formatSecondsPerKm(athleteProfile.paces.half.max)}</p><p className="text-xs text-white/30">potencial estimado</p></div>}
+                {athleteProfile.paces.km10 && <div className="rounded-2xl bg-white/[0.03] p-4"><p className="text-sm" style={{ color: "var(--text-muted)" }}>Pace 10km (VDOT)</p><p className="mt-1 text-2xl font-bold text-white">{formatSecondsPerKm(athleteProfile.paces.km10)}</p><p className="text-xs text-zinc-500">potencial estimado</p></div>}
+                {athleteProfile.paces.half && <div className="rounded-2xl bg-white/[0.03] p-4"><p className="text-sm" style={{ color: "var(--text-muted)" }}>Pace meia (VDOT)</p><p className="mt-1 text-2xl font-bold text-white">{formatSecondsPerKm(athleteProfile.paces.half.min)}–{formatSecondsPerKm(athleteProfile.paces.half.max)}</p><p className="text-xs text-zinc-500">potencial estimado</p></div>}
               </div>
 
               {/* PRs encontrados */}
               <div className="mt-4 rounded-2xl bg-white/[0.03] p-4">
-                <p className="mb-3 text-sm font-medium text-white/60">PRs usados no cálculo</p>
+                <p className="mb-3 text-sm font-medium text-zinc-100">PRs usados no cálculo</p>
                 <div className="space-y-2">
                   {(["km5", "km10", "half", "marathon"] as const).map((key) => {
                     const pr = athleteProfile.prs[key];
@@ -562,22 +562,22 @@ export default async function BuenosAiresPage() {
                     const isPartial = pr && pr.ageMonths > 6;
                     return (
                       <div key={key} className="flex items-center justify-between">
-                        <span className="text-sm text-white/60">{labels[key]}</span>
+                        <span className="text-sm text-zinc-100">{labels[key]}</span>
                         {pr ? (
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-white/60">{formatPrTime(pr.timeSec)}</span>
-                            <span className={`text-xs px-1.5 py-0.5 rounded-full ${isPartial ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>
+                            <span className="text-sm font-semibold text-zinc-100">{formatPrTime(pr.timeSec)}</span>
+                            <span className={`text-xs px-1.5 py-0.5 rounded-full ${isPartial ? "bg-amber-500/10 text-amber-300" : "bg-emerald-500/10 text-emerald-300"}`}>
                               {pr.ageMonths}m
                             </span>
                           </div>
                         ) : (
-                          <span className="text-xs text-white/60">Não encontrado</span>
+                          <span className="text-xs text-zinc-100">Não encontrado</span>
                         )}
                       </div>
                     );
                   })}
                 </div>
-                <p className="mt-3 text-xs text-white/60">
+                <p className="mt-3 text-xs text-zinc-100">
                   Verde = últimos 6 meses (peso total) · Amarelo = 6–18 meses (peso 50%).
                   Atualiza automaticamente a cada novo PR no Strava.
                 </p>
@@ -586,39 +586,39 @@ export default async function BuenosAiresPage() {
               <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.25)" }}>
                 <p className="text-sm font-medium" style={{ color: "var(--accent)" }}>FC alvo em Buenos Aires</p>
                 <p className="mt-1 text-2xl font-bold" style={{ color: "var(--accent)" }}>148–155 bpm</p>
-                <p className="mt-1 text-sm text-orange-600">Zona de potência aeróbica → limiar. ~10 bpm abaixo das meias.</p>
+                <p className="mt-1 text-sm text-orange-400">Zona de potência aeróbica → limiar. ~10 bpm abaixo das meias.</p>
               </div>
             </div>
 
             <div className="card">
-              <h3 className="text-xl font-semibold text-white/60">Paces de treino pelo VDOT</h3>
-              <p className="mt-1 text-sm text-white/60">Referências de Daniels derivadas do seu VDOT {vdot.toFixed(1)}.</p>
+              <h3 className="text-xl font-semibold text-zinc-100">Paces de treino pelo VDOT</h3>
+              <p className="mt-1 text-sm text-zinc-100">Referências de Daniels derivadas do seu VDOT {vdot.toFixed(1)}.</p>
               <div className="mt-5 space-y-2">
                 {[
-                  { label: "Regenerativo / Fácil", pace: trainingPaces ? `${formatSecondsPerKm(trainingPaces.easy.min)}–${formatSecondsPerKm(trainingPaces.easy.max)}` : "—", desc: "Z1–Z2", color: "bg-cyan-50" },
-                  { label: "Pace de maratona",     pace: trainingPaces ? `${formatSecondsPerKm(trainingPaces.marathon.min)}–${formatSecondsPerKm(trainingPaces.marathon.max)}` : "—", desc: "Z3", color: "bg-[rgba(245,166,35,0.1)] ring-1 ring-orange-200" },
-                  { label: "Limiar (Threshold)",   pace: trainingPaces ? `${formatSecondsPerKm(trainingPaces.threshold.min)}–${formatSecondsPerKm(trainingPaces.threshold.max)}` : "—", desc: "Z4", color: "bg-amber-50" },
-                  { label: "Intervalado (VO2max)", pace: trainingPaces ? formatSecondsPerKm(trainingPaces.interval) : "—", desc: "Z5", color: "bg-red-50" },
+                  { label: "Regenerativo / Fácil", pace: trainingPaces ? `${formatSecondsPerKm(trainingPaces.easy.min)}–${formatSecondsPerKm(trainingPaces.easy.max)}` : "—", desc: "Z1–Z2", color: "bg-cyan-500/10 border border-cyan-400/20" },
+                  { label: "Pace de maratona",     pace: trainingPaces ? `${formatSecondsPerKm(trainingPaces.marathon.min)}–${formatSecondsPerKm(trainingPaces.marathon.max)}` : "—", desc: "Z3", color: "bg-[rgba(245,166,35,0.1)] ring-1 ring-orange-400/20" },
+                  { label: "Limiar (Threshold)",   pace: trainingPaces ? `${formatSecondsPerKm(trainingPaces.threshold.min)}–${formatSecondsPerKm(trainingPaces.threshold.max)}` : "—", desc: "Z4", color: "bg-amber-500/10 border border-amber-400/20" },
+                  { label: "Intervalado (VO2max)", pace: trainingPaces ? formatSecondsPerKm(trainingPaces.interval) : "—", desc: "Z5", color: "bg-red-500/10 border border-red-400/20" },
                 ].map((row) => (
                   <div key={row.label} className={`flex items-center justify-between rounded-2xl p-3 ${row.color}`}>
                     <div>
-                      <p className="text-sm font-medium text-white/60">{row.label}</p>
-                      <p className="text-xs text-white/60">{row.desc}</p>
+                      <p className="text-sm font-medium text-zinc-100">{row.label}</p>
+                      <p className="text-xs text-zinc-100">{row.desc}</p>
                     </div>
-                    <p className="text-sm font-bold text-white/60">{row.pace}</p>
+                    <p className="text-sm font-bold text-zinc-100">{row.pace}</p>
                   </div>
                 ))}
               </div>
               <div className="mt-5 rounded-2xl bg-white/[0.03] p-4">
-                <p className="mb-3 text-sm font-medium text-white/60">% FCmáx nas provas</p>
+                <p className="mb-3 text-sm font-medium text-zinc-100">% FCmáx nas provas</p>
                 <div className="space-y-2">
                   {[{ name: "Berlim", bpm: 159 }, { name: "Lisboa", bpm: 160 }, { name: "SP (meia)", bpm: 152 }].map((prova) => (
                     <div key={prova.name} className="flex items-center gap-3">
-                      <span className="w-20 text-sm text-white/60">{prova.name}</span>
+                      <span className="w-20 text-sm text-zinc-100">{prova.name}</span>
                       <div className="flex-1 rounded-full bg-white/[0.04]" style={{ height: 8 }}>
                         <div className="rounded-full bg-orange-400" style={{ width: `${Math.round((prova.bpm / hrMax) * 100)}%`, height: 8 }} />
                       </div>
-                      <span className="w-20 text-right text-sm font-medium text-white/60">{prova.bpm} bpm ({Math.round((prova.bpm / hrMax) * 100)}%)</span>
+                      <span className="w-20 text-right text-sm font-medium text-zinc-100">{prova.bpm} bpm ({Math.round((prova.bpm / hrMax) * 100)}%)</span>
                     </div>
                   ))}
                 </div>
@@ -628,10 +628,10 @@ export default async function BuenosAiresPage() {
         )}
 
         {/* Projeções + Longões recentes */}
-        <section className="grid gap-4 mb-8 lg:grid-cols-[1.1fr_.9fr]">
+        <section className="mb-6 grid gap-4 xl:grid-cols-[1.1fr_.9fr]">
           <div className="card">
-            <h3 className="text-xl font-semibold text-white/60">Projeções da maratona</h3>
-            <p className="mt-1 text-sm text-white/60">Comparação entre alvo, leituras automáticas, VDOT e previsão manual.</p>
+            <h3 className="text-xl font-semibold text-zinc-100">Projeções da maratona</h3>
+            <p className="mt-1 text-sm text-zinc-100">Comparação entre alvo, leituras automáticas, VDOT e previsão manual.</p>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <ProjectionCard title="Pelo pace-alvo"              value={formatFullDuration(targetPredictionSeconds)} caption={targetPaceLabel} />
               <ProjectionCard title="Pela melhor meia"            value={predictedFromHalf && bestHalf ? formatFullDuration(predictedFromHalf) : "Sem dado"} caption={predictedFromHalf && bestHalf ? `${bestHalf.name} • ${formatDate(bestHalf.start_date_local)}` : "Nenhuma meia encontrada no recorte."} />
@@ -656,8 +656,8 @@ export default async function BuenosAiresPage() {
           </div>
 
           <div className="card">
-            <h3 className="text-xl font-semibold text-white/60">Longões recentes</h3>
-            <p className="mt-1 text-sm text-white/60">Foco nos treinos mais relevantes para a maratona.</p>
+            <h3 className="text-xl font-semibold text-zinc-100">Longões recentes</h3>
+            <p className="mt-1 text-sm text-zinc-100">Foco nos treinos mais relevantes para a maratona.</p>
             <div className="mt-5 space-y-3">
               {recentLongRuns.length > 0 ? recentLongRuns.map((run) => {
                 const km = run.distance / 1000;
@@ -666,19 +666,19 @@ export default async function BuenosAiresPage() {
                   <div key={run.id} className="rounded-2xl border border-white/10 p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="font-semibold text-white/60">{run.name}</p>
+                        <p className="font-semibold text-zinc-100">{run.name}</p>
                         <p className="text-sm" style={{ color: "var(--text-muted)" }}>{km.toFixed(1)} km • {formatDate(run.start_date_local)}</p>
                       </div>
                       {hr && hrZones.length > 0 && <HrZoneBadge bpm={Math.round(hr)} zones={hrZones} hrMax={hrMax} />}
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <span className="rounded-full bg-white/[0.06] px-3 py-1 text-xs font-medium text-white/60">{formatSecondsPerKm(run.moving_time / km)}</span>
+                      <span className="rounded-full bg-white/[0.06] px-3 py-1 text-xs font-medium text-zinc-100">{formatSecondsPerKm(run.moving_time / km)}</span>
                       {hr ? (
                         <span className="rounded-full px-3 py-1 text-xs font-medium text-white" style={{ backgroundColor: getHrZoneForBpm(Math.round(hr), hrZones)?.color ?? "#888" }}>{Math.round(hr)} bpm</span>
                       ) : (
-                        <span className="rounded-full bg-white/[0.06] px-3 py-1 text-xs text-white/60">FC não disponível</span>
+                        <span className="rounded-full bg-white/[0.06] px-3 py-1 text-xs text-zinc-100">FC não disponível</span>
                       )}
-                      {run.total_elevation_gain > 0 && <span className="rounded-full bg-white/[0.06] px-3 py-1 text-xs text-white/60">+{Math.round(run.total_elevation_gain)}m alt.</span>}
+                      {run.total_elevation_gain > 0 && <span className="rounded-full bg-white/[0.06] px-3 py-1 text-xs text-zinc-100">+{Math.round(run.total_elevation_gain)}m alt.</span>}
                     </div>
                     <div className="mt-3">
                       <ActivitySplitsChart
@@ -690,21 +690,21 @@ export default async function BuenosAiresPage() {
                     </div>
                   </div>
                 );
-              }) : <p className="text-white/40">Nenhum longão identificado ainda.</p>}
+              }) : <p className="text-zinc-400">Nenhum longão identificado ainda.</p>}
             </div>
           </div>
         </section>
 
         {/* ─── CALCULADORA DE PROJEÇÃO ─────────────────────────────────────── */}
         {projectionLongRuns.length >= 3 && (
-          <section className="mb-8" style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius)", overflow: "hidden" }}>
+          <section className="mb-6" style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius)", overflow: "hidden" }}>
             <MarathonProjection longRuns={projectionLongRuns} weeksToRace={weeksToRace} races={racePointsForProjection} />
           </section>
         )}
 
         {/* Volume planejado vs. executado */}
         {weeklyData.length > 0 && (
-          <section className="mb-8">
+          <section className="mb-6">
             <WeeklyPlanVsActualChart
               weeks={buildWeeklyComparison(sisrunData, activities, 16).reverse().map((w) => ({
                 label: w.label,
@@ -717,16 +717,16 @@ export default async function BuenosAiresPage() {
         )}
 
         {/* Resumo estratégico */}
-        <section style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "1.25rem 1.5rem" }}>
-          <h3 className="text-xl font-semibold text-white/60">Resumo estratégico</h3>
+        <section className="premium-panel p-6">
+          <h3 className="text-xl font-semibold text-zinc-100">Resumo estratégico</h3>
           <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <div className="rounded-2xl bg-white/[0.03] p-5">
               <p className="text-sm" style={{ color: "var(--text-muted)" }}>Leitura do momento</p>
-              <p className="mt-2 text-sm leading-6 text-white/60">O alvo configurado está em <span className="font-semibold">{targetPaceLabel}</span>, projetando <span className="font-semibold">{formatFullDuration(targetPredictionSeconds)}</span>. Hoje, o ciclo está em <span className="font-semibold">{cyclePhase.name}</span> e o semáforo está em <span className={`font-semibold ${readiness.text}`}>{readiness.label}</span>.</p>
+              <p className="mt-2 text-sm leading-6 text-zinc-100">O alvo configurado está em <span className="font-semibold">{targetPaceLabel}</span>, projetando <span className="font-semibold">{formatFullDuration(targetPredictionSeconds)}</span>. Hoje, o ciclo está em <span className="font-semibold">{cyclePhase.name}</span> e o semáforo está em <span className={`font-semibold ${readiness.text}`}>{readiness.label}</span>.</p>
             </div>
             <div className="rounded-2xl bg-white/[0.03] p-5">
               <p className="text-sm" style={{ color: "var(--text-muted)" }}>Planejado x executado</p>
-              <p className="mt-2 text-sm leading-6 text-white/60">
+              <p className="mt-2 text-sm leading-6 text-zinc-100">
                 {sisrunWeek ? <>O SisRUN prevê <span className="font-semibold">{plannedWeekKm.toFixed(1)} km</span> nesta semana, e o Strava mostra <span className="font-semibold">{currentWeekKm.toFixed(1)} km</span> executados até agora.</> : <>Sem semana do SisRUN carregada. Usando apenas o executado no Strava.</>}
               </p>
             </div>
