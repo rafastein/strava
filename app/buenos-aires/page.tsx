@@ -980,7 +980,7 @@ export default async function BuenosAiresPage() {
                 <p className="ba-label">Janela</p>
                 <p style={{ color: "#fff", fontWeight: 800, marginTop: 4 }}>
                   {todaySisrunRow
-                    ? `${todaySisrunRow.windowStart} / ${todaySisrunRow.windowEnd}`
+                    ? `${todaySisrunRow.minPlannedTime ?? "—"} / ${todaySisrunRow.maxPlannedTime ?? "—"}`
                     : "—"}
                 </p>
               </div>
