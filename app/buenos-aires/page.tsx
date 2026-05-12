@@ -423,8 +423,8 @@ export default async function BuenosAiresPage() {
 
   return (
     <div className="page"><Navbar />
-    <main>
-      {/* Header */
+    <main className="page__inner" style={{ maxWidth: 1400 }}>
+        {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div>
             <p className="page-header__eyebrow">Road to Buenos Aires</p>
