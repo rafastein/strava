@@ -240,82 +240,82 @@ export default function MarathonProjection({ longRuns, weeksToRace, races = [] }
   if (longRuns.length === 0) return null;
 
   return (
-    <div className="rounded-[22px] border border-white/10 bg-[#151515] p-6 shadow-[0_18px_60px_rgba(0,0,0,.22)]">
-      <h3 className="text-xl font-semibold text-white">
+    <div className="rounded-[22px] border border-white/10 bg-[#151515] p-5 shadow-[0_18px_60px_rgba(0,0,0,.22)]">
+      <h3 className="text-lg font-semibold text-white">
         Calculadora de projeção — maratona
       </h3>
-      <p className="mt-1 text-sm text-white/55">
+      <p className="mt-1 text-xs leading-relaxed text-white/50">
         Regressão linear sobre os longões para estimar o tempo em Buenos Aires.
       </p>
 
       {/* Gráfico */}
-      <div className="mt-5">
-        <canvas ref={canvasRef} height={180} />
+      <div className="mt-4">
+        <canvas ref={canvasRef} height={160} />
       </div>
 
       {/* Cards de tendência */}
-      <div className="mt-5 grid grid-cols-5 gap-2">
-        <div className="rounded-2xl border border-white/10 bg-white/[.035] p-4">
-          <p className="text-xs text-white/45">Melhora de pace/mês</p>
-          <p className="mt-1 text-lg font-bold text-white">
+      <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-5">
+        <div className="rounded-2xl border border-white/10 bg-white/[.035] p-3">
+          <p className="text-[11px] text-white/45">Melhora de pace/mês</p>
+          <p className="mt-1 text-sm font-bold text-white">
             {pacePerMonth < 0 ? "−" : "+"}{Math.abs(pacePerMonth).toFixed(1)}s/km
           </p>
-          <p className="text-xs text-white/35">{pacePerMonth < 0 ? "melhorando" : "piora no período"}</p>
+          <p className="text-[11px] text-white/35">{pacePerMonth < 0 ? "melhorando" : "piora no período"}</p>
         </div>
 
         {effPerMonth !== null && (
           <div className="rounded-2xl border border-white/10 bg-white/[.035] p-4">
             <p className="text-xs text-white/45">Eficiência/mês</p>
-            <p className="mt-1 text-lg font-bold text-white">
+            <p className="mt-1 text-sm font-bold text-white">
               {effPerMonth > 0 ? "+" : ""}{effPerMonth.toFixed(2)}
             </p>
-            <p className="text-xs text-white/35">{effPerMonth > 0 ? "crescendo" : "estabilizando"}</p>
+            <p className="text-[11px] text-white/35">{effPerMonth > 0 ? "crescendo" : "estabilizando"}</p>
           </div>
         )}
 
-        <div className="rounded-2xl border border-white/10 bg-white/[.035] p-4">
-          <p className="text-xs text-white/45">Maior longão</p>
-          <p className="mt-1 text-lg font-bold text-white">
+        <div className="rounded-2xl border border-white/10 bg-white/[.035] p-3">
+          <p className="text-[11px] text-white/45">Maior longão</p>
+          <p className="mt-1 text-sm font-bold text-white">
             {Math.max(...longRuns.map((l) => l.km)).toFixed(1)} km
           </p>
-          <p className="text-xs text-white/35">
+          <p className="text-[11px] text-white/35">
             {formatDateLabel(longRuns.reduce((a, b) => (a.km >= b.km ? a : b)).date)}
           </p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/[.035] p-4">
-          <p className="text-xs text-white/45">FC média longões</p>
-          <p className="mt-1 text-lg font-bold text-white">
+        <div className="rounded-2xl border border-white/10 bg-white/[.035] p-3">
+          <p className="text-[11px] text-white/45">FC média longões</p>
+          <p className="mt-1 text-sm font-bold text-white">
             {longRuns.filter((l) => l.fc).length > 0
               ? Math.round(longRuns.filter((l) => l.fc).reduce((a, b) => a + (b.fc ?? 0), 0) / longRuns.filter((l) => l.fc).length) + " bpm"
               : "—"}
           </p>
-          <p className="text-xs text-white/35">média de {longRuns.length} longões</p>
+          <p className="text-[11px] text-white/35">média de {longRuns.length} longões</p>
         </div>
       </div>
 
       {/* Sliders */}
-      <div className="mt-5 space-y-3">
+      <div className="mt-4 space-y-3">
         <div className="flex items-center gap-3">
-          <label className="min-w-[130px] text-sm text-white/55">Semanas até a prova</label>
+          <label className="min-w-[130px] text-xs text-white/55">Semanas até a prova</label>
           <input type="range" min={1} max={24} step={1} value={weeks} onChange={(e) => setWeeks(Number(e.target.value))} className="flex-1" />
-          <span className="min-w-[52px] text-right text-sm font-medium text-white">{weeks} sem</span>
+          <span className="min-w-[52px] text-right text-xs font-medium text-white">{weeks} sem</span>
         </div>
         <div className="flex items-center gap-3">
-          <label className="min-w-[130px] text-sm text-white/55">Fator de pacing</label>
+          <label className="min-w-[130px] text-xs text-white/55">Fator de pacing</label>
           <input type="range" min={1.05} max={1.15} step={0.01} value={pacingFactor} onChange={(e) => setPacingFactor(Number(e.target.value))} className="flex-1" />
-          <span className="min-w-[52px] text-right text-sm font-medium text-white">+{Math.round((pacingFactor - 1) * 100)}%</span>
+          <span className="min-w-[52px] text-right text-xs font-medium text-white">+{Math.round((pacingFactor - 1) * 100)}%</span>
         </div>
-        <p className="ml-[130px] text-xs text-white/35">
+        <p className="ml-[130px] text-[11px] text-white/35">
           +7–12% é o delta típico entre pace de longão de treino e pace real em maratona completa
         </p>
       </div>
 
       {/* Resultado */}
-      <div className="mt-5 rounded-2xl border border-orange-400/25 bg-orange-500/10 p-5">
-        <p className="text-sm font-medium text-orange-300">Tempo projetado na maratona</p>
-        <p className="mt-1 text-3xl font-bold tracking-tight text-orange-200">{totalTimeStr(totalSec)}</p>
-        <p className="mt-2 text-sm text-orange-300/80">
+      <div className="mt-4 rounded-2xl border border-orange-400/25 bg-orange-500/10 p-4">
+        <p className="text-xs font-medium text-orange-300">Tempo projetado na maratona</p>
+        <p className="mt-1 text-2xl font-bold tracking-tight text-orange-200">{totalTimeStr(totalSec)}</p>
+        <p className="mt-2 text-xs text-orange-300/80">
           Pace no treino: {secToStr(projPace)}/km → em prova: {secToStr(racePace)}/km
           {projEff !== null && <span className="ml-2 opacity-70">· eficiência projetada: {projEff.toFixed(1)}</span>}
         </p>
@@ -337,9 +337,9 @@ export default function MarathonProjection({ longRuns, weeksToRace, races = [] }
       </div>
 
       {/* Metas de referência */}
-      <div className="mt-5">
-        <p className="mb-3 text-sm font-medium text-white/50">Pace necessário para cada meta</p>
-        <div className="grid grid-cols-5 gap-2">
+      <div className="mt-4">
+        <p className="mb-3 text-xs font-medium text-white/50">Pace necessário para cada meta</p>
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
           {GOALS.map((g) => {
             const needPace = g.totalSec / DIST_MARATHON;
             const ok       = totalSec <= g.totalSec;
@@ -347,7 +347,7 @@ export default function MarathonProjection({ longRuns, weeksToRace, races = [] }
             return (
               <div key={g.label} className={`rounded-2xl p-2 ${ok ? "border border-emerald-400/20 bg-emerald-400/10" : "border border-white/10 bg-white/[.035]"}`}>
                 <p className="text-xs text-white/45">{g.label}</p>
-                <p className="mt-1 text-base font-bold text-white">{secToStr(needPace)}/km</p>
+                <p className="mt-1 text-sm font-bold text-white">{secToStr(needPace)}/km</p>
                 <p className={`mt-1 text-xs ${ok ? "text-emerald-300" : "text-red-300"}`}>
                   {ok
                     ? `${secToStr(diffSec).replace(":", "min ")}s de sobra`

@@ -418,7 +418,7 @@ function buildProjectionLongRuns(
 function InfoCard({ title, value }: { title: string; value: string }) {
   return (
     <div className="card">
-      <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+      <p className="text-xs" style={{ color: "var(--text-muted)" }}>
         {title}
       </p>
       <h3 className="mt-2 text-3xl font-bold text-white/60">{value}</h3>
@@ -441,10 +441,10 @@ function ProjectionCard({
 }) {
   return (
     <div
-      className={`rounded-2xl p-4 ${highlight ? "bg-[rgba(245,166,35,0.1)] ring-1 ring-orange-200" : "bg-white/[0.03]"}`}
+      className={`rounded-2xl border p-4 ${highlight ? "border-orange-300/25 bg-[rgba(245,166,35,0.1)]" : "border-white/10 bg-white/[0.035]"}`}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+        <p className="text-xs" style={{ color: "var(--text-muted)" }}>
           {title}
         </p>
         {badge && (
@@ -453,8 +453,8 @@ function ProjectionCard({
           </span>
         )}
       </div>
-      <p className="mt-2 text-2xl font-bold text-white/60">{value}</p>
-      <p className="mt-1 text-sm text-white/60">{caption}</p>
+      <p className="mt-2 text-xl font-bold leading-tight text-white/80">{value}</p>
+      <p className="mt-1 text-xs leading-snug text-white/50">{caption}</p>
     </div>
   );
 }
@@ -701,7 +701,7 @@ export default async function BuenosAiresPage() {
         .ba-page { max-width: 1180px; margin: 0 auto; padding: 2.4rem 1.5rem 4rem; }
         .ba-hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 2rem; align-items: stretch; }
         .ba-eyebrow { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: #f5a623; }
-        .ba-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3.6rem, 7.2vw, 6.2rem); line-height: .9; letter-spacing: .02em; color: #fff; }
+        .ba-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 5.4vw, 4.85rem); line-height: .94; letter-spacing: .018em; color: #fff; }
         .ba-card { background: linear-gradient(180deg, rgba(255,255,255,.052), rgba(255,255,255,.026)); border: 1px solid rgba(255,255,255,.09); border-radius: 22px; box-shadow: 0 18px 60px rgba(0,0,0,.22); }
         .ba-card-soft { background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.075); border-radius: 18px; }
         .ba-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.38); }
@@ -717,7 +717,7 @@ export default async function BuenosAiresPage() {
         .ba-pill-dark { background: rgba(255,255,255,.06); color: rgba(255,255,255,.72); border: 1px solid rgba(255,255,255,.08); }
         .ba-race-glow { position: absolute; inset: -120px -120px auto auto; width: 520px; height: 520px; border-radius: 50%; background: radial-gradient(circle, rgba(245,166,35,.16), transparent 68%); pointer-events: none; }
         @media (max-width: 1020px) { .ba-hero, .ba-week, .ba-two { grid-template-columns: 1fr; } .ba-grid-4 { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 640px) { .ba-page { padding: 2rem 1rem 3rem; } .ba-grid-4 { grid-template-columns: 1fr; } .ba-title { font-size: 3.8rem; } }
+        @media (max-width: 640px) { .ba-page { padding: 2rem 1rem 3rem; } .ba-grid-4 { grid-template-columns: 1fr; } .ba-title { font-size: 3.2rem; } }
       `}</style>
 
       <div className="ba-page">
