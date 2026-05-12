@@ -101,11 +101,11 @@ export default function WeeklyPlanVsActualChart({ weeks, title }: Props) {
           },
           scales: {
             x: {
-              ticks: { color: tickColor, font: { size: 9 }, maxRotation: 35, autoSkip: false },
+              ticks: { color: tickColor, font: { size: 8 }, maxRotation: 35, autoSkip: false },
               grid: { color: gridColor },
             },
             y: {
-              ticks: { color: tickColor, font: { size: 9 }, callback: (v: unknown) => `${v} km` },
+              ticks: { color: tickColor, font: { size: 8 }, callback: (v: unknown) => `${v} km` },
               grid: { color: gridColor },
             },
             yPct: {
@@ -114,7 +114,7 @@ export default function WeeklyPlanVsActualChart({ weeks, title }: Props) {
               max: 130,
               ticks: {
                 color: "#6366f1",
-                font: { size: 9 },
+                font: { size: 8 },
                 callback: (v: unknown) => `${v}%`,
               },
               grid: { display: false },
@@ -143,12 +143,12 @@ export default function WeeklyPlanVsActualChart({ weeks, title }: Props) {
 
   return (
     <div className="rounded-[22px] border border-white/10 bg-[#151515] p-5 shadow-[0_18px_60px_rgba(0,0,0,.20)]">
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold text-white">
+          <h2 className="text-[15px] font-semibold text-white">
             {title ?? "Planejado vs. executado"}
           </h2>
-          <p className="mt-1 text-[12px] text-white/45">SisRUN x Strava por semana</p>
+          <p className="mt-1 text-[11px] text-white/42">SisRUN x Strava por semana</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <span className="rounded-full border border-orange-400/20 bg-orange-400/10 px-2.5 py-1 text-[10px] font-semibold text-orange-300">
@@ -167,7 +167,7 @@ export default function WeeklyPlanVsActualChart({ weeks, title }: Props) {
         </div>
       </div>
 
-      <div className="relative h-60">
+      <div className="relative h-56 rounded-2xl border border-white/5 bg-black/10 p-2">
         <canvas
           ref={chartRef}
           role="img"
@@ -175,7 +175,7 @@ export default function WeeklyPlanVsActualChart({ weeks, title }: Props) {
         />
       </div>
 
-      <div className="mt-2.5 flex flex-wrap gap-3 text-[10px] text-white/32">
+      <div className="mt-3 flex flex-wrap justify-center gap-x-3 gap-y-1.5 text-[9.5px] text-white/32">
         <span className="flex items-center gap-1">
           <span className="inline-block h-2.5 w-2.5 rounded-sm bg-orange-400" />
           Executado (≥90% da meta)
@@ -200,20 +200,20 @@ export default function WeeklyPlanVsActualChart({ weeks, title }: Props) {
 
       {weeks.length > 0 && (
         <div className="mt-3 rounded-2xl border border-white/10 bg-white/[.03] p-3">
-          <div className="grid grid-cols-3 gap-3 text-center text-[12px]">
+          <div className="grid grid-cols-3 gap-3 text-center text-[11px]">
             <div>
-              <p className="text-white/32">Semanas no alvo</p>
-              <p className="mt-1 font-semibold text-white/90">{weeksOnTarget}/{weeks.filter(w => w.planned > 0).length}</p>
+              <p className="text-white/30">Semanas no alvo</p>
+              <p className="mt-1 text-[12px] font-semibold text-white/88">{weeksOnTarget}/{weeks.filter(w => w.planned > 0).length}</p>
             </div>
             <div>
-              <p className="text-white/32">Melhor semana</p>
-              <p className="mt-1 font-semibold text-white/90">
+              <p className="text-white/30">Melhor semana</p>
+              <p className="mt-1 text-[12px] font-semibold text-white/88">
                 {Math.max(...weeks.map(w => w.actual)).toFixed(1)} km
               </p>
             </div>
             <div>
-              <p className="text-white/32">Média semanal</p>
-              <p className="mt-1 font-semibold text-white/90">
+              <p className="text-white/30">Média semanal</p>
+              <p className="mt-1 text-[12px] font-semibold text-white/88">
                 {(totalActual / Math.max(weeks.length, 1)).toFixed(1)} km
               </p>
             </div>

@@ -441,20 +441,31 @@ function ProjectionCard({
 }) {
   return (
     <div
-      className={`rounded-[18px] border p-3 ${highlight ? "border-orange-300/25 bg-[rgba(245,166,35,0.09)]" : "border-white/10 bg-white/[0.03]"}`}
+      className={`flex min-h-[92px] flex-col items-center justify-center rounded-[18px] border px-3 py-3 text-center ${
+        highlight
+          ? "border-orange-300/25 bg-[rgba(245,166,35,0.09)]"
+          : "border-white/10 bg-white/[0.035]"
+      }`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--text-muted)" }}>
+      <div className="flex min-h-[16px] items-center justify-center gap-2">
+        <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/36">
           {title}
         </p>
         {badge && (
-          <span className="shrink-0 rounded-full bg-[rgba(59,130,246,0.15)] px-2 py-0.5 text-[10px] font-medium text-[#93c5fd]">
+          <span className="shrink-0 rounded-full bg-[rgba(59,130,246,0.15)] px-2 py-0.5 text-[9px] font-medium text-[#93c5fd]">
             {badge}
           </span>
         )}
       </div>
-      <p className="mt-1.5 text-lg font-semibold leading-tight text-white/85">{value}</p>
-      <p className="mt-1 text-[11px] leading-snug text-white/45">{caption}</p>
+      <p className="mt-2 text-[17px] font-semibold leading-none tracking-[-0.02em] text-white/90">
+        {value}
+      </p>
+      <p
+        className="mt-1.5 max-w-full text-[10.5px] leading-snug text-white/42"
+        style={{ overflowWrap: "anywhere" }}
+      >
+        {caption}
+      </p>
     </div>
   );
 }
@@ -1234,13 +1245,13 @@ export default async function BuenosAiresPage() {
         )}
 
         <section className="ba-two" style={{ marginBottom: "1rem" }}>
-          <div className="ba-card" style={{ padding: "1.2rem" }}>
+          <div className="ba-card" style={{ padding: "1.15rem" }}>
             <p className="ba-label">Projeções</p>
             <h2
               style={{
                 color: "#fff",
-                fontSize: 20,
-                fontWeight: 700,
+                fontSize: 18,
+                fontWeight: 650,
                 marginTop: 8,
               }}
             >
@@ -1249,9 +1260,9 @@ export default async function BuenosAiresPage() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: ".7rem",
-                marginTop: ".95rem",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gap: ".75rem",
+                marginTop: ".9rem",
               }}
             >
               <ProjectionCard
@@ -1296,7 +1307,15 @@ export default async function BuenosAiresPage() {
                 highlight
               />
             </div>
-            <div style={{ marginTop: "1rem" }}>
+            <div
+              style={{
+                marginTop: ".9rem",
+                padding: ".85rem",
+                borderRadius: 18,
+                background: "rgba(255,255,255,.032)",
+                border: "1px solid rgba(255,255,255,.07)",
+              }}
+            >
               <ManualPredictionForm
                 initialValue={manualPredictions.stravaMarathonPrediction}
               />
@@ -1387,10 +1406,7 @@ export default async function BuenosAiresPage() {
         </section>
 
         {projectionLongRuns.length >= 3 && (
-          <section
-            className="ba-card"
-            style={{ overflow: "hidden", marginBottom: "1rem" }}
-          >
+          <section style={{ marginBottom: "1rem" }}>
             <MarathonProjection
               longRuns={projectionLongRuns}
               weeksToRace={weeksToRace}
