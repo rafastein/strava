@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import Navbar from "../components/Navbar";
 import { getValidStravaAccessToken } from "../lib/strava-auth";
 import { formatBRDate } from "../lib/date-utils";
 import {
@@ -9,7 +10,6 @@ import {
   formatLongRunPace,
   getLongRunSummary,
   getLongRunsFromActivities,
-  type LongRunEntry,
 } from "../lib/strava-long-runs";
 import LongRunCharts from "../components/LongRunCharts";
 import ActivitySplitsChart from "../components/ActivitySplitsChart";
@@ -32,8 +32,9 @@ type StravaActivity = {
 };
 
 const STRAVA_AFTER_EPOCH = Math.floor(
-  new Date("2024-01-01T00:00:00Z").getTime() / 1000
+  new Date("2024-01-01T00:00:00Z").getTime() / 1000,
 );
+const BUENOS_AIRES_GOAL_PACE_SEC_PER_KM = 320;
 
 async function getActivities(): Promise<StravaActivity[]> {
   try {
@@ -74,46 +75,46 @@ function getEfficiencyBadge(efficiency: number | null): {
   label: string;
   badge: string;
 } {
-  if (!efficiency)
-    return { label: "Sem dados", badge: "bg-gray-100 text-gray-500" };
-  if (efficiency >= 16)
-    return { label: "Alta eficiência", badge: "bg-emerald-100 text-emerald-700" };
-  if (efficiency >= 14)
-    return { label: "Boa eficiência", badge: "bg-blue-100 text-blue-700" };
-  return { label: "Eficiência moderada", badge: "bg-orange-100 text-orange-700" };
+  if (!efficiency) return { label: "Sem dados", badge: "badge badge--muted" };
+  if (efficiency >= 16) return { label: "Alta eficiência", badge: "badge badge--success" };
+  if (efficiency >= 14) return { label: "Boa eficiência", badge: "badge badge--blue" };
+  return { label: "Eficiência moderada", badge: "badge badge--orange" };
 }
 
 function getEfficiencyTrend(
   current?: number | null,
-  previous?: number | null
+  previous?: number | null,
 ): { emoji: string; label: string; detail: string; tone: string } {
   if (!current || !previous)
     return {
       emoji: "➖",
       label: "Sem base anterior",
       detail: "Ainda não há longão anterior com eficiência para comparar.",
-      tone: "text-gray-500",
+      tone: "text-white/45",
     };
+
   const diff = current - previous;
   if (Math.abs(diff) < 1)
     return {
       emoji: "➖",
       label: "Estável",
       detail: `Variação de ${diff >= 0 ? "+" : ""}${diff.toFixed(0)} ponto.`,
-      tone: "text-gray-600",
+      tone: "text-white/55",
     };
+
   if (diff > 0)
     return {
       emoji: "📈",
       label: "Melhorou",
       detail: `+${diff.toFixed(0)} pontos em relação ao longão anterior.`,
-      tone: "text-emerald-600",
+      tone: "text-emerald-400",
     };
+
   return {
     emoji: "📉",
     label: "Piorou",
     detail: `${diff.toFixed(0)} pontos em relação ao longão anterior.`,
-    tone: "text-red-600",
+    tone: "text-red-400",
   };
 }
 
@@ -126,30 +127,29 @@ function InfoCard({
   title: string;
   value: React.ReactNode;
   sub?: string;
-  accent?: "orange" | "blue" | "green" | "red";
+  accent?: "accent" | "blue" | "success" | "danger";
 }) {
-  const colors = {
-    orange: "text-orange-600",
-    blue: "text-blue-600",
-    green: "text-emerald-600",
-    red: "text-red-500",
-  };
+  const valueClass = {
+    accent: "card__value--accent",
+    blue: "card__value--blue",
+    success: "card__value--success",
+    danger: "card__value--danger",
+  }[accent ?? "accent"];
+
   return (
-    <div className="rounded-3xl bg-white p-6 shadow-sm">
-      <p className="text-sm text-gray-500">{title}</p>
-      <h2 className={`mt-2 text-2xl font-bold ${accent ? colors[accent] : "text-gray-900"}`}>
-        {value}
-      </h2>
-      {sub && <p className="mt-1 text-xs text-gray-400">{sub}</p>}
+    <div className="card">
+      <p className="card__label">{title}</p>
+      <h2 className={`card__value ${accent ? valueClass : ""}`}>{value}</h2>
+      {sub && <p className="card__sub">{sub}</p>}
     </div>
   );
 }
 
 function MetricPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-white p-3">
-      <p className="text-xs text-gray-400">{label}</p>
-      <p className="mt-0.5 text-sm font-semibold text-gray-900">{value}</p>
+    <div className="metric-pill">
+      <p className="metric-pill__label">{label}</p>
+      <p className="metric-pill__value">{value}</p>
     </div>
   );
 }
@@ -164,13 +164,14 @@ function PaceBar({
   worst: number;
 }) {
   if (!paceSecPerKm || worst === best) return null;
-  const pct = Math.min(100, Math.max(0, ((worst - paceSecPerKm) / (worst - best)) * 100));
+  const pct = Math.min(
+    100,
+    Math.max(0, ((worst - paceSecPerKm) / (worst - best)) * 100),
+  );
+
   return (
-    <div className="mt-2 h-1.5 w-full rounded-full bg-gray-100">
-      <div
-        className="h-1.5 rounded-full bg-orange-400 transition-all"
-        style={{ width: `${pct}%` }}
-      />
+    <div className="progress-bar mt-3">
+      <div className="progress-bar__fill" style={{ width: `${pct}%` }} />
     </div>
   );
 }
@@ -184,7 +185,7 @@ export default async function LongoesPage() {
   const previousLongRun = longRuns[1] ?? null;
   const efficiencyTrend = getEfficiencyTrend(
     lastLongRun?.efficiency,
-    previousLongRun?.efficiency
+    previousLongRun?.efficiency,
   );
 
   const validPaces = longRuns
@@ -207,6 +208,11 @@ export default async function LongoesPage() {
     return (r.efficiency ?? 0) > (prev.efficiency ?? 0);
   }).length;
 
+  const longRuns25Plus = longRuns.filter((r) => r.distanceKm >= 25).length;
+  const avgDistance = summary.totalLongRuns
+    ? longRuns.reduce((acc, run) => acc + run.distanceKm, 0) / summary.totalLongRuns
+    : 0;
+
   const chartData = longRuns.map((r) => ({
     id: r.id,
     date: r.date,
@@ -218,199 +224,116 @@ export default async function LongoesPage() {
   }));
 
   return (
-    <main className="min-h-screen bg-gray-100 p-6 md:p-10">
-      <div className="mx-auto max-w-6xl">
-
-        {/* Header */}
-        <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+    <main className="page">
+      <Navbar />
+      <div className="page__inner pb-24">
+        <div className="page-header">
           <div>
-            <p className="text-sm font-medium text-orange-600">Treinos</p>
-            <h1 className="text-3xl font-bold text-gray-900 md:text-4xl">
-              Análise de longões
-            </h1>
-            <p className="mt-2 text-sm text-gray-500">
-              Histórico completo com evolução de ritmo, FC e eficiência.
+            <p className="page-header__eyebrow">Treinos</p>
+            <h1 className="page-header__title">Análise de longões</h1>
+            <p className="page-header__sub">
+              Histórico completo com evolução de distância, ritmo, frequência cardíaca,
+              elevação, eficiência e splits km a km.
             </p>
           </div>
-          <Link
-            href="/"
-            className="rounded-full bg-white px-5 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-          >
+
+          <Link href="/" className="btn-back">
             ← Voltar ao dashboard
           </Link>
         </div>
 
-        {/* Summary cards */}
-        <section className="mb-6 grid gap-4 sm:grid-cols-2 md:grid-cols-5">
-          <InfoCard
-            title="Total de longões"
-            value={String(summary.totalLongRuns)}
-            sub="desde jan/2024"
-          />
-          <InfoCard
-            title="Maior distância"
-            value={`${summary.longestRunKm.toFixed(1)} km`}
-            accent="orange"
-          />
-          <InfoCard
-            title="Melhor ritmo"
-            value={formatLongRunPace(bestPace)}
-            sub={bestEffRun ? formatBRDate(bestEffRun.date) : undefined}
-            accent="blue"
-          />
-          <InfoCard
-            title="Melhor eficiência"
-            value={formatEfficiency(summary.bestEfficiency)}
-            sub={bestEffRun?.name}
-            accent="green"
-          />
-          <InfoCard
-            title="FC média geral"
-            value={
-              summary.averageHeartrate
-                ? `${summary.averageHeartrate.toFixed(0)} bpm`
-                : "-"
-            }
-          />
+        <section style={{ marginBottom: "4rem" }}>
+          <p className="section-label">Resumo geral</p>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
+            <InfoCard title="Total de longões" value={String(summary.totalLongRuns)} sub="desde jan/2024" />
+            <InfoCard title="Maior distância" value={`${summary.longestRunKm.toFixed(1)} km`} accent="accent" />
+            <InfoCard title="Melhor ritmo" value={formatLongRunPace(bestPace)} sub={bestEffRun ? formatBRDate(bestEffRun.date) : undefined} accent="blue" />
+            <InfoCard title="Melhor eficiência" value={formatEfficiency(summary.bestEfficiency)} sub={bestEffRun?.name} accent="success" />
+            <InfoCard title="FC média geral" value={summary.averageHeartrate ? `${summary.averageHeartrate.toFixed(0)} bpm` : "—"} />
+          </div>
         </section>
 
-        {/* Trend + last run + patterns */}
-        <section className="mb-6 grid gap-4 md:grid-cols-3">
-          <div className="rounded-3xl bg-white p-6 shadow-sm">
-            <h3 className="text-base font-semibold text-gray-900">Último longão</h3>
+        <section className="grid gap-8 lg:grid-cols-3" style={{ marginBottom: "3.5rem" }}>
+          <div className="card card--accent min-h-[340px]" style={{ padding: "2rem" }}>
+            <p className="section-label mb-8">Último longão</p>
             {lastLongRun ? (
-              <>
-                <p className="mt-3 font-medium text-gray-800">{lastLongRun.name}</p>
-                <p className="mt-1 text-sm text-gray-500">{formatBRDate(lastLongRun.date)}</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <span className="rounded-full bg-orange-100 px-3 py-1 text-sm font-semibold text-orange-700">
-                    {lastLongRun.distanceKm.toFixed(2)} km
-                  </span>
-                  <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
-                    {formatLongRunPace(lastLongRun.paceSecPerKm)}
-                  </span>
+              <div className="space-y-8">
+                <div>
+                  <h2 className="max-w-[92%] text-xl font-semibold leading-snug text-white/90">
+                    {lastLongRun.name}
+                  </h2>
+                  <p className="mt-3 text-sm text-white/45">{formatBRDate(lastLongRun.date)}</p>
+                </div>
+
+                <div className="mt-2 flex flex-wrap gap-3">
+                  <span className="badge badge--accent">{lastLongRun.distanceKm.toFixed(2)} km</span>
+                  <span className="badge badge--blue">{formatLongRunPace(lastLongRun.paceSecPerKm)}</span>
                   {lastLongRun.averageHeartrate && (
-                    <span className="rounded-full bg-red-50 px-3 py-1 text-sm font-medium text-red-600">
-                      {lastLongRun.averageHeartrate.toFixed(0)} bpm
-                    </span>
+                    <span className="badge badge--danger">{lastLongRun.averageHeartrate.toFixed(0)} bpm</span>
                   )}
                 </div>
-                <PaceBar
-                  paceSecPerKm={lastLongRun.paceSecPerKm}
-                  best={bestPace}
-                  worst={worstPace}
-                />
-                <p className="mt-1 text-xs text-gray-400">
-                  Posição relativa de ritmo no histórico
-                </p>
-              </>
+
+                <div className="pt-3">
+                  <PaceBar paceSecPerKm={lastLongRun.paceSecPerKm} best={bestPace} worst={worstPace} />
+                  <p className="mt-5 text-xs text-white/35">Posição relativa de ritmo no histórico.</p>
+                </div>
+              </div>
             ) : (
-              <p className="mt-3 text-sm text-gray-500">Nenhum longão encontrado.</p>
+              <p className="text-sm text-white/50">Nenhum longão encontrado.</p>
             )}
           </div>
 
-          <div className="rounded-3xl bg-white p-6 shadow-sm">
-            <h3 className="text-base font-semibold text-gray-900">Tendência de eficiência</h3>
-            <div className="mt-4 flex items-center gap-3">
+          <div className="card min-h-[340px]" style={{ padding: "2rem" }}>
+            <p className="section-label mb-7">Tendência de eficiência</p>
+            <div className="flex items-center gap-4">
               <span className="text-3xl">{efficiencyTrend.emoji}</span>
               <div>
-                <p className={`text-xl font-bold ${efficiencyTrend.tone}`}>
-                  {efficiencyTrend.label}
-                </p>
-                <p className="mt-0.5 text-sm text-gray-500">{efficiencyTrend.detail}</p>
+                <p className={`text-xl font-bold ${efficiencyTrend.tone}`}>{efficiencyTrend.label}</p>
+                <p className="mt-1 text-sm text-white/45">{efficiencyTrend.detail}</p>
               </div>
             </div>
-            <div className="mt-4 space-y-1.5">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Último longão</span>
-                <span className="font-semibold text-gray-900">
-                  {formatEfficiency(lastLongRun?.efficiency ?? null)}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Longão anterior</span>
-                <span className="font-semibold text-gray-900">
-                  {formatEfficiency(previousLongRun?.efficiency ?? null)}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Melhor histórico</span>
-                <span className="font-semibold text-emerald-600">
-                  {formatEfficiency(summary.bestEfficiency)}
-                </span>
-              </div>
+
+            <div className="mt-8 space-y-4">
+              <div className="flex justify-between text-sm"><span className="text-white/45">Último</span><span className="font-semibold text-white/85">{formatEfficiency(lastLongRun?.efficiency ?? null)}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-white/45">Anterior</span><span className="font-semibold text-white/85">{formatEfficiency(previousLongRun?.efficiency ?? null)}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-white/45">Melhor</span><span className="font-semibold text-emerald-400">{formatEfficiency(summary.bestEfficiency)}</span></div>
             </div>
           </div>
 
-          <div className="rounded-3xl bg-white p-6 shadow-sm">
-            <h3 className="text-base font-semibold text-gray-900">Padrões identificados</h3>
-            <div className="mt-4 space-y-3">
-              <div className="flex items-start gap-3">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700">
-                  {progressiveRuns}
-                </span>
-                <div>
-                  <p className="text-sm font-medium text-gray-800">
-                    Longões com melhora de eficiência
-                  </p>
-                  <p className="text-xs text-gray-400">em relação ao anterior</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700">
-                  {summary.totalLongRuns}
-                </span>
-                <div>
-                  <p className="text-sm font-medium text-gray-800">
-                    Longões registrados
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    ritmo médio {formatLongRunPace(summary.averagePaceSecPerKm)}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-100 text-sm font-bold text-orange-600">
-                  ↑
-                </span>
-                <div>
-                  <p className="text-sm font-medium text-gray-800">
-                    Elevação média
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    {summary.averageElevationGain.toFixed(0)} m por longão
-                  </p>
-                </div>
-              </div>
+          <div className="card min-h-[340px]" style={{ padding: "2rem" }}>
+            <p className="section-label mb-7">Padrões identificados</p>
+            <div className="space-y-4">
+              <MetricPill label="Longões com melhora" value={`${progressiveRuns} em relação ao anterior`} />
+              <MetricPill label="Longões 25 km+" value={`${longRuns25Plus} treinos`} />
+              <MetricPill label="Distância média" value={`${avgDistance.toFixed(1)} km por longão`} />
+              <MetricPill label="Elevação média" value={`${summary.averageElevationGain.toFixed(0)} m por longão`} />
             </div>
           </div>
         </section>
 
-        {/* Charts */}
-        <section className="mb-6">
+        <section style={{ marginBottom: "3.5rem" }}>
+          <p className="section-label" style={{ marginBottom: "1.25rem" }}>Evolução</p>
           <LongRunCharts longRuns={chartData} />
         </section>
 
-        {/* Full history */}
-        <section className="rounded-3xl bg-white p-6 shadow-sm">
+        <section className="card" style={{ padding: "2rem", marginTop: "0" }}>
           <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Histórico completo</h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Do mais recente ao mais antigo — distância, ritmo, FC, elevação e eficiência.
+              <p className="section-label">Histórico completo</p>
+              <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white/90">
+                Longões registrados
+              </h2>
+              <p className="mt-1 text-sm text-white/45">
+                Do mais recente ao mais antigo — distância, ritmo, FC, elevação, eficiência e splits.
               </p>
             </div>
-            <span className="rounded-full bg-orange-100 px-3 py-1 text-sm font-semibold text-orange-700">
-              {summary.totalLongRuns} longões
-            </span>
+            <span className="badge badge--accent">{summary.totalLongRuns} longões</span>
           </div>
 
           {longRuns.length === 0 ? (
-            <p className="text-sm text-gray-500">
-              Nenhuma atividade com nome "Longão" foi encontrada.
-            </p>
+            <p className="text-sm text-white/50">Nenhuma atividade com nome “Longão” foi encontrada.</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-12">
               {longRuns.map((run, index) => {
                 const previous = longRuns[index + 1];
                 const trend = getEfficiencyTrend(run.efficiency, previous?.efficiency);
@@ -418,29 +341,18 @@ export default async function LongoesPage() {
                 const isBest = run.efficiency === bestEffValue;
 
                 return (
-                  <div
-                    key={run.id}
-                    className={`rounded-2xl border p-4 transition-colors hover:bg-gray-50 ${
-                      isBest
-                        ? "border-orange-300 bg-orange-50"
-                        : "border-gray-200 bg-gray-50"
-                    }`}
-                  >
+                  <div key={run.id} className={`list-item ${isBest ? "list-item--accent" : ""}`} style={{ padding: "2rem 2rem 3rem" }}>
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                       <div className="flex items-start gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-sm font-bold text-gray-400 shadow-sm">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-sm font-bold text-white/35">
                           {longRuns.length - index}
                         </div>
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-semibold text-gray-900">{run.name}</p>
-                            {isBest && (
-                              <span className="rounded-full bg-orange-500 px-2 py-0.5 text-xs font-bold text-white">
-                                Melhor eficiência
-                              </span>
-                            )}
+                            <p className="font-semibold text-white/90">{run.name}</p>
+                            {isBest && <span className="badge badge--accent">Melhor eficiência</span>}
                           </div>
-                          <p className="mt-0.5 text-sm text-gray-500">
+                          <p className="mt-1 text-sm text-white/45">
                             {formatBRDate(run.date)}
                             {run.city && run.city !== "Não identificado"
                               ? ` · ${run.city}${run.state ? `, ${run.state}` : ""}`
@@ -450,79 +362,46 @@ export default async function LongoesPage() {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full bg-orange-100 px-3 py-1 text-sm font-semibold text-orange-700">
-                          {run.distanceKm.toFixed(2)} km
-                        </span>
-                        <span className={`rounded-full px-3 py-1 text-xs font-medium ${effBadge.badge}`}>
-                          {effBadge.label}
-                        </span>
+                        <span className="badge badge--accent">{run.distanceKm.toFixed(2)} km</span>
+                        <span className={effBadge.badge}>{effBadge.label}</span>
                       </div>
                     </div>
 
-                    <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-6">
-                      <MetricPill
-                        label="Tempo"
-                        value={formatLongRunDuration(run.movingTimeSec)}
-                      />
-                      <MetricPill
-                        label="Ritmo"
-                        value={formatLongRunPace(run.paceSecPerKm)}
-                      />
-                      <MetricPill
-                        label="Ritmo ajustado"
-                        value={formatLongRunPace(run.adjustedPaceSecPerKm)}
-                      />
-                      <MetricPill
-                        label="FC média"
-                        value={
-                          run.averageHeartrate
-                            ? `${run.averageHeartrate.toFixed(0)} bpm`
-                            : "-"
-                        }
-                      />
-                      <MetricPill
-                        label="FC máxima"
-                        value={run.maxHeartrate ? `${run.maxHeartrate} bpm` : "-"}
-                      />
-                      <MetricPill
-                        label="Elevação"
-                        value={`${run.elevationGain.toFixed(0)} m`}
-                      />
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6" style={{ marginTop: "1.75rem" }}>
+                      <MetricPill label="Tempo" value={formatLongRunDuration(run.movingTimeSec)} />
+                      <MetricPill label="Ritmo" value={formatLongRunPace(run.paceSecPerKm)} />
+                      <MetricPill label="Ritmo ajustado" value={formatLongRunPace(run.adjustedPaceSecPerKm)} />
+                      <MetricPill label="FC média" value={run.averageHeartrate ? `${run.averageHeartrate.toFixed(0)} bpm` : "—"} />
+                      <MetricPill label="FC máxima" value={run.maxHeartrate ? `${run.maxHeartrate} bpm` : "—"} />
+                      <MetricPill label="Elevação" value={`${run.elevationGain.toFixed(0)} m`} />
                     </div>
 
-                    <div className="mt-3 flex items-center justify-between border-t border-gray-200 pt-3">
+                    <div
+                      className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10"
+                      style={{ marginTop: "1.75rem", paddingTop: "1.5rem" }}
+                    >
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-400">Eficiência:</span>
-                        <span className="text-sm font-bold text-gray-900">
-                          {formatEfficiency(run.efficiency)}
-                        </span>
+                        <span className="text-xs text-white/35">Eficiência:</span>
+                        <span className="text-sm font-bold text-white/90">{formatEfficiency(run.efficiency)}</span>
                       </div>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2 text-right">
                         <span className="text-sm">{trend.emoji}</span>
-                        <span className={`text-xs font-medium ${trend.tone}`}>
-                          {trend.label}
-                        </span>
-                        <span className="hidden text-xs text-gray-400 sm:inline">
-                          {trend.detail}
-                        </span>
+                        <span className={`text-xs font-medium ${trend.tone}`}>{trend.label}</span>
+                        <span className="hidden text-xs text-white/35 sm:inline">{trend.detail}</span>
                       </div>
                     </div>
 
-                    <PaceBar
-                      paceSecPerKm={run.paceSecPerKm}
-                      best={bestPace}
-                      worst={worstPace}
-                    />
-                    <p className="mt-0.5 text-right text-xs text-gray-300">
-                      posição de ritmo no histórico
-                    </p>
+                    <div style={{ marginTop: "1rem", marginBottom: "1.75rem" }}>
+                      <PaceBar paceSecPerKm={run.paceSecPerKm} best={bestPace} worst={worstPace} />
+                      <p className="mt-2 text-right text-xs text-white/20">posição de ritmo no histórico</p>
+                    </div>
 
-                    <div className="mt-3">
+                    <div className="border-t border-white/10" style={{ paddingTop: "1.5rem" }}>
                       <ActivitySplitsChart
                         activityId={Number(run.id)}
                         activityName={run.name}
                         targetPaceSecPerKm={run.paceSecPerKm ?? undefined}
-                        goalPaceSecPerKm={320}
+                        goalPaceSecPerKm={BUENOS_AIRES_GOAL_PACE_SEC_PER_KM}
                       />
                     </div>
                   </div>

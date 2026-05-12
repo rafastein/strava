@@ -79,9 +79,9 @@ export default function ActivitySplitsChart({
         chartInstance.current = null;
       }
 
-      const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const gridColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
-      const tickColor = isDark ? "#9ca3af" : "#6b7280";
+      const gridColor = "rgba(255,255,255,0.06)";
+      const tickColor = "rgba(255,255,255,0.45)";
+      const canvasBg = "#0d0d0d";
 
       const validPaces = splits
         .map((s) => s.paceSecPerKm)
@@ -127,7 +127,7 @@ export default function ActivitySplitsChart({
           backgroundColor: "transparent",
           pointRadius: 3,
           pointBackgroundColor: "#ef4444",
-          pointBorderColor: isDark ? "#1f2937" : "#fff",
+          pointBorderColor: canvasBg,
           pointBorderWidth: 1.5,
           tension: 0.4,
           yAxisID: "yHr",
@@ -274,7 +274,7 @@ export default function ActivitySplitsChart({
     return () => {
       cancelled = true;
     };
-  }, [splits, targetPaceSecPerKm]);
+  }, [splits, targetPaceSecPerKm, goalPaceSecPerKm]);
 
   useEffect(() => {
     return () => {
@@ -286,19 +286,19 @@ export default function ActivitySplitsChart({
 
   if (!loaded && !loading) {
     return (
-      <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <p className="text-sm font-medium text-gray-700">
+      <div className="rounded-2xl border border-white/10 bg-white/[0.035]" style={{ padding: "1.5rem 1.75rem", minHeight: "82px" }}>
+        <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
+          <div className="min-w-0">
+            <p className="text-base font-semibold leading-none text-white/90">
               Splits km a km
             </p>
             {activityName && (
-              <p className="text-xs text-gray-400">{activityName}</p>
+              <p className="mt-3 max-w-[720px] truncate text-xs leading-relaxed text-white/40">{activityName}</p>
             )}
           </div>
           <button
             onClick={fetchAndRender}
-            className="rounded-full bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 transition-colors"
+            className="w-full min-w-[160px] rounded-full bg-[#f5a623] px-8 py-3.5 text-sm font-semibold leading-none text-black transition-colors hover:opacity-90 md:w-auto"
           >
             Ver splits
           </button>
@@ -309,10 +309,10 @@ export default function ActivitySplitsChart({
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+      <div className="rounded-2xl border border-white/10 bg-white/[0.035]" style={{ padding: "1.5rem" }}>
         <div className="flex items-center gap-3">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
-          <p className="text-sm text-gray-500">Carregando splits...</p>
+          <p className="text-sm text-white/45">Carregando splits...</p>
         </div>
       </div>
     );
@@ -320,11 +320,11 @@ export default function ActivitySplitsChart({
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
-        <p className="text-sm text-red-600">{error}</p>
+      <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-5">
+        <p className="text-sm text-red-300">{error}</p>
         <button
           onClick={() => { setLoaded(false); fetchAndRender(); }}
-          className="mt-2 text-xs text-red-500 underline"
+          className="mt-2 text-xs text-red-300 underline"
         >
           Tentar novamente
         </button>
@@ -334,8 +334,8 @@ export default function ActivitySplitsChart({
 
   if (!splits || splits.length === 0) {
     return (
-      <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-        <p className="text-sm text-gray-500">Splits não disponíveis para esta atividade.</p>
+      <div className="rounded-2xl border border-white/10 bg-white/[0.035]" style={{ padding: "1.5rem" }}>
+        <p className="text-sm text-white/45">Splits não disponíveis para esta atividade.</p>
       </div>
     );
   }
@@ -348,31 +348,31 @@ export default function ActivitySplitsChart({
   const hasHr = splits.some((s) => s.heartrate !== null);
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-      <div className="mb-3 flex items-start justify-between flex-wrap gap-2">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.035]" style={{ padding: "1.5rem" }}>
+      <div className="mb-6 flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
         <div>
-          <p className="text-sm font-semibold text-gray-800">
+          <p className="text-base font-semibold text-white/90">
             Splits km a km
           </p>
           {activityName && (
-            <p className="text-xs text-gray-400">{activityName}</p>
+            <p className="mt-1 text-xs text-white/40">{activityName}</p>
           )}
         </div>
-        <div className="flex flex-wrap gap-3 text-xs text-gray-500">
-          <span>
+        <div className="flex w-full flex-wrap gap-2 text-xs text-white/45 xl:w-auto xl:justify-end">
+          <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5">
             Ritmo médio:{" "}
-            <span className="font-semibold text-gray-800">
+            <span className="font-semibold text-white/85">
               {formatPace(avgPace)}/km
             </span>
           </span>
-          <span>
+          <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5">
             Melhor km:{" "}
-            <span className="font-semibold text-emerald-600">
+            <span className="font-semibold text-emerald-400">
               {formatPace(bestPace)}/km
             </span>
           </span>
           {goalPaceSecPerKm && (
-            <span>
+            <span className="rounded-full border border-orange-400/20 bg-orange-400/10 px-3 py-1.5 text-orange-200">
               <span className="inline-block h-2 w-4 border-b-2 border-dashed border-orange-400 align-middle" />{" "}
               Meta BsAs: {formatPace(goalPaceSecPerKm)}/km
             </span>
@@ -380,7 +380,7 @@ export default function ActivitySplitsChart({
         </div>
       </div>
 
-      <div className="relative h-56">
+      <div className="relative h-72">
         <canvas
           ref={chartRef}
           role="img"
@@ -388,7 +388,7 @@ export default function ActivitySplitsChart({
         />
       </div>
 
-      <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-400">
+      <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-white/35">
         <span className="flex items-center gap-1">
           <span className="inline-block h-2.5 w-2.5 rounded-sm bg-emerald-500" />
           Acima da média

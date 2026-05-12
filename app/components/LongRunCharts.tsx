@@ -57,11 +57,9 @@ export default function LongRunCharts({ longRuns }: Props) {
         chartInstance.current = null;
       }
 
-      const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const gridColor = isDark
-        ? "rgba(255,255,255,0.06)"
-        : "rgba(0,0,0,0.06)";
-      const tickColor = isDark ? "#9ca3af" : "#6b7280";
+      const gridColor = "rgba(255,255,255,0.06)";
+      const tickColor = "rgba(255,255,255,0.45)";
+      const canvasBg = "#0d0d0d";
 
       let datasets: ConstructorParameters<typeof Chart>[1]["data"]["datasets"] =
         [];
@@ -81,7 +79,7 @@ export default function LongRunCharts({ longRuns }: Props) {
             tension: 0.4,
             pointRadius: 5,
             pointBackgroundColor: "#3b82f6",
-            pointBorderColor: isDark ? "#1f2937" : "#fff",
+            pointBorderColor: canvasBg,
             pointBorderWidth: 1.5,
             spanGaps: true,
           },
@@ -242,25 +240,25 @@ export default function LongRunCharts({ longRuns }: Props) {
   ];
 
   return (
-    <div className="rounded-3xl bg-white p-6 shadow-sm">
-      <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
+    <div className="card" style={{ padding: "2rem" }}>
+      <div className="mb-7 flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">
+          <h2 className="text-xl font-semibold text-white/90">
             Evolução dos longões
           </h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-white/45">
             {sorted.length} longões — do mais antigo ao mais recente
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3 xl:w-auto xl:min-w-[540px]">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setMode(tab.key)}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+              className={`min-w-[165px] rounded-full border px-7 py-3.5 text-center text-sm font-semibold leading-none transition-colors ${
                 mode === tab.key
-                  ? "bg-orange-500 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-[rgba(245,166,35,0.18)] text-[#f5a623] border border-[rgba(245,166,35,0.3)]"
+                  : "bg-white/[0.04] text-white/45 border border-white/10 hover:text-white/75"
               }`}
             >
               {tab.label}
@@ -268,14 +266,14 @@ export default function LongRunCharts({ longRuns }: Props) {
           ))}
         </div>
       </div>
-      <div className="relative h-64">
+      <div className="relative h-[340px]">
         <canvas
           ref={chartRef}
           role="img"
           aria-label={`Gráfico de evolução de ${mode} nos longões`}
         />
       </div>
-      <div className="mt-3 flex flex-wrap gap-4 text-xs text-gray-400">
+      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-white/35">
         {mode === "pace" && (
           <>
             <span className="flex items-center gap-1">
