@@ -12,8 +12,8 @@ type WeeklyItem = {
   doneKm?: number;
   actualKm?: number;
   stravaKm?: number;
-  adherencePct?: number;
-  adherence?: number;
+  adherencePct?: number | null;
+  adherence?: number | null;
   isCurrent?: boolean;
   current?: boolean;
 };
