@@ -156,8 +156,8 @@ export default function MarathonProjection({ longRuns, weeksToRace, races = [] }
             backgroundColor: "rgba(249,115,22,0.08)",
             tension: 0.35,
             yAxisID: "yPace",
-            pointRadius: 4,
-            pointHoverRadius: 6,
+            pointRadius: 3,
+            pointHoverRadius: 5,
           },
           ...(effData.length >= 2
             ? [{
@@ -167,8 +167,8 @@ export default function MarathonProjection({ longRuns, weeksToRace, races = [] }
                 backgroundColor: "rgba(29,158,117,0.08)",
                 tension: 0.35,
                 yAxisID: "yEff",
-                pointRadius: 4,
-                pointHoverRadius: 6,
+                pointRadius: 3,
+                pointHoverRadius: 5,
               }]
             : []),
           ...(races.length > 0
@@ -177,8 +177,8 @@ export default function MarathonProjection({ longRuns, weeksToRace, races = [] }
                 data: raceDataOnAxis,
                 borderColor: "transparent",
                 backgroundColor: "transparent",
-                pointRadius: raceDataOnAxis.map((v) => v !== null ? 8 : 0),
-                pointHoverRadius: raceDataOnAxis.map((v) => v !== null ? 10 : 0),
+                pointRadius: raceDataOnAxis.map((v) => v !== null ? 6 : 0),
+                pointHoverRadius: raceDataOnAxis.map((v) => v !== null ? 8 : 0),
                 pointBackgroundColor: "#8b5cf6",
                 pointBorderColor: "#151515",
                 pointBorderWidth: 2,
@@ -194,7 +194,7 @@ export default function MarathonProjection({ longRuns, weeksToRace, races = [] }
         responsive: true,
         interaction: { mode: "index", intersect: false },
         plugins: {
-          legend: { labels: { color: textColor, font: { size: 12 }, boxWidth: 12, padding: 12 } },
+          legend: { labels: { color: textColor, font: { size: 10 }, boxWidth: 10, padding: 10 } },
           tooltip: {
             callbacks: {
               label: (ctx) => {
@@ -214,17 +214,17 @@ export default function MarathonProjection({ longRuns, weeksToRace, races = [] }
           },
         },
         scales: {
-          x: { ticks: { color: textColor, font: { size: 11 } }, grid: { color: gridColor } },
+          x: { ticks: { color: textColor, font: { size: 9 } }, grid: { color: gridColor } },
           yPace: {
             type: "linear", position: "left", reverse: true,
             ticks: {
-              color: "#f97316", font: { size: 11 },
+              color: "#f97316", font: { size: 9 },
               callback: (v) => { const n = v as number, m = Math.floor(n / 60), s = n % 60; return `${m}:${s.toString().padStart(2, "0")}`; },
             },
             grid: { color: gridColor },
           },
           ...(effData.length >= 2
-            ? { yEff: { type: "linear" as const, position: "right" as const, ticks: { color: "#1D9E75", font: { size: 11 } }, grid: { drawOnChartArea: false } } }
+            ? { yEff: { type: "linear" as const, position: "right" as const, ticks: { color: "#1D9E75", font: { size: 9 } }, grid: { drawOnChartArea: false } } }
             : {}),
         },
       },
@@ -240,94 +240,94 @@ export default function MarathonProjection({ longRuns, weeksToRace, races = [] }
   if (longRuns.length === 0) return null;
 
   return (
-    <div className="rounded-[22px] border border-white/10 bg-[#151515] p-5 shadow-[0_18px_60px_rgba(0,0,0,.22)]">
-      <h3 className="text-lg font-semibold text-white">
+    <div className="rounded-[22px] border border-white/10 bg-[#151515] p-4 shadow-[0_18px_60px_rgba(0,0,0,.20)]">
+      <h3 className="text-base font-semibold text-white">
         Calculadora de projeção — maratona
       </h3>
-      <p className="mt-1 text-xs leading-relaxed text-white/50">
+      <p className="mt-1 text-[12px] leading-relaxed text-white/45">
         Regressão linear sobre os longões para estimar o tempo em Buenos Aires.
       </p>
 
       {/* Gráfico */}
-      <div className="mt-4">
-        <canvas ref={canvasRef} height={160} />
+      <div className="mt-3">
+        <canvas ref={canvasRef} height={145} />
       </div>
 
       {/* Cards de tendência */}
-      <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-5">
-        <div className="rounded-2xl border border-white/10 bg-white/[.035] p-3">
+      <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-5">
+        <div className="rounded-2xl border border-white/10 bg-white/[.032] p-3">
           <p className="text-[11px] text-white/45">Melhora de pace/mês</p>
-          <p className="mt-1 text-sm font-bold text-white">
+          <p className="mt-1 text-[13px] font-semibold text-white">
             {pacePerMonth < 0 ? "−" : "+"}{Math.abs(pacePerMonth).toFixed(1)}s/km
           </p>
-          <p className="text-[11px] text-white/35">{pacePerMonth < 0 ? "melhorando" : "piora no período"}</p>
+          <p className="text-[10px] text-white/34">{pacePerMonth < 0 ? "melhorando" : "piora no período"}</p>
         </div>
 
         {effPerMonth !== null && (
-          <div className="rounded-2xl border border-white/10 bg-white/[.035] p-4">
-            <p className="text-xs text-white/45">Eficiência/mês</p>
-            <p className="mt-1 text-sm font-bold text-white">
+          <div className="rounded-2xl border border-white/10 bg-white/[.032] p-3">
+            <p className="text-[11px] text-white/42">Eficiência/mês</p>
+            <p className="mt-1 text-[13px] font-semibold text-white">
               {effPerMonth > 0 ? "+" : ""}{effPerMonth.toFixed(2)}
             </p>
-            <p className="text-[11px] text-white/35">{effPerMonth > 0 ? "crescendo" : "estabilizando"}</p>
+            <p className="text-[10px] text-white/34">{effPerMonth > 0 ? "crescendo" : "estabilizando"}</p>
           </div>
         )}
 
-        <div className="rounded-2xl border border-white/10 bg-white/[.035] p-3">
+        <div className="rounded-2xl border border-white/10 bg-white/[.032] p-3">
           <p className="text-[11px] text-white/45">Maior longão</p>
-          <p className="mt-1 text-sm font-bold text-white">
+          <p className="mt-1 text-[13px] font-semibold text-white">
             {Math.max(...longRuns.map((l) => l.km)).toFixed(1)} km
           </p>
-          <p className="text-[11px] text-white/35">
+          <p className="text-[10px] text-white/34">
             {formatDateLabel(longRuns.reduce((a, b) => (a.km >= b.km ? a : b)).date)}
           </p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/[.035] p-3">
+        <div className="rounded-2xl border border-white/10 bg-white/[.032] p-3">
           <p className="text-[11px] text-white/45">FC média longões</p>
-          <p className="mt-1 text-sm font-bold text-white">
+          <p className="mt-1 text-[13px] font-semibold text-white">
             {longRuns.filter((l) => l.fc).length > 0
               ? Math.round(longRuns.filter((l) => l.fc).reduce((a, b) => a + (b.fc ?? 0), 0) / longRuns.filter((l) => l.fc).length) + " bpm"
               : "—"}
           </p>
-          <p className="text-[11px] text-white/35">média de {longRuns.length} longões</p>
+          <p className="text-[10px] text-white/34">média de {longRuns.length} longões</p>
         </div>
       </div>
 
       {/* Sliders */}
-      <div className="mt-4 space-y-3">
+      <div className="mt-3 space-y-2.5">
         <div className="flex items-center gap-3">
-          <label className="min-w-[130px] text-xs text-white/55">Semanas até a prova</label>
+          <label className="min-w-[120px] text-[11px] text-white/48">Semanas até a prova</label>
           <input type="range" min={1} max={24} step={1} value={weeks} onChange={(e) => setWeeks(Number(e.target.value))} className="flex-1" />
-          <span className="min-w-[52px] text-right text-xs font-medium text-white">{weeks} sem</span>
+          <span className="min-w-[48px] text-right text-[11px] font-medium text-white/85">{weeks} sem</span>
         </div>
         <div className="flex items-center gap-3">
-          <label className="min-w-[130px] text-xs text-white/55">Fator de pacing</label>
+          <label className="min-w-[120px] text-[11px] text-white/48">Fator de pacing</label>
           <input type="range" min={1.05} max={1.15} step={0.01} value={pacingFactor} onChange={(e) => setPacingFactor(Number(e.target.value))} className="flex-1" />
-          <span className="min-w-[52px] text-right text-xs font-medium text-white">+{Math.round((pacingFactor - 1) * 100)}%</span>
+          <span className="min-w-[48px] text-right text-[11px] font-medium text-white/85">+{Math.round((pacingFactor - 1) * 100)}%</span>
         </div>
-        <p className="ml-[130px] text-[11px] text-white/35">
+        <p className="ml-[130px] text-[10px] text-white/34">
           +7–12% é o delta típico entre pace de longão de treino e pace real em maratona completa
         </p>
       </div>
 
       {/* Resultado */}
-      <div className="mt-4 rounded-2xl border border-orange-400/25 bg-orange-500/10 p-4">
-        <p className="text-xs font-medium text-orange-300">Tempo projetado na maratona</p>
-        <p className="mt-1 text-2xl font-bold tracking-tight text-orange-200">{totalTimeStr(totalSec)}</p>
-        <p className="mt-2 text-xs text-orange-300/80">
+      <div className="mt-3 rounded-2xl border border-orange-400/22 bg-orange-500/[.085] p-3.5">
+        <p className="text-[11px] font-medium text-orange-300">Tempo projetado na maratona</p>
+        <p className="mt-1 text-xl font-semibold tracking-tight text-orange-200">{totalTimeStr(totalSec)}</p>
+        <p className="mt-1.5 text-[11px] text-orange-300/75">
           Pace no treino: {secToStr(projPace)}/km → em prova: {secToStr(racePace)}/km
           {projEff !== null && <span className="ml-2 opacity-70">· eficiência projetada: {projEff.toFixed(1)}</span>}
         </p>
 
         {/* Badges de metas */}
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
           {GOALS.map((g) => {
             const ok      = totalSec <= g.totalSec;
             const diffSec = Math.abs(totalSec - g.totalSec);
             const diffStr = secToStr(diffSec).replace(":", "min ") + "s";
             return (
-              <span key={g.label} className={`rounded-full px-3 py-1 text-xs font-medium ${ok ? "bg-emerald-400/10 text-emerald-300 border border-emerald-400/20" : "bg-red-400/10 text-red-300 border border-red-400/20"}`}>
+              <span key={g.label} className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${ok ? "bg-emerald-400/10 text-emerald-300 border border-emerald-400/20" : "bg-red-400/10 text-red-300 border border-red-400/20"}`}>
                 {ok ? `${g.label} ✓` : `${g.label} —`}
                 <span className="ml-1 opacity-70">{ok ? `(+${diffStr})` : `(−${diffStr})`}</span>
               </span>
@@ -337,18 +337,18 @@ export default function MarathonProjection({ longRuns, weeksToRace, races = [] }
       </div>
 
       {/* Metas de referência */}
-      <div className="mt-4">
-        <p className="mb-3 text-xs font-medium text-white/50">Pace necessário para cada meta</p>
+      <div className="mt-3">
+        <p className="mb-2.5 text-[11px] font-medium text-white/45">Pace necessário para cada meta</p>
         <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
           {GOALS.map((g) => {
             const needPace = g.totalSec / DIST_MARATHON;
             const ok       = totalSec <= g.totalSec;
             const diffSec  = Math.abs(totalSec - g.totalSec);
             return (
-              <div key={g.label} className={`rounded-2xl p-2 ${ok ? "border border-emerald-400/20 bg-emerald-400/10" : "border border-white/10 bg-white/[.035]"}`}>
-                <p className="text-xs text-white/45">{g.label}</p>
-                <p className="mt-1 text-sm font-bold text-white">{secToStr(needPace)}/km</p>
-                <p className={`mt-1 text-xs ${ok ? "text-emerald-300" : "text-red-300"}`}>
+              <div key={g.label} className={`rounded-2xl p-2.5 ${ok ? "border border-emerald-400/20 bg-emerald-400/10" : "border border-white/10 bg-white/[.035]"}`}>
+                <p className="text-[11px] text-white/42">{g.label}</p>
+                <p className="mt-1 text-[13px] font-semibold text-white">{secToStr(needPace)}/km</p>
+                <p className={`mt-1 text-[10px] ${ok ? "text-emerald-300" : "text-red-300"}`}>
                   {ok
                     ? `${secToStr(diffSec).replace(":", "min ")}s de sobra`
                     : `faltam ~${secToStr(diffSec).replace(":", "min ")}s`}

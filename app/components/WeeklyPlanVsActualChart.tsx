@@ -101,11 +101,11 @@ export default function WeeklyPlanVsActualChart({ weeks, title }: Props) {
           },
           scales: {
             x: {
-              ticks: { color: tickColor, font: { size: 10 }, maxRotation: 45, autoSkip: false },
+              ticks: { color: tickColor, font: { size: 9 }, maxRotation: 35, autoSkip: false },
               grid: { color: gridColor },
             },
             y: {
-              ticks: { color: tickColor, font: { size: 10 }, callback: (v: unknown) => `${v} km` },
+              ticks: { color: tickColor, font: { size: 9 }, callback: (v: unknown) => `${v} km` },
               grid: { color: gridColor },
             },
             yPct: {
@@ -114,7 +114,7 @@ export default function WeeklyPlanVsActualChart({ weeks, title }: Props) {
               max: 130,
               ticks: {
                 color: "#6366f1",
-                font: { size: 10 },
+                font: { size: 9 },
                 callback: (v: unknown) => `${v}%`,
               },
               grid: { display: false },
@@ -142,22 +142,22 @@ export default function WeeklyPlanVsActualChart({ weeks, title }: Props) {
   const weeksOnTarget = weeks.filter((w) => w.planned > 0 && w.actual / w.planned >= 0.9).length;
 
   return (
-    <div className="rounded-[22px] border border-white/10 bg-[#151515] p-6 shadow-[0_18px_60px_rgba(0,0,0,.22)]">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+    <div className="rounded-[22px] border border-white/10 bg-[#151515] p-5 shadow-[0_18px_60px_rgba(0,0,0,.20)]">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold text-white">
+          <h2 className="text-base font-semibold text-white">
             {title ?? "Planejado vs. executado"}
           </h2>
-          <p className="mt-1 text-sm text-white/50">SisRUN x Strava por semana</p>
+          <p className="mt-1 text-[12px] text-white/45">SisRUN x Strava por semana</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <span className="rounded-full border border-orange-400/20 bg-orange-400/10 px-3 py-1 text-xs font-semibold text-orange-300">
+          <span className="rounded-full border border-orange-400/20 bg-orange-400/10 px-2.5 py-1 text-[10px] font-semibold text-orange-300">
             {totalActual.toFixed(0)} km feitos
           </span>
-          <span className="rounded-full border border-white/10 bg-white/[.04] px-3 py-1 text-xs font-semibold text-white/60">
+          <span className="rounded-full border border-white/10 bg-white/[.04] px-2.5 py-1 text-[10px] font-semibold text-white/60">
             {totalPlanned.toFixed(0)} km planejados
           </span>
-          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+          <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
             avgAdherence >= 90 ? "border border-emerald-400/20 bg-emerald-400/10 text-emerald-300" :
             avgAdherence >= 70 ? "border border-amber-400/20 bg-amber-400/10 text-amber-300" :
             "border border-red-400/20 bg-red-400/10 text-red-300"
@@ -167,7 +167,7 @@ export default function WeeklyPlanVsActualChart({ weeks, title }: Props) {
         </div>
       </div>
 
-      <div className="relative h-64">
+      <div className="relative h-60">
         <canvas
           ref={chartRef}
           role="img"
@@ -175,7 +175,7 @@ export default function WeeklyPlanVsActualChart({ weeks, title }: Props) {
         />
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-4 text-xs text-white/35">
+      <div className="mt-2.5 flex flex-wrap gap-3 text-[10px] text-white/32">
         <span className="flex items-center gap-1">
           <span className="inline-block h-2.5 w-2.5 rounded-sm bg-orange-400" />
           Executado (≥90% da meta)
@@ -199,21 +199,21 @@ export default function WeeklyPlanVsActualChart({ weeks, title }: Props) {
       </div>
 
       {weeks.length > 0 && (
-        <div className="mt-4 rounded-2xl border border-white/10 bg-white/[.035] p-4">
-          <div className="grid grid-cols-3 gap-4 text-center text-sm">
+        <div className="mt-3 rounded-2xl border border-white/10 bg-white/[.03] p-3">
+          <div className="grid grid-cols-3 gap-3 text-center text-[12px]">
             <div>
-              <p className="text-white/35">Semanas no alvo</p>
-              <p className="mt-1 font-bold text-white">{weeksOnTarget}/{weeks.filter(w => w.planned > 0).length}</p>
+              <p className="text-white/32">Semanas no alvo</p>
+              <p className="mt-1 font-semibold text-white/90">{weeksOnTarget}/{weeks.filter(w => w.planned > 0).length}</p>
             </div>
             <div>
-              <p className="text-white/35">Melhor semana</p>
-              <p className="mt-1 font-bold text-white">
+              <p className="text-white/32">Melhor semana</p>
+              <p className="mt-1 font-semibold text-white/90">
                 {Math.max(...weeks.map(w => w.actual)).toFixed(1)} km
               </p>
             </div>
             <div>
-              <p className="text-white/35">Média semanal</p>
-              <p className="mt-1 font-bold text-white">
+              <p className="text-white/32">Média semanal</p>
+              <p className="mt-1 font-semibold text-white/90">
                 {(totalActual / Math.max(weeks.length, 1)).toFixed(1)} km
               </p>
             </div>

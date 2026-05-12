@@ -441,20 +441,20 @@ function ProjectionCard({
 }) {
   return (
     <div
-      className={`rounded-2xl border p-4 ${highlight ? "border-orange-300/25 bg-[rgba(245,166,35,0.1)]" : "border-white/10 bg-white/[0.035]"}`}
+      className={`rounded-[18px] border p-3 ${highlight ? "border-orange-300/25 bg-[rgba(245,166,35,0.09)]" : "border-white/10 bg-white/[0.03]"}`}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+        <p className="text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--text-muted)" }}>
           {title}
         </p>
         {badge && (
-          <span className="shrink-0 rounded-full bg-[rgba(59,130,246,0.15)] px-2 py-0.5 text-xs font-medium text-[#93c5fd]">
+          <span className="shrink-0 rounded-full bg-[rgba(59,130,246,0.15)] px-2 py-0.5 text-[10px] font-medium text-[#93c5fd]">
             {badge}
           </span>
         )}
       </div>
-      <p className="mt-2 text-xl font-bold leading-tight text-white/80">{value}</p>
-      <p className="mt-1 text-xs leading-snug text-white/50">{caption}</p>
+      <p className="mt-1.5 text-lg font-semibold leading-tight text-white/85">{value}</p>
+      <p className="mt-1 text-[11px] leading-snug text-white/45">{caption}</p>
     </div>
   );
 }
@@ -473,7 +473,7 @@ function HrZoneBadge({
   return (
     <div className="flex flex-col items-end gap-1">
       <span
-        className="rounded-full px-2 py-0.5 text-xs font-medium text-white"
+        className="rounded-full px-2 py-0.5 text-[10px] font-medium text-white"
         style={{ backgroundColor: zone?.color ?? "#888" }}
       >
         {zone?.name ?? "—"}
@@ -702,11 +702,11 @@ export default async function BuenosAiresPage() {
         .ba-hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 2rem; align-items: stretch; }
         .ba-eyebrow { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: #f5a623; }
         .ba-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 5.4vw, 4.85rem); line-height: .94; letter-spacing: .018em; color: #fff; }
-        .ba-card { background: linear-gradient(180deg, rgba(255,255,255,.052), rgba(255,255,255,.026)); border: 1px solid rgba(255,255,255,.09); border-radius: 22px; box-shadow: 0 18px 60px rgba(0,0,0,.22); }
-        .ba-card-soft { background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.075); border-radius: 18px; }
-        .ba-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.38); }
+        .ba-card { background: linear-gradient(180deg, rgba(255,255,255,.048), rgba(255,255,255,.022)); border: 1px solid rgba(255,255,255,.085); border-radius: 22px; box-shadow: 0 18px 60px rgba(0,0,0,.20); }
+        .ba-card-soft { background: rgba(255,255,255,.032); border: 1px solid rgba(255,255,255,.07); border-radius: 18px; }
+        .ba-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.34); }
         .ba-value { font-family: 'Bebas Neue', sans-serif; letter-spacing: .035em; color: #fff; line-height: .95; }
-        .ba-muted { color: rgba(255,255,255,.56); }
+        .ba-muted { color: rgba(255,255,255,.50); font-size: 13px; }
         .ba-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: .9rem; }
         .ba-week { display: grid; grid-template-columns: .78fr 1.22fr; gap: 1rem; }
         .ba-two { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
@@ -774,7 +774,7 @@ export default async function BuenosAiresPage() {
             </div>
           </div>
 
-          <div className="ba-card" style={{ padding: "1.35rem" }}>
+          <div className="ba-card" style={{ padding: "1.2rem" }}>
             <div
               style={{
                 display: "flex",
@@ -817,7 +817,7 @@ export default async function BuenosAiresPage() {
                 marginTop: "1rem",
               }}
             >
-              <div className="ba-card-soft" style={{ padding: "1rem" }}>
+              <div className="ba-card-soft" style={{ padding: ".95rem" }}>
                 <p className="ba-label">Pace-alvo</p>
                 <p className="ba-value" style={{ fontSize: 32, marginTop: 8 }}>
                   {targetPaceLabel.replace("/km", "")}
@@ -826,7 +826,7 @@ export default async function BuenosAiresPage() {
                   /km
                 </p>
               </div>
-              <div className="ba-card-soft" style={{ padding: "1rem" }}>
+              <div className="ba-card-soft" style={{ padding: ".95rem" }}>
                 <p className="ba-label">Projetado</p>
                 <p className="ba-value" style={{ fontSize: 32, marginTop: 8 }}>
                   {formatDurationShort(targetPredictionSeconds)}
@@ -835,7 +835,7 @@ export default async function BuenosAiresPage() {
                   tempo-alvo
                 </p>
               </div>
-              <div className="ba-card-soft" style={{ padding: "1rem" }}>
+              <div className="ba-card-soft" style={{ padding: ".95rem" }}>
                 <p className="ba-label">Fase</p>
                 <p className="ba-value" style={{ fontSize: 28, marginTop: 10 }}>
                   {cyclePhase.name}
@@ -934,7 +934,7 @@ export default async function BuenosAiresPage() {
               </p>
             </div>
           </div>
-          <div className="ba-card-soft" style={{ padding: "1rem" }}>
+          <div className="ba-card-soft" style={{ padding: ".95rem" }}>
             <p className="ba-label">Leitura do ciclo</p>
             <p
               style={{
@@ -949,14 +949,14 @@ export default async function BuenosAiresPage() {
         </section>
 
         <section className="ba-week" style={{ marginBottom: "1rem" }}>
-          <div className="ba-card" style={{ padding: "1.35rem" }}>
+          <div className="ba-card" style={{ padding: "1.2rem" }}>
             <p className="ba-label">Hoje</p>
             <h2
               style={{
                 color: "#fff",
-                fontSize: 24,
-                fontWeight: 800,
-                marginTop: 10,
+                fontSize: 20,
+                fontWeight: 700,
+                marginTop: 8,
               }}
             >
               Treino de hoje
@@ -1004,7 +1004,7 @@ export default async function BuenosAiresPage() {
             </span>
           </div>
 
-          <div className="ba-card" style={{ padding: "1.35rem" }}>
+          <div className="ba-card" style={{ padding: "1.2rem" }}>
             <div
               style={{
                 display: "flex",
@@ -1092,7 +1092,7 @@ export default async function BuenosAiresPage() {
 
         {vdot && trainingPaces && (
           <section className="ba-two" style={{ marginBottom: "1rem" }}>
-            <div className="ba-card" style={{ padding: "1.35rem" }}>
+            <div className="ba-card" style={{ padding: "1.2rem" }}>
               <div
                 style={{
                   display: "flex",
@@ -1182,13 +1182,13 @@ export default async function BuenosAiresPage() {
               </div>
             </div>
 
-            <div className="ba-card" style={{ padding: "1.35rem" }}>
+            <div className="ba-card" style={{ padding: "1.2rem" }}>
               <p className="ba-label">Referência Daniels</p>
               <h2
                 style={{
                   color: "#fff",
-                  fontSize: 24,
-                  fontWeight: 800,
+                  fontSize: 20,
+                  fontWeight: 700,
                   marginTop: 10,
                 }}
               >
@@ -1234,14 +1234,14 @@ export default async function BuenosAiresPage() {
         )}
 
         <section className="ba-two" style={{ marginBottom: "1rem" }}>
-          <div className="ba-card" style={{ padding: "1.35rem" }}>
+          <div className="ba-card" style={{ padding: "1.2rem" }}>
             <p className="ba-label">Projeções</p>
             <h2
               style={{
                 color: "#fff",
-                fontSize: 24,
-                fontWeight: 800,
-                marginTop: 10,
+                fontSize: 20,
+                fontWeight: 700,
+                marginTop: 8,
               }}
             >
               Maratona
@@ -1250,8 +1250,8 @@ export default async function BuenosAiresPage() {
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
-                gap: ".8rem",
-                marginTop: "1.1rem",
+                gap: ".7rem",
+                marginTop: ".95rem",
               }}
             >
               <ProjectionCard
@@ -1303,20 +1303,20 @@ export default async function BuenosAiresPage() {
             </div>
           </div>
 
-          <div className="ba-card" style={{ padding: "1.35rem" }}>
+          <div className="ba-card" style={{ padding: "1.2rem" }}>
             <p className="ba-label">Longões recentes</p>
             <h2
               style={{
                 color: "#fff",
-                fontSize: 24,
-                fontWeight: 800,
-                marginTop: 10,
+                fontSize: 20,
+                fontWeight: 700,
+                marginTop: 8,
               }}
             >
               Especificidade
             </h2>
             <div
-              style={{ display: "grid", gap: ".75rem", marginTop: "1.1rem" }}
+              style={{ display: "grid", gap: ".65rem", marginTop: ".95rem" }}
             >
               {recentLongRuns.length > 0 ? (
                 recentLongRuns.slice(0, 4).map((run) => {
@@ -1326,7 +1326,7 @@ export default async function BuenosAiresPage() {
                     <div
                       key={run.id}
                       style={{
-                        padding: ".9rem",
+                        padding: ".8rem",
                         borderRadius: 16,
                         background: "rgba(255,255,255,.04)",
                         border: "1px solid rgba(255,255,255,.06)",
@@ -1340,17 +1340,17 @@ export default async function BuenosAiresPage() {
                         }}
                       >
                         <div>
-                          <p style={{ color: "#fff", fontWeight: 800 }}>
+                          <p style={{ color: "#fff", fontWeight: 650, fontSize: 14 }}>
                             {run.name}
                           </p>
                           <p
                             className="ba-muted"
-                            style={{ fontSize: 13, marginTop: 3 }}
+                            style={{ fontSize: 12, marginTop: 3 }}
                           >
                             {formatDate(run.start_date_local)}
                           </p>
                         </div>
-                        <p style={{ color: "#f5a623", fontWeight: 900 }}>
+                        <p style={{ color: "#f5a623", fontWeight: 750, fontSize: 13 }}>
                           {km.toFixed(1)} km
                         </p>
                       </div>
@@ -1414,42 +1414,42 @@ export default async function BuenosAiresPage() {
           </section>
         )}
 
-        <section className="ba-card" style={{ padding: "1.35rem" }}>
+        <section className="ba-card" style={{ padding: "1.2rem" }}>
           <p className="ba-label">Resumo estratégico</p>
           <div
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(3, 1fr)",
-              gap: "1rem",
-              marginTop: "1rem",
+              gap: ".85rem",
+              marginTop: ".9rem",
             }}
           >
-            <div className="ba-card-soft" style={{ padding: "1rem" }}>
-              <p style={{ color: "#fff", fontWeight: 800 }}>Momento</p>
+            <div className="ba-card-soft" style={{ padding: ".95rem" }}>
+              <p style={{ color: "#fff", fontWeight: 650, fontSize: 14 }}>Momento</p>
               <p
                 className="ba-muted"
-                style={{ marginTop: 8, lineHeight: 1.55 }}
+                style={{ marginTop: 7, lineHeight: 1.45, fontSize: 13 }}
               >
                 Ciclo em {cyclePhase.name}, com semáforo{" "}
                 {readiness.label.toLowerCase()} e alvo de {targetPaceLabel}.
               </p>
             </div>
-            <div className="ba-card-soft" style={{ padding: "1rem" }}>
-              <p style={{ color: "#fff", fontWeight: 800 }}>Semana</p>
+            <div className="ba-card-soft" style={{ padding: ".95rem" }}>
+              <p style={{ color: "#fff", fontWeight: 650, fontSize: 14 }}>Semana</p>
               <p
                 className="ba-muted"
-                style={{ marginTop: 8, lineHeight: 1.55 }}
+                style={{ marginTop: 7, lineHeight: 1.45, fontSize: 13 }}
               >
                 {sisrunWeek
                   ? `${currentWeekKm.toFixed(1)} km executados de ${plannedWeekKm.toFixed(1)} km planejados.`
                   : "Sem SisRUN carregado para a semana."}
               </p>
             </div>
-            <div className="ba-card-soft" style={{ padding: "1rem" }}>
-              <p style={{ color: "#fff", fontWeight: 800 }}>Próximo foco</p>
+            <div className="ba-card-soft" style={{ padding: ".95rem" }}>
+              <p style={{ color: "#fff", fontWeight: 650, fontSize: 14 }}>Próximo foco</p>
               <p
                 className="ba-muted"
-                style={{ marginTop: 8, lineHeight: 1.55 }}
+                style={{ marginTop: 7, lineHeight: 1.45, fontSize: 13 }}
               >
                 Aumentar consistência, longões e especificidade antes dos blocos
                 mais fortes.
