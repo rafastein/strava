@@ -1,222 +1,324 @@
-type WeeklyComparisonItem = {
-  label: string;
-  plannedKm?: number | null;
-  actualKm?: number | null;
-  executedKm?: number | null;
-  completedKm?: number | null;
-  adherencePct?: number | null;
-  isCurrentWeek?: boolean | null;
-  current?: boolean | null;
+"use client";
+
+type WeeklyItem = {
+  label?: string;
+  weekLabel?: string;
+  week?: string;
+  range?: string;
+  plannedKm?: number;
+  planned?: number;
+  totalPlannedKm?: number;
+  executedKm?: number;
+  doneKm?: number;
+  actualKm?: number;
+  stravaKm?: number;
+  adherencePct?: number;
+  adherence?: number;
+  isCurrent?: boolean;
+  current?: boolean;
 };
 
 type Props = {
-  items: WeeklyComparisonItem[];
+  items: WeeklyItem[];
   title?: string;
   subtitle?: string;
   dark?: boolean;
 };
 
-function safeNumber(value: unknown) {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+function getNumber(...values: Array<number | undefined | null>) {
+  const value = values.find((v) => typeof v === "number" && !Number.isNaN(v));
+  return value ?? 0;
 }
 
-function resolvePlannedKm(item: WeeklyComparisonItem) {
-  return safeNumber(item.plannedKm);
-}
-
-function resolveActualKm(item: WeeklyComparisonItem) {
-  if (typeof item.actualKm === "number") return safeNumber(item.actualKm);
-  if (typeof item.executedKm === "number") return safeNumber(item.executedKm);
-  if (typeof item.completedKm === "number") return safeNumber(item.completedKm);
-  return 0;
-}
-
-function resolveAdherencePct(
-  item: WeeklyComparisonItem,
-  actualKm: number,
-  plannedKm: number
-) {
-  if (
-    typeof item.adherencePct === "number" &&
-    Number.isFinite(item.adherencePct)
-  ) {
-    return item.adherencePct;
-  }
-
-  if (plannedKm <= 0) return actualKm > 0 ? 100 : 0;
-  return (actualKm / plannedKm) * 100;
-}
-
-function getProgressPct(actualKm: number, plannedKm: number) {
-  if (plannedKm <= 0) return actualKm > 0 ? 100 : 0;
-  return Math.min((actualKm / plannedKm) * 100, 100);
-}
-
-function parseWeekLabel(label: string) {
-  const match = label.match(/^(\d{2})\/(\d{2})\s*[-–]\s*(\d{2})\/(\d{2})$/);
-
-  if (!match) return null;
-
-  const [, startDayStr, startMonthStr, endDayStr, endMonthStr] = match;
-
-  const startDay = Number(startDayStr);
-  const startMonth = Number(startMonthStr);
-  const endDay = Number(endDayStr);
-  const endMonth = Number(endMonthStr);
-
-  if (
-    !Number.isFinite(startDay) ||
-    !Number.isFinite(startMonth) ||
-    !Number.isFinite(endDay) ||
-    !Number.isFinite(endMonth)
-  ) {
-    return null;
-  }
-
-  return {
-    startDay,
-    startMonth,
-    endDay,
-    endMonth,
-  };
-}
-
-function isDateWithinWeekLabel(label: string, now = new Date()) {
-  const parsed = parseWeekLabel(label);
-  if (!parsed) return false;
-
-  const currentYear = now.getFullYear();
-
-  const start = new Date(
-    currentYear,
-    parsed.startMonth - 1,
-    parsed.startDay,
-    0,
-    0,
-    0,
-    0
-  );
-
-  let endYear = currentYear;
-
-  if (parsed.endMonth < parsed.startMonth) {
-    endYear += 1;
-  }
-
-  const end = new Date(
-    endYear,
-    parsed.endMonth - 1,
-    parsed.endDay,
-    23,
-    59,
-    59,
-    999
-  );
-
-  return now >= start && now <= end;
-}
-
-function isCurrent(item: WeeklyComparisonItem) {
-  if (item.isCurrentWeek || item.current) return true;
-  return isDateWithinWeekLabel(item.label);
+function getLabel(item: WeeklyItem) {
+  return item.label ?? item.weekLabel ?? item.week ?? item.range ?? "Semana";
 }
 
 export default function WeeklyComparisonChart({
   items,
   title = "Planejado x executado por semana",
-  subtitle,
-  dark = false,
+  subtitle = "Volume planejado no SisRUN comparado com o executado no Strava.",
 }: Props) {
   return (
-    <div style={{ background: dark ? "rgba(255,255,255,0.04)" : "#fff", border: dark ? "1px solid rgba(255,255,255,0.08)" : "none", borderRadius: 16, padding: "1.25rem" }}>
-      <h2 style={{ fontSize: 16, fontWeight: 650, color: dark ? "#fff" : "#111", marginBottom: 4 }}>{title}</h2>
+    <section
+      style={{
+        background:
+          "linear-gradient(180deg, rgba(22,22,24,0.96) 0%, rgba(14,14,16,0.98) 100%)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        borderRadius: 24,
+        padding: 28,
+        boxShadow: "0 18px 45px rgba(0,0,0,0.22)",
+      }}
+    >
+      <header style={{ marginBottom: 24 }}>
+        <h2
+          style={{
+            color: "#fff",
+            fontSize: 20,
+            lineHeight: 1.15,
+            fontWeight: 800,
+            margin: 0,
+          }}
+        >
+          {title}
+        </h2>
 
-      {subtitle ? <p style={{ fontSize: 11, color: dark ? "rgba(255,255,255,0.4)" : "#6b7280", marginTop: 2 }}>{subtitle}</p> : null}
+        <p
+          style={{
+            color: "rgba(255,255,255,0.48)",
+            fontSize: 12,
+            lineHeight: 1.5,
+            marginTop: 8,
+            marginBottom: 0,
+          }}
+        >
+          {subtitle}
+        </p>
 
-      <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 8.5, letterSpacing: "0.1em", textTransform: "uppercase", color: dark ? "rgba(255,255,255,0.25)" : "#9ca3af", marginTop: 8 }}>
-        Da semana mais recente para a mais antiga
-      </p>
+        <p
+          style={{
+            color: "rgba(255,255,255,0.28)",
+            fontFamily: "'DM Mono', monospace",
+            fontSize: 10,
+            letterSpacing: "0.16em",
+            textTransform: "uppercase",
+            marginTop: 16,
+            marginBottom: 0,
+          }}
+        >
+          Da semana mais recente para a mais antiga
+        </p>
+      </header>
 
-      <div className="mt-4 space-y-3">
-        {items.map((item) => {
-          const plannedKm = resolvePlannedKm(item);
-          const actualKm = resolveActualKm(item);
-          const adherencePct = resolveAdherencePct(item, actualKm, plannedKm);
-          const progressPct = getProgressPct(actualKm, plannedKm);
-          const currentWeek = Boolean(item.isCurrentWeek || isCurrent(item));
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 22,
+        }}
+      >
+        {items.map((item, index) => {
+          const plannedKm = getNumber(
+            item.plannedKm,
+            item.planned,
+            item.totalPlannedKm
+          );
+
+          const executedKm = getNumber(
+            item.executedKm,
+            item.doneKm,
+            item.actualKm,
+            item.stravaKm
+          );
+
+          const adherencePct =
+            item.adherencePct ??
+            item.adherence ??
+            (plannedKm > 0 ? (executedKm / plannedKm) * 100 : 0);
+
+          const progressPct =
+            plannedKm > 0 ? Math.min((executedKm / plannedKm) * 100, 100) : 0;
+
+          const isCurrent = Boolean(item.isCurrent ?? item.current);
+          const isDone = adherencePct >= 100;
+          const isPartial = adherencePct >= 70 && adherencePct < 100;
+
+          const barColor = isDone
+            ? "#22c55e"
+            : isPartial
+            ? "#f97316"
+            : "#ef4444";
 
           return (
-            <div
-              key={item.label}
-              style={{ borderRadius: 16, padding: currentWeek ? "1.15rem 1.2rem" : ".95rem 1rem", background: currentWeek ? "linear-gradient(180deg, rgba(245,166,35,0.12), rgba(245,166,35,0.055))" : dark ? "rgba(255,255,255,0.04)" : "#f9fafb", border: currentWeek ? "1px solid rgba(245,166,35,0.34)" : dark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e5e7eb", boxShadow: currentWeek ? "0 14px 40px rgba(0,0,0,.22)" : "none" }} className={`${
-                currentWeek
-                  ? "" : ""
-              }`}
+            <article
+              key={`${getLabel(item)}-${index}`}
+              style={{
+                borderRadius: 22,
+                padding: 22,
+                background: isCurrent
+                  ? "linear-gradient(180deg, rgba(245,166,35,0.14) 0%, rgba(245,166,35,0.055) 100%)"
+                  : "linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.025) 100%)",
+                border: isCurrent
+                  ? "1px solid rgba(245,166,35,0.34)"
+                  : "1px solid rgba(255,255,255,0.08)",
+                boxShadow: isCurrent
+                  ? "0 12px 34px rgba(245,166,35,0.08)"
+                  : "none",
+              }}
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-2">
-                  <p style={{ fontSize: 13, fontWeight: 600, color: dark ? "#fff" : "#111" }}>
-                    {item.label}
-                  </p>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr auto",
+                  gap: 18,
+                  alignItems: "flex-start",
+                  marginBottom: 22,
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      marginBottom: 8,
+                    }}
+                  >
+                    <h3
+                      style={{
+                        color: "#fff",
+                        fontSize: 16,
+                        lineHeight: 1.1,
+                        fontWeight: 800,
+                        margin: 0,
+                      }}
+                    >
+                      {getLabel(item)}
+                    </h3>
 
-                  {currentWeek ? (
-                    <span className="rounded-full border border-orange-400/25 bg-orange-400/15 px-2 py-0.5 text-[10px] font-bold text-orange-300">
-                      Atual
-                    </span>
-                  ) : null}
+                    {isCurrent && (
+                      <span
+                        style={{
+                          color: "#f5a623",
+                          background: "rgba(245,166,35,0.14)",
+                          border: "1px solid rgba(245,166,35,0.28)",
+                          borderRadius: 999,
+                          padding: "3px 8px",
+                          fontSize: 10,
+                          fontWeight: 800,
+                        }}
+                      >
+                        Atual
+                      </span>
+                    )}
+                  </div>
+
+                  <p
+                    style={{
+                      color: "rgba(255,255,255,0.48)",
+                      fontSize: 12,
+                      margin: 0,
+                    }}
+                  >
+                    Progresso real
+                  </p>
                 </div>
 
-                <p style={{ fontSize: 11, fontWeight: 500, color: dark ? "rgba(255,255,255,0.6)" : "#374151" }}>
-                  {actualKm.toFixed(1)} / {plannedKm.toFixed(1)} km
-                </p>
-              </div>
+                <div style={{ textAlign: "right" }}>
+                  <strong
+                    style={{
+                      color: "#fff",
+                      fontSize: 13,
+                      lineHeight: 1.2,
+                      display: "block",
+                    }}
+                  >
+                    {executedKm.toFixed(1)} / {plannedKm.toFixed(1)} km
+                  </strong>
 
-              <div className="mt-5">
-                <div style={{ marginBottom: 6, display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 11, color: dark ? "rgba(255,255,255,0.5)" : "#4b5563" }}>
-                  <span>Progresso real</span>
-                  <span>
-                    {actualKm.toFixed(1)} / {plannedKm.toFixed(1)} km
+                  <span
+                    style={{
+                      color: "rgba(255,255,255,0.42)",
+                      fontSize: 11,
+                      display: "block",
+                      marginTop: 6,
+                    }}
+                  >
+                    {Math.round(adherencePct)}% de aderência
                   </span>
                 </div>
+              </div>
 
-                <div style={{ height: currentWeek ? 7 : 6, overflow: "hidden", borderRadius: 999, background: dark ? "rgba(255,255,255,0.1)" : "#e5e7eb" }}>
+              <div style={{ marginBottom: 22 }}>
+                <div
+                  style={{
+                    height: 7,
+                    borderRadius: 999,
+                    background: "rgba(255,255,255,0.09)",
+                    overflow: "hidden",
+                  }}
+                >
                   <div
-                    className="h-full rounded-full bg-orange-500 transition-all"
-                    style={{ width: `${progressPct}%` }}
+                    style={{
+                      width: `${progressPct}%`,
+                      height: "100%",
+                      borderRadius: 999,
+                      background: barColor,
+                    }}
                   />
                 </div>
-
-                <div style={{ marginTop: 12, fontSize: 11, color: dark ? "rgba(255,255,255,0.4)" : "#4b5563" }}>
-                  {plannedKm > 0 ? (
-                    actualKm >= plannedKm ? (
-                      <p>
-                        Meta semanal cumprida. Excedente de{" "}
-                        {(actualKm - plannedKm).toFixed(1)} km.
-                      </p>
-                    ) : (
-                      <p>
-                        Faltam {(plannedKm - actualKm).toFixed(1)} km para cumprir
-                        o planejado da semana.
-                      </p>
-                    )
-                  ) : actualKm > 0 ? (
-                    <p>Semana sem planejamento definido, mas houve execução.</p>
-                  ) : (
-                    <p>Semana sem planejamento e sem execução registrada.</p>
-                  )}
-
-                  <p className="mt-2">
-                    Planejado: {plannedKm.toFixed(1)} km • Executado:{" "}
-                    {actualKm.toFixed(1)} km
-                  </p>
-
-                  <p className="mt-1">{adherencePct.toFixed(0)}% de aderência</p>
-                </div>
               </div>
-            </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                  gap: 14,
+                  marginBottom: 20,
+                }}
+              >
+                <MiniMetric label="Planejado" value={`${plannedKm.toFixed(1)} km`} />
+                <MiniMetric label="Executado" value={`${executedKm.toFixed(1)} km`} />
+                <MiniMetric label="Aderência" value={`${Math.round(adherencePct)}%`} />
+              </div>
+
+              <p
+                style={{
+                  color: "rgba(255,255,255,0.52)",
+                  fontSize: 12,
+                  lineHeight: 1.5,
+                  margin: 0,
+                }}
+              >
+                {isDone
+                  ? `Meta semanal cumprida. Excedente de ${(
+                      executedKm - plannedKm
+                    ).toFixed(1)} km.`
+                  : `Faltam ${Math.max(plannedKm - executedKm, 0).toFixed(
+                      1
+                    )} km para cumprir o planejado da semana.`}
+              </p>
+            </article>
           );
         })}
       </div>
+    </section>
+  );
+}
+
+function MiniMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      style={{
+        borderRadius: 14,
+        padding: "14px 16px",
+        background: "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.07)",
+      }}
+    >
+      <p
+        style={{
+          color: "rgba(255,255,255,0.34)",
+          fontFamily: "'DM Mono', monospace",
+          fontSize: 9,
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          margin: 0,
+          marginBottom: 8,
+        }}
+      >
+        {label}
+      </p>
+
+      <strong
+        style={{
+          color: "#fff",
+          fontSize: 13,
+          lineHeight: 1,
+        }}
+      >
+        {value}
+      </strong>
     </div>
   );
 }
