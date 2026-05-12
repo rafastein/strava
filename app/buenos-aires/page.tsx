@@ -426,10 +426,10 @@ export default async function BuenosAiresPage() {
       <div>
 
         {/* Header */}
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-sm font-medium text-orange-400">Road to Buenos Aires</p>
-            <h1 className="text-4xl font-black tracking-tight text-zinc-100 md:text-6xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-orange-400">Road to Buenos Aires</p>
+            <h1 className="mt-2 text-4xl font-black tracking-tight text-zinc-100 md:text-5xl">
               {athlete ? `${athlete.firstname} ${athlete.lastname}` : "Atleta"}
             </h1>
           </div>
@@ -439,42 +439,58 @@ export default async function BuenosAiresPage() {
         </div>
 
         {/* Hero */}
-        <section className="mb-8 overflow-hidden rounded-[32px] border border-orange-400/20 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.65),rgba(127,29,29,0.35)_42%,rgba(255,255,255,0.04)_100%)] p-6 text-white shadow-2xl shadow-orange-950/20 md:p-8">
-          <div className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]">
-            <div>
-              <p className="text-sm uppercase tracking-wide text-orange-100">Prova-alvo</p>
-              <h2 className="mt-2 text-4xl font-black tracking-tight md:text-6xl">{marathonGoal.raceName}</h2>
-              <p className="mt-4 max-w-2xl text-orange-50">Painel dedicado ao ciclo com foco em volume, longão, especificidade e prontidão para a maratona.</p>
-              <div className="mt-8 grid gap-3 md:grid-cols-3">
-                <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm col-span-full md:col-span-1">
-                  <p className="text-sm text-orange-100 mb-3">Contagem regressiva</p>
+        <section className="mb-6 grid gap-4 xl:grid-cols-[1.35fr_.65fr]">
+          <div className="premium-panel relative overflow-hidden p-6 md:p-7">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.32),transparent_38%),linear-gradient(135deg,rgba(249,115,22,0.16),transparent_55%)]" />
+            <div className="relative">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-orange-300">Prova-alvo</p>
+              <h2 className="mt-2 max-w-3xl text-4xl font-black leading-[0.98] tracking-tight text-white md:text-5xl">
+                {marathonGoal.raceName}
+              </h2>
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-300">
+                Painel dedicado ao ciclo com foco em volume, longão, especificidade e prontidão para a maratona.
+              </p>
+
+              <div className="mt-6 grid gap-3 md:grid-cols-3">
+                <div className="rounded-2xl border border-orange-400/20 bg-black/25 p-4">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-orange-200">Contagem</p>
                   <RaceCountdown targetDate="2026-09-20T06:00:00-03:00" raceName="Buenos Aires" />
                 </div>
-                <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm"><p className="text-sm text-orange-100">Pace-alvo</p><p className="mt-1 text-3xl font-bold">{targetPaceLabel}</p></div>
-                <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm"><p className="text-sm text-orange-100">Tempo projetado</p><p className="mt-1 text-3xl font-bold">{formatFullDuration(targetPredictionSeconds)}</p></div>
-              </div>
-            </div>
-            <div className="rounded-3xl p-6" style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.15)" }}>
-              <div className="flex items-center gap-3">
-                <span className={`h-3 w-3 rounded-full ${readiness.dot}`} />
-                <div>
-                  <p className={`font-semibold ${readiness.text}`}>{readiness.title}</p>
-                  <p className="text-sm" style={{ color: "var(--text-muted)" }}>{readiness.label}</p>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">Pace-alvo</p>
+                  <p className="mt-2 text-3xl font-black text-white">{targetPaceLabel}</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">Tempo projetado</p>
+                  <p className="mt-2 text-3xl font-black text-white">{formatFullDuration(targetPredictionSeconds)}</p>
                 </div>
               </div>
-              <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)" }}>
-                <p className={`font-medium ${readiness.text}`}>{readiness.description}</p>
+            </div>
+          </div>
+
+          <div className="premium-panel p-6 md:p-7">
+            <div className="flex items-start gap-3">
+              <span className={`mt-1 h-3 w-3 rounded-full ${readiness.dot}`} />
+              <div>
+                <p className={`text-lg font-bold ${readiness.text}`}>{readiness.title}</p>
+                <p className="mt-1 text-sm text-zinc-400">Semáforo atual: {readiness.label}</p>
               </div>
-              <div className="mt-4 rounded-2xl bg-white/[0.03] p-4">
-                <p className="text-sm" style={{ color: "var(--text-muted)" }}>Fase do ciclo</p>
-                <div className="mt-2"><span className={`rounded-full px-3 py-1 text-sm font-semibold ${cyclePhase.color}`}>{cyclePhase.name}</span></div>
-                <p className="mt-3 text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>{cyclePhase.description}</p>
+            </div>
+            <p className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm leading-6 text-zinc-300">
+              {readiness.description}
+            </p>
+            <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Fase do ciclo</p>
+              <div className="mt-3">
+                <span className={`rounded-full px-3 py-1 text-sm font-semibold ${cyclePhase.color}`}>{cyclePhase.name}</span>
               </div>
+              <p className="mt-3 text-sm leading-6 text-zinc-400">{cyclePhase.description}</p>
             </div>
           </div>
         </section>
 
         {/* Info cards */}
+
         <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <InfoCard title="Semana planejada (SisRUN)" value={sisrunWeek ? `${plannedWeekKm.toFixed(1)} km` : "-"} />
           <InfoCard title="Semana feita (Strava)"     value={`${currentWeekKm.toFixed(1)} km`} />

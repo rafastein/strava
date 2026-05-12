@@ -27,13 +27,11 @@ function calcTimeLeft(targetDate: string): TimeLeft {
 
 function Digit({ value, label }: { value: number; label: string }) {
   return (
-    <div className="flex flex-col items-center gap-1">
-      <div className="flex items-center justify-center rounded-2xl bg-white/20 px-3 py-2 min-w-[52px]">
-        <span className="text-2xl font-bold tabular-nums leading-none text-white">
-          {String(value).padStart(2, "0")}
-        </span>
-      </div>
-      <span className="text-xs font-medium uppercase tracking-wider text-orange-100">
+    <div className="min-w-[46px] rounded-xl border border-white/10 bg-white/[0.08] px-2.5 py-2 text-center">
+      <span className="block text-xl font-black tabular-nums leading-none text-white">
+        {String(value).padStart(2, "0")}
+      </span>
+      <span className="mt-1 block text-[9px] font-semibold uppercase tracking-wider text-orange-100/80">
         {label}
       </span>
     </div>
@@ -54,7 +52,7 @@ export default function RaceCountdown({ targetDate, raceName }: Props) {
 
   if (!mounted) {
     return (
-      <div className="flex gap-3">
+      <div className="grid grid-cols-4 gap-2">
         {["dias", "horas", "min", "seg"].map((l) => (
           <Digit key={l} value={0} label={l} />
         ))}
@@ -75,7 +73,7 @@ export default function RaceCountdown({ targetDate, raceName }: Props) {
   }
 
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="grid grid-cols-4 gap-2">
       <Digit value={timeLeft.days} label="dias" />
       <Digit value={timeLeft.hours} label="horas" />
       <Digit value={timeLeft.minutes} label="min" />
