@@ -1,6 +1,7 @@
 export const revalidate = 86400; // 24 horas
 
 import Link from "next/link";
+import Navbar from "../components/Navbar";
 import { getValidStravaAccessToken } from "../lib/strava-auth";
 import { getLongRunsFromActivities } from "../lib/strava-long-runs";
 import QualityWorkoutsChart, {
@@ -208,56 +209,46 @@ export default async function TreinosQualidadePage() {
   const mostCommon = Object.entries(countByType).sort((a, b) => b[1] - a[1])[0];
 
   return (
-    <main className="min-h-screen bg-gray-100 p-6 md:p-10">
-      <div className="mx-auto max-w-5xl">
+    <div className="page">
+      <Navbar />
+      <main className="ba-page">
 
         {/* Header */}
-        <div className="ba-section flex flex-wrap items-start justify-between gap-4">
+        <div className="ba-page-header" style={{ marginBottom: "2rem" }}>
           <div>
-            <p className="text-sm font-medium text-orange-600">Treinos</p>
-            <h1 className="text-3xl font-bold text-gray-900 md:text-4xl">
-              Treinos de qualidade
-            </h1>
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="ba-eyebrow">Treinos</p>
+            <h1 className="ba-title">Treinos de qualidade</h1>
+            <p className="ba-muted" style={{ marginTop: ".5rem" }}>
               Classificação automática por padrão de velocidade — intervalados, fartleks, progressivos e mais.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <RevalidateButton path="/treinos-qualidade" />
-            <Link
-              href="/"
-              className="rounded-full bg-white px-5 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-            >
-              ← Voltar ao dashboard
-            </Link>
+            <Link href="/" className="ba-back">← Voltar ao dashboard</Link>
           </div>
         </div>
 
-        {/* Summary */}
-        <section className="ba-section grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-          <div className="rounded-3xl bg-white p-6 shadow-sm">
-            <p className="text-sm text-gray-500">Treinos de qualidade</p>
-            <p className="mt-2 text-2xl font-bold text-orange-600">{totalQuality}</p>
-            <p className="mt-1 text-xs text-gray-400">desde jan/2026</p>
+        {/* Summary cards */}
+        <section className="ba-grid-4" style={{ marginBottom: "1rem" }}>
+          <div className="ba-card" style={{ padding: "1.2rem", textAlign: "center" }}>
+            <p className="ba-label">Treinos de qualidade</p>
+            <p className="ba-value" style={{ fontSize: "2rem", color: "#f5a623", marginTop: ".4rem" }}>{totalQuality}</p>
+            <p className="ba-muted" style={{ marginTop: ".3rem" }}>desde jan/2026</p>
           </div>
-          <div className="rounded-3xl bg-white p-6 shadow-sm">
-            <p className="text-sm text-gray-500">Tipo mais frequente</p>
-            <p className="mt-2 text-2xl font-bold text-gray-900">
-              {mostCommon?.[0] ?? "-"}
-            </p>
-            <p className="mt-1 text-xs text-gray-400">{mostCommon?.[1] ?? 0}x realizados</p>
+          <div className="ba-card" style={{ padding: "1.2rem", textAlign: "center" }}>
+            <p className="ba-label">Tipo mais frequente</p>
+            <p className="ba-value" style={{ fontSize: "1.6rem", marginTop: ".4rem" }}>{mostCommon?.[0] ?? "—"}</p>
+            <p className="ba-muted" style={{ marginTop: ".3rem" }}>{mostCommon?.[1] ?? 0}x realizados</p>
           </div>
-          <div className="rounded-3xl bg-white p-6 shadow-sm">
-            <p className="text-sm text-gray-500">FC máxima média</p>
-            <p className="mt-2 text-2xl font-bold text-red-500">
-              {avgFcMax ? `${avgFcMax} bpm` : "-"}
-            </p>
-            <p className="mt-1 text-xs text-gray-400">nos treinos de qualidade</p>
+          <div className="ba-card" style={{ padding: "1.2rem", textAlign: "center" }}>
+            <p className="ba-label">FC máxima média</p>
+            <p className="ba-value" style={{ fontSize: "2rem", color: "#ef4444", marginTop: ".4rem" }}>{avgFcMax ? `${avgFcMax} bpm` : "—"}</p>
+            <p className="ba-muted" style={{ marginTop: ".3rem" }}>nos treinos de qualidade</p>
           </div>
-          <div className="rounded-3xl bg-white p-6 shadow-sm">
-            <p className="text-sm text-gray-500">Corridas base</p>
-            <p className="mt-2 text-2xl font-bold text-gray-900">{baseWorkouts.length}</p>
-            <p className="mt-1 text-xs text-gray-400">sem padrão de qualidade detectado</p>
+          <div className="ba-card" style={{ padding: "1.2rem", textAlign: "center" }}>
+            <p className="ba-label">Corridas base</p>
+            <p className="ba-value" style={{ fontSize: "2rem", marginTop: ".4rem" }}>{baseWorkouts.length}</p>
+            <p className="ba-muted" style={{ marginTop: ".3rem" }}>sem padrão detectado</p>
           </div>
         </section>
 
@@ -265,13 +256,13 @@ export default async function TreinosQualidadePage() {
         {qualityWorkouts.length > 0 ? (
           <QualityWorkoutsChart workouts={qualityWorkouts} />
         ) : (
-          <div className="rounded-3xl bg-white p-8 text-center shadow-sm">
-            <p className="text-sm text-gray-500">
-              Nenhum treino de qualidade encontrado. Verifique a conexão com o Strava.
-            </p>
+          <div className="ba-card" style={{ padding: "2rem", textAlign: "center" }}>
+            <p className="ba-muted">Nenhum treino de qualidade encontrado. Verifique a conexão com o Strava.</p>
           </div>
         )}
-      </div>
-    </main>
+
+      </main>
+      <footer className="site-footer">STRAVA · RAFAEL CABRAL · 2026</footer>
+    </div>
   );
 }

@@ -337,41 +337,28 @@ export default function QualityWorkoutsChart({ workouts }: Props) {
   return (
     <div className="space-y-6">
       {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="ba-grid-3" style={{ gridTemplateColumns: "repeat(6,1fr)", gap: ".7rem", marginBottom: "1rem" }}>
         {Object.entries(TYPE_COLORS).map(([tipo, color]) => {
           const stats = typeStats[tipo];
           const count = counts[tipo] || 0;
+          const active = filter === tipo;
           return (
             <button
               key={tipo}
-              onClick={() => setFilter(filter === tipo ? "Todos" : tipo)}
-              className={`rounded-2xl p-3 text-left transition-all ${
-                filter === tipo ? "ring-2 shadow-sm" : "bg-white shadow-sm hover:shadow"
-              }`}
-              style={filter === tipo ? { outline: `2px solid ${color}`, background: color + "18" } : {}}
+              onClick={() => setFilter(active ? "Todos" : tipo)}
+              className="ba-card-soft"
+              style={{ padding: ".85rem 1rem", textAlign: "left", cursor: "pointer", outline: active ? `1.5px solid ${color}` : "none", background: active ? color + "18" : undefined, transition: "all .15s" }}
             >
-              <div className="flex items-center gap-1.5 mb-2">
-                <span className="inline-block h-2.5 w-2.5 rounded-full shrink-0" style={{ background: color }} />
-                <span className="text-xs font-medium text-gray-600">{tipo}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0 }} />
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "rgba(255,255,255,.35)" }}>{tipo}</span>
               </div>
-              <p className="text-2xl font-bold text-gray-900 mb-2">{count}</p>
+              <p style={{ fontFamily: "var(--font-display)", fontSize: "1.6rem", color: "#fff", lineHeight: 1 }}>{count}</p>
               {count > 0 && (
-                <div className="space-y-0.5 border-t border-gray-100 pt-2">
-                  {stats.avgDist !== null && (
-                    <p className="text-xs text-gray-400">
-                      dist <span className="font-medium text-gray-600">{stats.avgDist.toFixed(1)} km</span>
-                    </p>
-                  )}
-                  {stats.avgPace !== null && (
-                    <p className="text-xs text-gray-400">
-                      pace <span className="font-medium text-gray-600">{formatPace(stats.avgPace)}/km</span>
-                    </p>
-                  )}
-                  {stats.avgFc !== null && (
-                    <p className="text-xs text-gray-400">
-                      FC <span className="font-medium text-gray-600">{stats.avgFc} bpm</span>
-                    </p>
-                  )}
+                <div style={{ borderTop: "1px solid rgba(255,255,255,.07)", marginTop: 8, paddingTop: 8 }}>
+                  {stats.avgDist !== null && <p style={{ fontSize: 11, color: "rgba(255,255,255,.35)", marginBottom: 4 }}>dist <span style={{ color: "rgba(255,255,255,.65)" }}>{stats.avgDist.toFixed(1)} km</span></p>}
+                  {stats.avgPace !== null && <p style={{ fontSize: 11, color: "rgba(255,255,255,.35)", marginBottom: 4 }}>pace <span style={{ color: "rgba(255,255,255,.65)" }}>{formatPace(stats.avgPace)}/km</span></p>}
+                  {stats.avgFc !== null && <p style={{ fontSize: 11, color: "rgba(255,255,255,.35)" }}>FC <span style={{ color: "rgba(255,255,255,.65)" }}>{stats.avgFc} bpm</span></p>}
                 </div>
               )}
             </button>
@@ -380,15 +367,15 @@ export default function QualityWorkoutsChart({ workouts }: Props) {
       </div>
 
       {/* Charts row */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-3xl bg-white p-5 shadow-sm">
-          <p className="mb-3 text-sm font-semibold text-gray-900">Treinos por mês e tipo</p>
+      <div className="ba-grid-2">
+        <div className="ba-card" style={{ padding: "1.2rem" }}>
+          <p style={{ marginBottom: 12, fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Treinos por mês e tipo</p>
           <div className="relative h-48">
             <VolumeChart workouts={workouts} />
           </div>
         </div>
-        <div className="rounded-3xl bg-white p-5 shadow-sm">
-          <p className="mb-3 text-sm font-semibold text-gray-900">FC máxima por treino</p>
+        <div className="ba-card" style={{ padding: "1.2rem" }}>
+          <p style={{ marginBottom: 12, fontSize: 13, fontWeight: 600, color: "var(--text)" }}>FC máxima por treino</p>
           <div className="relative h-48">
             <FcTrendChart workouts={workouts} />
           </div>
@@ -396,15 +383,15 @@ export default function QualityWorkoutsChart({ workouts }: Props) {
       </div>
 
       {/* Filter tabs */}
-      <div className="flex flex-wrap gap-2">
+      <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", justifyContent: "center", margin: "1rem 0" }}>
         {ALL_TYPES.map((t) => (
           <button
             key={t}
             onClick={() => setFilter(t)}
             className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
               filter === t
-                ? "bg-gray-900 text-white"
-                : "bg-white text-gray-600 shadow-sm hover:bg-gray-50"
+                ? "ba-pill ba-pill-orange"
+                : "ba-pill ba-pill-dark"
             }`}
           >
             {t}
@@ -416,14 +403,14 @@ export default function QualityWorkoutsChart({ workouts }: Props) {
       </div>
 
       {/* Workout list */}
-      <div className="space-y-2">
+      <div style={{ display: "flex", flexDirection: "column", gap: ".6rem" }}>
         {sorted.map((w) => {
           const color = TYPE_COLORS[w.label] || "#6b7280";
           const isOpen = expanded === w.id;
           return (
-            <div key={w.id} className="rounded-2xl bg-white shadow-sm overflow-hidden">
+            <div key={w.id} className="ba-card-soft" style={{ overflow: "hidden" }}>
               <button
-                className="w-full text-left p-4 hover:bg-gray-50 transition-colors"
+                className="w-full text-left" style={{ padding: "1.1rem 1.25rem", background: "transparent", cursor: "pointer" }}
                 onClick={() => setExpanded(isOpen ? null : w.id)}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -436,7 +423,7 @@ export default function QualityWorkoutsChart({ workouts }: Props) {
                     </span>
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-semibold text-gray-900 text-sm">{w.name}</span>
+                        <span style={{ fontWeight: 600, color: "var(--text)", fontSize: 13 }}>{w.name}</span>
                         <span
                           className="rounded-full px-2 py-0.5 text-xs font-medium text-white"
                           style={{ background: color }}
@@ -444,16 +431,16 @@ export default function QualityWorkoutsChart({ workouts }: Props) {
                           {TYPE_LABELS[w.label] || w.label}
                         </span>
                         {w.confidence < 0.85 && (
-                          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-400">
+                          <span className="ba-pill ba-pill-dark" style={{ fontSize: 10, padding: "2px 8px" }}>
                             auto-detectado
                           </span>
                         )}
                       </div>
-                      <p className="mt-0.5 text-xs text-gray-500">{formatDate(w.date)}</p>
+                      <p style={{ marginTop: 2, fontSize: 11, color: "rgba(255,255,255,.4)" }}>{formatDate(w.date)}</p>
                     </div>
                   </div>
-                  <div className="flex shrink-0 flex-wrap gap-2 text-xs text-gray-500">
-                    <span className="font-mono font-medium text-gray-800">{w.distKm.toFixed(1)} km</span>
+                  <div style={{ display: "flex", flexShrink: 0, flexWrap: "wrap", gap: 6, fontSize: 11, color: "rgba(255,255,255,.4)" }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontWeight: 500, color: "var(--text)" }}>{w.distKm.toFixed(1)} km</span>
                     {w.fcAvg && <span>{w.fcAvg} bpm</span>}
                     {w.fcMax && (
                       <span className="font-medium" style={{ color }}>
@@ -466,8 +453,8 @@ export default function QualityWorkoutsChart({ workouts }: Props) {
               </button>
 
               {isOpen && (
-                <div className="border-t border-gray-100 p-4">
-                  <div className="mb-3 flex flex-wrap gap-3 text-xs text-gray-500">
+                <div style={{ borderTop: "1px solid rgba(255,255,255,.06)", padding: "1rem 1.15rem" }}>
+                  <div style={{ marginBottom: 12, display: "flex", flexWrap: "wrap", gap: 12, fontSize: 11, color: "rgba(255,255,255,.4)" }}>
                     <span>Elevação: {w.elev}m</span>
                     <span>Calorias: {w.cal} kcal</span>
                     {w.kmSplits.length > 0 && (
@@ -491,7 +478,7 @@ export default function QualityWorkoutsChart({ workouts }: Props) {
                       <SplitsMiniChart splits={w.kmSplits} label={w.label} />
                     </div>
                   ) : (
-                    <p className="text-xs text-gray-400">Splits km a km não disponíveis para este treino.</p>
+                    <p style={{ fontSize: 11, color: "rgba(255,255,255,.3)" }}>Splits km a km não disponíveis para este treino.</p>
                   )}
                 </div>
               )}
@@ -500,8 +487,8 @@ export default function QualityWorkoutsChart({ workouts }: Props) {
         })}
 
         {sorted.length === 0 && (
-          <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
-            <p className="text-sm text-gray-500">Nenhum treino do tipo "{filter}" encontrado.</p>
+          <div className="ba-card" style={{ padding: "2rem", textAlign: "center" }}>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,.4)" }}>Nenhum treino do tipo &ldquo;{filter}&rdquo; encontrado.</p>
           </div>
         )}
       </div>
