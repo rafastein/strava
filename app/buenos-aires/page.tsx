@@ -256,18 +256,18 @@ function buildProjectionLongRuns(runs: StravaActivity[], enriched: StravaActivit
 function InfoCard({ title, value }: { title: string; value: string }) {
   return (
     <div className="card">
-      <p className="text-sm" style={{ color: "var(--text-muted)" }}>{title}</p>
-      <h3 className="mt-2 text-3xl font-bold text-white">{value}</h3>
+      <p className="card__label">{title}</p>
+      <h3 className="card__value" style={{ fontSize: 26, marginTop: 6 }}>{value}</h3>
     </div>
   );
 }
 
 function ProjectionCard({ title, value, caption, highlight = false, badge }: { title: string; value: string; caption: string; highlight?: boolean; badge?: string }) {
   return (
-    <div className={`rounded-2xl p-4 ${highlight ? "bg-orange-50 ring-1 ring-orange-200" : "bg-white/[0.03]"}`}>
+    <div className="rounded-2xl p-4" style={{ background: highlight ? "rgba(245,166,35,0.1)" : "rgba(255,255,255,0.04)", border: highlight ? "1px solid rgba(245,166,35,0.3)" : "1px solid rgba(255,255,255,0.08)" }}>
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>{title}</p>
-        {badge && <span className="shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">{badge}</span>}
+        {badge && <span className="badge badge--blue shrink-0">{badge}</span>}
       </div>
       <p style={{ marginTop: 8, fontSize: 22, fontWeight: 700, color: "var(--text)" }}>{value}</p>
       <p style={{ marginTop: 4, fontSize: 12, color: "var(--text-muted)" }}>{caption}</p>
@@ -422,7 +422,7 @@ export default async function BuenosAiresPage() {
 
   return (
     <div className="page"><Navbar />
-    <main className="page__inner" style={{ maxWidth: 1400 }}>
+    <main style={{ maxWidth: 1200, margin: "0 auto", padding: "2rem 1.25rem 4rem" }}>
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div>
@@ -463,7 +463,7 @@ export default async function BuenosAiresPage() {
               <div className={`mt-4 rounded-2xl border p-4`} style={{ background: "rgba(255,255,255,0.08)", borderColor: "rgba(255,255,255,0.15)" }}>
                 <p style={{ fontWeight: 500, color: "var(--text)" }}>{readiness.description}</p>
               </div>
-              <div className="mt-4 rounded-2xl bg-white/[0.03] p-4">
+              <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                 <p className="text-sm" style={{ color: "var(--text-muted)" }}>Fase do ciclo</p>
                 <div className="mt-2"><span className={`rounded-full px-3 py-1 text-sm font-semibold ${cyclePhase.color}`}>{cyclePhase.name}</span></div>
                 <p className="mt-3 text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>{cyclePhase.description}</p>
@@ -473,7 +473,7 @@ export default async function BuenosAiresPage() {
         </section>
 
         {/* Info cards */}
-        <section className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section className="stat-grid stat-grid--4 mb-8">
           <InfoCard title="Semana planejada (SisRUN)" value={sisrunWeek ? `${plannedWeekKm.toFixed(1)} km` : "-"} />
           <InfoCard title="Semana feita (Strava)"     value={`${currentWeekKm.toFixed(1)} km`} />
           <InfoCard title="Aderência real"             value={sisrunWeek ? `${Math.min(weeklyAdherencePct, 100).toFixed(0)}%` : "-"} />
