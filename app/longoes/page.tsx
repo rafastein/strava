@@ -312,7 +312,7 @@ export default async function LongoesPage() {
         </section>
 
         <section style={{ marginBottom: "3.5rem" }}>
-          <p className="ba-eyebrow" style={{ marginBottom: ".75rem" }} style={{ marginBottom: "1.25rem" }}>Evolução</p>
+          <p className="ba-eyebrow" style={{ marginBottom: "1.25rem" }}>Evolução</p>
           <LongRunCharts longRuns={chartData} />
         </section>
 
