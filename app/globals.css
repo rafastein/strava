@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --bg:            #070708;
-  --bg-card:       rgba(255,255,255,0.055);
+  --bg:            #0d0d0d;
+  --bg-card:       rgba(255,255,255,0.04);
   --bg-card-hover: rgba(255,255,255,0.07);
-  --border:        rgba(255,255,255,0.10);
+  --border:        rgba(255,255,255,0.08);
   --border-accent: rgba(245,166,35,0.3);
-  --text:          #f7f4ef;
-  --text-muted:    rgba(255,255,255,0.62);
-  --text-faint:    rgba(255,255,255,0.38);
+  --text:          #f0ede8;
+  --text-muted:    rgba(255,255,255,0.4);
+  --text-faint:    rgba(255,255,255,0.2);
   --accent:        #f5a623;
   --accent-dim:    rgba(245,166,35,0.12);
   --success:       #10b981;
@@ -32,7 +32,7 @@ body {
 
 /* ── NAVBAR ── */
 .site-nav { position: sticky; top: 0; z-index: 100; background: rgba(13,13,13,0.92); backdrop-filter: blur(14px); border-bottom: 1px solid var(--border); }
-.site-nav__inner { max-width: 1280px; margin: 0 auto; padding: 0 1.5rem; height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.site-nav__inner { max-width: 1200px; margin: 0 auto; padding: 0 1.25rem; height: 52px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .site-nav__brand { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .site-nav__avatar { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; border: 1.5px solid rgba(255,255,255,0.15); }
 .site-nav__logo { font-family: var(--font-display); font-size: 17px; letter-spacing: 0.08em; color: var(--text); text-decoration: none; }
@@ -45,7 +45,7 @@ body {
 
 /* ── PAGE ── */
 .page { min-height: 100vh; background: var(--bg); }
-.page__inner { max-width: 1280px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+.page__inner { max-width: 1200px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
 
 /* ── PAGE HEADER ── */
 .page-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; }
@@ -61,7 +61,7 @@ body {
 .btn-back:hover { color: var(--text); border-color: var(--border-accent); }
 
 /* ── CARDS ── */
-.card { background: linear-gradient(180deg, rgba(255,255,255,0.058), rgba(255,255,255,0.032)); border: 1px solid rgba(255,255,255,0.095); border-radius: 22px; padding: 1.2rem 1.35rem; box-shadow: 0 18px 50px rgba(0,0,0,0.22); }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem; }
 .card--accent { background: var(--accent-dim); border-color: var(--border-accent); }
 .card--best { background: rgba(245,166,35,0.06); border-color: rgba(245,166,35,0.2); }
 .card__label { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 0.5rem; }
@@ -129,22 +129,4 @@ body {
 }
 @media (max-width: 480px) {
   .stat-grid--3, .stat-grid--4, .stat-grid--5 { grid-template-columns: 1fr 1fr; }
-}
-
-/* ── PREMIUM DASHBOARD HELPERS ── */
-.page-shell { max-width: 1280px; margin: 0 auto; padding: 2.25rem 1.5rem 4rem; }
-.premium-panel { background: linear-gradient(180deg, rgba(255,255,255,0.062), rgba(255,255,255,0.032)); border: 1px solid rgba(255,255,255,0.10); border-radius: 28px; box-shadow: 0 20px 60px rgba(0,0,0,0.28); }
-.metric-card { background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.09); border-radius: 20px; padding: 1rem; }
-.soft-alert { background: rgba(245,166,35,0.11) !important; color: #fed7aa !important; border: 1px solid rgba(245,166,35,0.20); }
-.soft-danger { background: rgba(239,68,68,0.10) !important; color: #fecaca !important; border: 1px solid rgba(239,68,68,0.18); }
-.soft-success { background: rgba(16,185,129,0.10) !important; color: #bbf7d0 !important; border: 1px solid rgba(16,185,129,0.18); }
-@media (max-width: 768px) { .page-shell { padding: 1.25rem 1rem 3rem; } }
-
-
-/* ── SECOND PASS VISUAL REFINEMENTS ── */
-.card h3, .premium-panel h3 { letter-spacing: -0.02em; }
-.card p, .premium-panel p { text-wrap: pretty; }
-.soft-danger, .soft-alert, .soft-success { border-radius: 20px !important; padding: 1rem 1.25rem !important; }
-@media (min-width: 1280px) {
-  .page-shell { padding-left: 2rem; padding-right: 2rem; }
 }
