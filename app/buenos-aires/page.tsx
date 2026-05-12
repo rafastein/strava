@@ -712,7 +712,6 @@ export default async function BuenosAiresPage() {
                 actual: w.executedKm,
               }))}
               title="Volume semanal — planejado vs. executado"
-              dark
             />
           </section>
         )}
