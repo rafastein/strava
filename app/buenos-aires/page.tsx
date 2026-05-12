@@ -147,10 +147,10 @@ function marathonTimeFromPace(secondsPerKm: number) {
 
 function getCyclePhase(today: Date, raceDate: Date) {
   const days = daysUntil(raceDate);
-  if (days > 140) return { name: "Base",       description: "Consolidar consistência, volume e resistência geral.",                       color: "bg-sky-100 text-sky-700"     };
-  if (days > 70)  return { name: "Construção", description: "Aumentar volume e trazer mais especificidade para a maratona.",              color: "bg-amber-100 text-amber-700" };
-  if (days > 21)  return { name: "Pico",       description: "Bloco mais específico, com longões fortes e sessões-chave.",                 color: "bg-orange-100 text-orange-700" };
-  return               { name: "Taper",      description: "Redução de carga para chegar descansado e afiado.",                          color: "bg-emerald-100 text-emerald-700" };
+  if (days > 140) return { name: "Base",       description: "Consolidar consistência, volume e resistência geral.",                       color: "bg-[rgba(6,182,212,0.15)] text-[#22d3ee] border border-[rgba(6,182,212,0.3)]"     };
+  if (days > 70)  return { name: "Construção", description: "Aumentar volume e trazer mais especificidade para a maratona.",              color: "bg-[rgba(245,166,35,0.15)] text-[#f5a623] border border-[rgba(245,166,35,0.3)]" };
+  if (days > 21)  return { name: "Pico",       description: "Bloco mais específico, com longões fortes e sessões-chave.",                 color: "bg-[rgba(249,115,22,0.15)] text-[#fb923c] border border-[rgba(249,115,22,0.3)]" };
+  return               { name: "Taper",      description: "Redução de carga para chegar descansado e afiado.",                          color: "bg-[rgba(16,185,129,0.15)] text-[#10b981] border border-[rgba(16,185,129,0.3)]" };
 }
 
 function getIdealWeeklyVolume(daysToRace: number) {
@@ -165,10 +165,10 @@ function getIdealWeeklyVolume(daysToRace: number) {
 function getReadinessStatus(params: { currentWeekKm: number; idealWeekKm: number; longestRunKm: number; longRuns28Plus: number }) {
   const ratio = params.idealWeekKm > 0 ? params.currentWeekKm / params.idealWeekKm : 0;
   if (ratio >= 0.9 && params.longestRunKm >= 28 && params.longRuns28Plus >= 2)
-    return { label: "Verde",    title: "Prontidão forte",         description: "Seu ciclo mostra bons sinais de especificidade para sustentar a maratona.",              card: "bg-emerald-50 border-emerald-200", dot: "bg-emerald-500", text: "text-emerald-700" };
+    return { label: "Verde",    title: "Prontidão forte",         description: "Seu ciclo mostra bons sinais de especificidade para sustentar a maratona.",              card: "border-[rgba(16,185,129,0.3)]", dot: "bg-[#10b981]", text: "text-[#10b981]" };
   if (ratio >= 0.7 && params.longestRunKm >= 24 && params.longRuns28Plus >= 1)
-    return { label: "Amarelo",  title: "Prontidão em construção", description: "O caminho está bom, mas ainda faltam mais base e longões específicos.",                  card: "bg-amber-50 border-amber-200",    dot: "bg-amber-500",   text: "text-amber-700"   };
-  return   { label: "Vermelho", title: "Prontidão baixa",         description: "Ainda falta especificidade de maratona para sustentar o alvo com segurança.",            card: "bg-red-50 border-red-200",        dot: "bg-red-500",     text: "text-red-700"     };
+    return { label: "Amarelo",  title: "Prontidão em construção", description: "O caminho está bom, mas ainda faltam mais base e longões específicos.",                  card: "border-[rgba(245,166,35,0.3)]", dot: "bg-[#f5a623]", text: "text-[#f5a623]"   };
+  return   { label: "Vermelho", title: "Prontidão baixa",         description: "Ainda falta especificidade de maratona para sustentar o alvo com segurança.",            card: "border-[rgba(239,68,68,0.3)]", dot: "bg-[#ef4444]", text: "text-[#ef4444]"     };
 }
 
 function predictFromHalf(half: StravaActivity | null) {
@@ -564,7 +564,7 @@ export default async function BuenosAiresPage() {
                         {pr ? (
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-semibold text-white">{formatPrTime(pr.timeSec)}</span>
-                            <span className={`text-xs px-1.5 py-0.5 rounded-full ${isPartial ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>
+                            <span className={`text-xs px-1.5 py-0.5 rounded-full ${isPartial ? "bg-[rgba(245,166,35,0.15)] text-[#f5a623]" : "bg-[rgba(16,185,129,0.15)] text-[#10b981]"}`}>
                               {pr.ageMonths}m
                             </span>
                           </div>
@@ -584,7 +584,7 @@ export default async function BuenosAiresPage() {
               <div className="mt-4 rounded-2xl bg-orange-50 p-4">
                 <p className="text-sm font-medium text-orange-700">FC alvo em Buenos Aires</p>
                 <p className="mt-1 text-2xl font-bold text-orange-900">148–155 bpm</p>
-                <p className="mt-1 text-sm text-orange-600">Zona de potência aeróbica → limiar. ~10 bpm abaixo das meias.</p>
+                <p className="mt-1 text-sm" style={{ color: "rgba(245,166,35,0.7)" }}>Zona de potência aeróbica → limiar. ~10 bpm abaixo das meias.</p>
               </div>
             </div>
 
@@ -593,10 +593,10 @@ export default async function BuenosAiresPage() {
               <p className="mt-1 text-sm text-white/40">Referências de Daniels derivadas do seu VDOT {vdot.toFixed(1)}.</p>
               <div className="mt-5 space-y-2">
                 {[
-                  { label: "Regenerativo / Fácil", pace: trainingPaces ? `${formatSecondsPerKm(trainingPaces.easy.min)}–${formatSecondsPerKm(trainingPaces.easy.max)}` : "—", desc: "Z1–Z2", color: "bg-cyan-50" },
-                  { label: "Pace de maratona",     pace: trainingPaces ? `${formatSecondsPerKm(trainingPaces.marathon.min)}–${formatSecondsPerKm(trainingPaces.marathon.max)}` : "—", desc: "Z3", color: "bg-orange-50 ring-1 ring-orange-200" },
-                  { label: "Limiar (Threshold)",   pace: trainingPaces ? `${formatSecondsPerKm(trainingPaces.threshold.min)}–${formatSecondsPerKm(trainingPaces.threshold.max)}` : "—", desc: "Z4", color: "bg-amber-50" },
-                  { label: "Intervalado (VO2max)", pace: trainingPaces ? formatSecondsPerKm(trainingPaces.interval) : "—", desc: "Z5", color: "bg-red-50" },
+                  { label: "Regenerativo / Fácil", pace: trainingPaces ? `${formatSecondsPerKm(trainingPaces.easy.min)}–${formatSecondsPerKm(trainingPaces.easy.max)}` : "—", desc: "Z1–Z2", color: "bg-[rgba(6,182,212,0.1)] border border-[rgba(6,182,212,0.2)]" },
+                  { label: "Pace de maratona",     pace: trainingPaces ? `${formatSecondsPerKm(trainingPaces.marathon.min)}–${formatSecondsPerKm(trainingPaces.marathon.max)}` : "—", desc: "Z3", color: "bg-[rgba(245,166,35,0.12)] border border-[rgba(245,166,35,0.3)]" },
+                  { label: "Limiar (Threshold)",   pace: trainingPaces ? `${formatSecondsPerKm(trainingPaces.threshold.min)}–${formatSecondsPerKm(trainingPaces.threshold.max)}` : "—", desc: "Z4", color: "bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.2)]" },
+                  { label: "Intervalado (VO2max)", pace: trainingPaces ? formatSecondsPerKm(trainingPaces.interval) : "—", desc: "Z5", color: "bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)]" },
                 ].map((row) => (
                   <div key={row.label} className={`flex items-center justify-between rounded-2xl p-3 ${row.color}`}>
                     <div>
