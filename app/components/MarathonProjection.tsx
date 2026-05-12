@@ -254,7 +254,7 @@ export default function MarathonProjection({ longRuns, weeksToRace, races = [] }
       </div>
 
       {/* Cards de tendência */}
-      <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4">
+      <div className="mt-5 grid grid-cols-2 gap-2.5 md:grid-cols-4">
         <div className="flex min-h-[68px] flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/[.032] p-2.5 text-center">
           <p className="text-[10px] text-white/40">Melhora de pace/mês</p>
           <p className="mt-1 text-[12px] font-semibold text-white">
@@ -295,7 +295,7 @@ export default function MarathonProjection({ longRuns, weeksToRace, races = [] }
       </div>
 
       {/* Sliders */}
-      <div className="mt-3 rounded-2xl border border-white/5 bg-white/[.025] p-3 space-y-2.5">
+      <div className="mt-5 rounded-2xl border border-white/5 bg-white/[.025] p-3.5 space-y-3">
         <div className="flex items-center gap-3">
           <label className="min-w-[118px] text-[10.5px] text-white/45">Semanas até a prova</label>
           <input type="range" min={1} max={24} step={1} value={weeks} onChange={(e) => setWeeks(Number(e.target.value))} className="flex-1" />
@@ -312,43 +312,28 @@ export default function MarathonProjection({ longRuns, weeksToRace, races = [] }
       </div>
 
       {/* Resultado */}
-      <div className="mt-3 rounded-2xl border border-orange-400/22 bg-orange-500/[.075] p-4 text-center">
+      <div className="mt-5 rounded-2xl border border-orange-400/22 bg-orange-500/[.075] p-4 text-center">
         <p className="text-[10.5px] font-medium uppercase tracking-[0.12em] text-orange-300/85">Tempo projetado na maratona</p>
         <p className="mt-1.5 text-[18px] font-semibold tracking-tight text-orange-100">{totalTimeStr(totalSec)}</p>
         <p className="mt-1.5 text-[10.5px] text-orange-300/72">
           Pace no treino: {secToStr(projPace)}/km → em prova: {secToStr(racePace)}/km
           {projEff !== null && <span className="ml-2 opacity-70">· eficiência projetada: {projEff.toFixed(1)}</span>}
         </p>
-
-        {/* Badges de metas */}
-        <div className="mt-3 flex flex-wrap justify-center gap-1.5">
-          {GOALS.map((g) => {
-            const ok      = totalSec <= g.totalSec;
-            const diffSec = Math.abs(totalSec - g.totalSec);
-            const diffStr = secToStr(diffSec).replace(":", "min ") + "s";
-            return (
-              <span key={g.label} className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${ok ? "bg-emerald-400/10 text-emerald-300 border border-emerald-400/20" : "bg-red-400/10 text-red-300 border border-red-400/20"}`}>
-                {ok ? `${g.label} ✓` : `${g.label} —`}
-                <span className="ml-1 opacity-70">{ok ? `(+${diffStr})` : `(−${diffStr})`}</span>
-              </span>
-            );
-          })}
-        </div>
       </div>
 
       {/* Metas de referência */}
-      <div className="mt-3">
+      <div className="mt-5">
         <p className="mb-2.5 text-center text-[10.5px] font-medium text-white/42">Pace necessário para cada meta</p>
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-5">
           {GOALS.map((g) => {
             const needPace = g.totalSec / DIST_MARATHON;
             const ok       = totalSec <= g.totalSec;
             const diffSec  = Math.abs(totalSec - g.totalSec);
             return (
-              <div key={g.label} className={`rounded-2xl p-2.5 ${ok ? "border border-emerald-400/20 bg-emerald-400/10" : "border border-white/10 bg-white/[.035]"}`}>
-                <p className="text-[11px] text-white/42">{g.label}</p>
+              <div key={g.label} className={`flex min-h-[64px] flex-col items-center justify-center rounded-2xl p-2.5 text-center ${ok ? "border border-emerald-400/20 bg-emerald-400/10" : "border border-white/10 bg-white/[.035]"}`}>
+                <p className="text-[10.5px] text-white/42">{g.label}</p>
                 <p className="mt-1 text-[12px] font-semibold text-white">{secToStr(needPace)}/km</p>
-                <p className={`mt-1 text-[10px] ${ok ? "text-emerald-300" : "text-red-300"}`}>
+                <p className={`mt-1 text-[9.5px] leading-tight ${ok ? "text-emerald-300" : "text-red-300"}`}>
                   {ok
                     ? `${secToStr(diffSec).replace(":", "min ")}s de sobra`
                     : `faltam ~${secToStr(diffSec).replace(":", "min ")}s`}
