@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import Navbar from "../components/Navbar";
 import SisrunUploadForm from "../components/SisrunUploadForm";
 import { getValidStravaAccessToken } from "../lib/strava-auth";
 import { getSisrunData, getCurrentWeek, getTodaySisrunRow } from "../lib/sisrun-utils";
@@ -122,6 +123,7 @@ export default async function SisrunPage() {
   const completedTodayKm = todayRow ? getCompletedKm(todayRow, stravaKmByDate) : 0;
 
   return (
+    <div className="page"><Navbar />
     <main className="min-h-screen bg-[#0b0b0b] text-white">
       <div className="ba-page">
         <header className="ba-page-header">
@@ -276,6 +278,8 @@ export default async function SisrunPage() {
         </section>
       </div>
     </main>
+    <footer className="site-footer">STRAVA · RAFAEL CABRAL · 2026</footer>
+    </div>
   );
 }
 
