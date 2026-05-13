@@ -7,6 +7,7 @@ export type HalfMarathonEntry = {
   id: number;
   name: string;
   date: string;
+  distanceKm: number;
   splits: { km: number; paceSecPerKm: number; heartrate: number | null; distanceM?: number }[];
 };
 
@@ -31,6 +32,16 @@ function formatPace(secPerKm: number): string {
   const s = Math.round(secPerKm % 60);
   if (s === 60) return `${m + 1}:00`;
   return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+
+function formatDistanceKm(distanceKm: number): string {
+  if (!distanceKm || !Number.isFinite(distanceKm)) return "-";
+
+  return `${distanceKm.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} km`;
 }
 
 function formatShortDate(iso: string): string {
@@ -259,7 +270,7 @@ export default function HalfMarathonComparison({ races }: Props) {
                     </span>
                   </td>
                   <td style={{ padding: "8px 0", textAlign: "right", color: "var(--text-muted)", fontSize: 12 }}>{formatShortDate(race.date)}</td>
-                  <td style={{ padding: "8px 0", textAlign: "right", color: "var(--text-muted)", fontSize: 12 }}>{race.splits.length} km</td>
+                  <td style={{ padding: "8px 0", textAlign: "right", color: "var(--text-muted)", fontSize: 12 }}>{formatDistanceKm(race.distanceKm)}</td>
                   <td style={{ padding: "8px 0", textAlign: "right", fontFamily: "var(--font-mono)", fontWeight: 500, color: "var(--text)", fontSize: 12 }}>
                     {formatPace(avg)}/km
                   </td>

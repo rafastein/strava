@@ -106,6 +106,7 @@ export default async function MeiasPage() {
         id: activity.id,
         name: cleanRaceName(activity.name),
         date: activity.start_date_local,
+        distanceKm: Number((activity.distance / 1000).toFixed(2)),
         splits,
       });
     }
