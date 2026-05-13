@@ -46,16 +46,17 @@ export default function SisrunUploadForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-3xl bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-semibold text-gray-900">Atualizar SisRUN</h2>
-      <p className="mt-1 text-sm text-gray-500">
-        Envie a planilha exportada para atualizar o planejamento.
-      </p>
+    <form onSubmit={handleSubmit} className="ba-card p-5 md:p-6">
+      <div>
+        <p className="ba-eyebrow">Upload</p>
+        <h2 className="mt-2 text-xl font-semibold text-white">Atualizar SisRUN</h2>
+        <p className="mt-1 text-sm text-white/45">
+          Envie a planilha exportada para atualizar o planejamento semanal.
+        </p>
+      </div>
 
-      <div className="mt-5">
-        <label className="block text-sm font-medium text-gray-700">
-          Arquivo da planilha
-        </label>
+      <div className="mt-6 rounded-2xl border border-dashed border-white/10 bg-white/[.025] p-4">
+        <label className="ba-label block">Arquivo da planilha</label>
 
         <input
           type="file"
@@ -65,23 +66,31 @@ export default function SisrunUploadForm() {
             setFile(selected);
             setStatus("");
           }}
-          className="mt-2 block w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-700"
+          className="mt-3 block w-full cursor-pointer rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white/65 file:mr-4 file:rounded-full file:border-0 file:bg-orange-400 file:px-4 file:py-2 file:text-xs file:font-black file:uppercase file:tracking-[.12em] file:text-black hover:border-orange-400/35 focus:outline-none focus:ring-2 focus:ring-orange-400/30"
         />
+
+        {file && (
+          <p className="mt-3 text-xs text-white/40">
+            Selecionado: <span className="text-white/65">{file.name}</span>
+          </p>
+        )}
       </div>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="mt-5 rounded-full bg-orange-500 px-5 py-3 text-sm font-medium text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {loading ? "Processando..." : "Enviar planilha"}
-      </button>
+      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <button
+          type="submit"
+          disabled={loading}
+          className="inline-flex items-center justify-center rounded-full bg-orange-400 px-5 py-3 text-xs font-black uppercase tracking-[.14em] text-black transition hover:bg-orange-300 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {loading ? "Processando..." : "Enviar planilha"}
+        </button>
 
-      {status && (
-        <p className="mt-4 text-sm text-gray-600">
-          {status}
-        </p>
-      )}
+        {status && (
+          <p className="text-sm text-white/45">
+            {status}
+          </p>
+        )}
+      </div>
     </form>
   );
 }
