@@ -286,30 +286,19 @@ export default function ActivitySplitsChart({
 
   if (!loaded && !loading) {
     return (
-      <div className="rounded-xl border border-white/[0.07] bg-white/[0.025]" style={{ padding: "0.8rem 0.95rem", minHeight: "58px" }}>
-        <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
-          <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] leading-none text-white/45">
-              Splits km a km
-            </p>
-            {activityName && (
-              <p className="mt-1.5 max-w-[720px] truncate text-[11px] leading-relaxed text-white/[0.32]">{activityName}</p>
-            )}
-          </div>
-          <button
-            onClick={fetchAndRender}
-            className="w-full min-w-[128px] rounded-full border border-orange-400/25 bg-orange-400/[0.12] px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] leading-none text-orange-200 transition-colors hover:bg-orange-400/[0.18] md:w-auto"
-          >
-            Ver splits
-          </button>
-        </div>
-      </div>
+      <button
+        onClick={fetchAndRender}
+        className="w-full rounded-md border border-orange-400/35 bg-orange-400/[0.10] px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] leading-none text-orange-100 transition-colors hover:bg-orange-400/[0.18] md:w-[150px]"
+        aria-label={`Ver splits km a km de ${activityName ?? "atividade"}`}
+      >
+        Ver splits
+      </button>
     );
   }
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-white/[0.07] bg-white/[0.025]" style={{ padding: "0.95rem" }}>
+      <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] md:col-span-2" style={{ padding: "0.95rem" }}>
         <div className="flex items-center gap-3">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
           <p className="text-sm text-white/45">Carregando splits...</p>
@@ -334,7 +323,7 @@ export default function ActivitySplitsChart({
 
   if (!splits || splits.length === 0) {
     return (
-      <div className="rounded-xl border border-white/[0.07] bg-white/[0.025]" style={{ padding: "0.95rem" }}>
+      <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] md:col-span-2" style={{ padding: "0.95rem" }}>
         <p className="text-sm text-white/45">Splits não disponíveis para esta atividade.</p>
       </div>
     );
@@ -348,7 +337,7 @@ export default function ActivitySplitsChart({
   const hasHr = splits.some((s) => s.heartrate !== null);
 
   return (
-    <div className="rounded-xl border border-white/[0.07] bg-white/[0.025]" style={{ padding: "0.95rem" }}>
+    <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] md:col-span-2" style={{ padding: "0.95rem" }}>
       <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">

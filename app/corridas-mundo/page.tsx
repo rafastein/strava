@@ -426,46 +426,46 @@ export default async function CorridasMundoPage() {
                         return (
                           <div
                             key={race.id}
-                            className="rounded-xl border border-white/[0.06] bg-black/[0.18] px-3 py-2.5 text-xs text-white/[0.45]"
+                            className="grid gap-2 rounded-xl border border-white/[0.06] bg-black/[0.18] px-3 py-2 text-xs text-white/[0.45] md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
                           >
-                            <p className="flex min-w-0 items-center gap-2 text-[13px] font-semibold leading-snug tracking-[-0.01em] text-white/[0.88]">
-                              {medal ? (
-                                <span
-                                  className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[11px]"
-                                  title="Top 3 melhores paces"
-                                >
-                                  {medal}
-                                </span>
-                              ) : null}
-                              <span className="truncate">{formatRaceName(race.name)}</span>
-                            </p>
+                            <div className="min-w-0">
+                              <p className="flex min-w-0 items-center gap-2 text-[13px] font-semibold leading-snug tracking-[-0.01em] text-white/[0.88]">
+                                {medal ? (
+                                  <span
+                                    className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[11px]"
+                                    title="Top 3 melhores paces"
+                                  >
+                                    {medal}
+                                  </span>
+                                ) : null}
+                                <span className="truncate">{formatRaceName(race.name)}</span>
+                              </p>
 
-                            <p className="mt-1 text-[11px] leading-relaxed text-white/[0.38]">
-                              {race.city || "Não identificado"}
-                              {race.state ? `, ${race.state}` : ""} •{" "}
-                              {formatBRDate(race.date)} •{" "}
-                              {race.distanceKm.toFixed(2)} km • {race.time} •{" "}
-                              {formatPaceFromRace(race)}
-                            </p>
+                              <p className="mt-1 truncate text-[11px] leading-relaxed text-white/[0.38]">
+                                {race.city || "Não identificado"}
+                                {race.state ? `, ${race.state}` : ""} •{" "}
+                                {formatBRDate(race.date)} •{" "}
+                                {race.distanceKm.toFixed(2)} km • {race.time} •{" "}
+                                {formatPaceFromRace(race)}
+                              </p>
 
-                            <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-white/[0.28]">
-                              FC{" "}
-                              {race.averageHeartrate
-                                ? `${race.averageHeartrate.toFixed(0)} bpm`
-                                : "-"}{" "}
-                              • Alt {race.elevationGain ?? 0} m • Eficiência{" "}
-                              {formatRaceEfficiency(race.efficiency ?? null)} •{" "}
-                              {getTrend(race.efficiency, previous?.efficiency)}
-                            </p>
-
-                            <div className="mt-2.5">
-                              <ActivitySplitsChart
-                                activityId={Number(String(race.id).replace("strava-", ""))}
-                                activityName={formatRaceName(race.name)}
-                                targetPaceSecPerKm={race.paceSecPerKm ?? undefined}
-                                goalPaceSecPerKm={320}
-                              />
+                              <p className="mt-0.5 truncate text-[10px] font-medium uppercase tracking-[0.12em] text-white/[0.28]">
+                                FC{" "}
+                                {race.averageHeartrate
+                                  ? `${race.averageHeartrate.toFixed(0)} bpm`
+                                  : "-"}{" "}
+                                • Alt {race.elevationGain ?? 0} m • Eficiência{" "}
+                                {formatRaceEfficiency(race.efficiency ?? null)} •{" "}
+                                {getTrend(race.efficiency, previous?.efficiency)}
+                              </p>
                             </div>
+
+                            <ActivitySplitsChart
+                              activityId={Number(String(race.id).replace("strava-", ""))}
+                              activityName={formatRaceName(race.name)}
+                              targetPaceSecPerKm={race.paceSecPerKm ?? undefined}
+                              goalPaceSecPerKm={320}
+                            />
                           </div>
                         );
                       })}
