@@ -98,6 +98,7 @@ export default async function MeiasPage() {
           km: s.split,
           paceSecPerKm: Math.round(paceSecPerKm),
           heartrate: s.average_heartrate ? Math.round(s.average_heartrate) : null,
+          distanceM: Math.round(distM),
         };
       });
 

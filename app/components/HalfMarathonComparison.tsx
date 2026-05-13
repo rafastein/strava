@@ -7,7 +7,7 @@ export type HalfMarathonEntry = {
   id: number;
   name: string;
   date: string;
-  splits: { km: number; paceSecPerKm: number; heartrate: number | null }[];
+  splits: { km: number; paceSecPerKm: number; heartrate: number | null; distanceM?: number }[];
 };
 
 type Props = {
@@ -44,6 +44,14 @@ function cleanRaceName(name: string): string {
     .replace(/^\s*prova:\s*/i, "")
     .replace(/\s*\*{2,}\s*$/g, "")
     .trim();
+}
+
+const CLOSED_KM_MIN_DISTANCE_M = 990;
+
+function isClosedKmSplit(split: HalfMarathonEntry["splits"][number]): boolean {
+  // O último split do Strava pode ter poucos metros, mas o pace vem normalizado para 1 km.
+  // Para "Melhor km", consideramos apenas quilômetros realmente fechados.
+  return (split.distanceM ?? 1000) >= CLOSED_KM_MIN_DISTANCE_M;
 }
 
 export default function HalfMarathonComparison({ races }: Props) {
@@ -234,7 +242,11 @@ export default function HalfMarathonComparison({ races }: Props) {
               const avg = validPaces.length
                 ? validPaces.reduce((a, b) => a + b, 0) / validPaces.length
                 : 0;
-              const best = validPaces.length ? Math.min(...validPaces) : 0;
+              const closedKmPaces = race.splits
+                .filter(isClosedKmSplit)
+                .map((s) => s.paceSecPerKm)
+                .filter((p) => p > 0 && p < 900);
+              const best = closedKmPaces.length ? Math.min(...closedKmPaces) : 0;
               return (
                 <tr key={race.id} style={{ borderBottom: "1px solid rgba(255,255,255,.05)" }}>
                   <td className="py-2">
