@@ -46,12 +46,14 @@ function formatTime(sec: number): string {
 }
 
 export default function ZonesAggregate() {
-  const [period, setPeriod]   = useState<Period>("week");
-  const [data, setData]       = useState<Record<Period, ApiResponse | null>>({ week: null, month: null, cycle: null });
-  const [loading, setLoading] = useState<Record<Period, boolean>>({ week: true, month: false, cycle: false });
+  const [period, setPeriod]       = useState<Period>("week");
+  const [data, setData]           = useState<Record<Period, ApiResponse | null>>({ week: null, month: null, cycle: null });
+  const [loading, setLoading]     = useState<Record<Period, boolean>>({ week: true, month: false, cycle: false });
+  const [processing, setProcessing] = useState(false);
+  const [processedCount, setProcessedCount] = useState(0);
 
-  const fetchPeriod = useCallback(async (p: Period) => {
-    if (data[p]) return; // already loaded
+  const fetchPeriod = useCallback(async (p: Period, force = false) => {
+    if (data[p] && !force) return;
     setLoading((prev) => ({ ...prev, [p]: true }));
     try {
       const res  = await fetch(`/api/strava/zones-aggregate?period=${p}`);
@@ -63,6 +65,31 @@ export default function ZonesAggregate() {
       setLoading((prev) => ({ ...prev, [p]: false }));
     }
   }, [data]);
+
+  // Batch process: keep calling until missingCount = 0
+  const processAll = useCallback(async () => {
+    setProcessing(true);
+    setProcessedCount(0);
+    let missing = 999;
+    let attempts = 0;
+    while (missing > 0 && attempts < 20) {
+      try {
+        const res  = await fetch(`/api/strava/zones-aggregate?period=cycle`);
+        const json = await res.json() as ApiResponse;
+        missing = json.missingCount ?? 0;
+        setProcessedCount(json.cachedCount ?? 0);
+        // Update all periods with fresh data
+        setData({ week: null, month: null, cycle: json });
+        if (missing === 0) break;
+        // Small delay to avoid rate limiting
+        await new Promise((r) => setTimeout(r, 800));
+      } catch { break; }
+      attempts++;
+    }
+    // Reload current period
+    await fetchPeriod(period, true);
+    setProcessing(false);
+  }, [period, fetchPeriod]);
 
   useEffect(() => { fetchPeriod("week"); }, []);
 
@@ -88,13 +115,21 @@ export default function ZonesAggregate() {
           </h3>
         </div>
         {current && !isLoading && (
-          <div style={{ textAlign: "right" }}>
+          <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
             <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "rgba(255,255,255,.3)" }}>
               {current.runCount} corrida{current.runCount !== 1 ? "s" : ""}
             </p>
-            {current.missingCount > 0 && (
-              <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "rgba(245,166,35,.6)", marginTop: 2 }}>
-                {current.missingCount} sem cache ainda
+            {current.missingCount > 0 && !processing && (
+              <button
+                onClick={processAll}
+                style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".08em", textTransform: "uppercase", background: "rgba(245,166,35,0.15)", border: "1px solid rgba(245,166,35,0.3)", color: "#f5a623", padding: "4px 10px", borderRadius: 999, cursor: "pointer" }}
+              >
+                Processar {current.missingCount} corridas
+              </button>
+            )}
+            {processing && (
+              <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "rgba(245,166,35,.7)" }}>
+                Processando... {processedCount} cacheadas
               </p>
             )}
           </div>
@@ -192,7 +227,7 @@ export default function ZonesAggregate() {
           {/* Total time */}
           <p style={{ marginTop: 16, fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".08em", color: "rgba(255,255,255,.2)" }}>
             Total: {formatTime(allZones.reduce((a, z) => a + z.timeSec, 0))} · via stream Strava
-            {(current?.missingCount ?? 0) > 0 && ` · ${current!.missingCount} corrida${current!.missingCount > 1 ? "s" : ""} sem cache (recarregue amanhã)`}
+            {(current?.missingCount ?? 0) > 0 && !processing && ` · ${current!.missingCount} corrida${current!.missingCount > 1 ? "s" : ""} sem cache`}
           </p>
         </>
       )}
