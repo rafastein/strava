@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import Navbar from "../components/Navbar";
 import { formatBRDate } from "../lib/date-utils";
 import WorldRaceMap from "../components/WorldRaceMap";
 import ActivitySplitsChart from "../components/ActivitySplitsChart";
@@ -246,7 +247,7 @@ function CountryFlag({ country }: { country: string }) {
 
   if (!code) {
     return (
-      <span className="flex h-5 w-7 items-center justify-center rounded-sm bg-gray-200 text-[10px] font-bold text-gray-500">
+      <span className="flex h-5 w-7 items-center justify-center rounded-sm border border-white/10 bg-white/5 text-[10px] font-bold text-white/40">
         ?
       </span>
     );
@@ -256,10 +257,17 @@ function CountryFlag({ country }: { country: string }) {
     <img
       src={`https://flagcdn.com/w40/${code}.png`}
       alt={`Bandeira de ${normalizeCountryDisplay(country)}`}
-      className="h-5 w-7 rounded-[2px] object-cover shadow-sm"
+      className="h-5 w-7 rounded-[2px] object-cover shadow-sm shadow-black/20"
       loading="lazy"
     />
   );
+}
+
+function formatRaceName(name: string) {
+  return String(name ?? "")
+    .replace(/^\s*Prova:\s*/i, "")
+    .replace(/\s*\*{3}\s*$/g, "")
+    .trim();
 }
 
 function parseTimeToSeconds(time: string) {
@@ -340,23 +348,19 @@ export default async function CorridasMundoPage() {
   const topRaceMedals = getTopRaceMedals(races);
 
   return (
-    <main className="min-h-screen bg-gray-100 p-6 md:p-10">
-      <div className="mx-auto max-w-6xl">
+    <div className="page">
+      <Navbar />
+      <main className="ba-page">
         <div className="ba-section flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-orange-600">Corridas</p>
-            <h1 className="text-3xl font-bold text-gray-900 md:text-4xl">
-              Corridas pelo mundo
-            </h1>
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="ba-eyebrow">Corridas</p>
+            <h1 className="ba-title">Corridas pelo mundo</h1>
+            <p className="ba-muted" style={{ marginTop: ".5rem" }}>
               Corridas puxadas do Strava com distância mínima de 21 km.
             </p>
           </div>
 
-          <Link
-            href="/"
-            className="rounded-full bg-white px-5 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-          >
+          <Link href="/" className="ba-back">
             Voltar ao dashboard
           </Link>
         </div>
@@ -381,18 +385,18 @@ export default async function CorridasMundoPage() {
           <WorldRaceMap counts={counts} />
         </section>
 
-        <section className="rounded-3xl bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-gray-900">
+        <section className="ba-card" style={{ padding: "1.5rem" }}>
+          <p className="ba-eyebrow">
             Ranking por país
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">
+          </p>
+          <p className="mt-1 text-sm text-white/40">
             Lista detalhada das corridas identificadas como eventos/provas com
             distância mínima de 21 km. As medalhas destacam os 3 melhores paces
             médios da página.
           </p>
 
           {grouped.length === 0 ? (
-            <p className="mt-5 text-sm text-gray-500">
+            <p className="ba-muted" style={{ marginTop: 20 }}>
               Nenhuma corrida acima de 21 km foi identificada com a regra atual.
             </p>
           ) : (
@@ -403,15 +407,15 @@ export default async function CorridasMundoPage() {
                 return (
                   <div
                     key={item.country}
-                    className="rounded-2xl border border-gray-200 bg-gray-50 p-4"
+                    className="ba-card-soft" style={{ padding: "1rem" }}
                   >
                     <div className="flex items-center justify-between">
-                      <p className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                      <p className="flex items-center gap-2" style={{ fontSize: 16, fontWeight: 600, color: "var(--text)" }}>
                         <CountryFlag country={item.country} />
                         <span>{displayCountry}</span>
                       </p>
 
-                      <span className="rounded-full bg-orange-100 px-3 py-1 text-sm font-semibold text-orange-700">
+                      <span className="rounded-full border border-orange-400/20 bg-orange-400/10 px-3 py-1 text-sm font-semibold text-orange-300">
                         {item.count} {item.count === 1 ? "corrida" : "corridas"}
                       </span>
                     </div>
@@ -424,21 +428,21 @@ export default async function CorridasMundoPage() {
                         return (
                           <div
                             key={race.id}
-                            className="rounded-xl bg-white p-3 text-sm text-gray-700"
+                            className="rounded-xl border border-white/5 bg-black/20 p-3 text-sm text-white/55"
                           >
-                            <p className="flex items-center gap-2 font-medium text-gray-900">
+                            <p className="flex items-center gap-2 font-medium text-white">
                               {medal ? (
                                 <span
-                                  className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-sm"
+                                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-white/5 text-sm"
                                   title="Top 3 melhores paces"
                                 >
                                   {medal}
                                 </span>
                               ) : null}
-                              <span>{race.name}</span>
+                              <span>{formatRaceName(race.name)}</span>
                             </p>
 
-                            <p className="text-gray-500">
+                            <p className="text-white/40">
                               {race.city || "Não identificado"}
                               {race.state ? `, ${race.state}` : ""} •{" "}
                               {formatBRDate(race.date)} •{" "}
@@ -446,7 +450,7 @@ export default async function CorridasMundoPage() {
                               {formatPaceFromRace(race)}
                             </p>
 
-                            <p className="mt-1 text-gray-500">
+                            <p className="mt-1 text-white/40">
                               FC{" "}
                               {race.averageHeartrate
                                 ? `${race.averageHeartrate.toFixed(0)} bpm`
@@ -459,7 +463,7 @@ export default async function CorridasMundoPage() {
                             <div className="mt-3">
                               <ActivitySplitsChart
                                 activityId={Number(String(race.id).replace("strava-", ""))}
-                                activityName={race.name}
+                                activityName={formatRaceName(race.name)}
                                 targetPaceSecPerKm={race.paceSecPerKm ?? undefined}
                                 goalPaceSecPerKm={320}
                               />
@@ -474,16 +478,18 @@ export default async function CorridasMundoPage() {
             </div>
           )}
         </section>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }
 
 function InfoCard({ title, value }: { title: string; value: string }) {
   return (
-    <div className="rounded-3xl bg-white p-6 shadow-sm">
-      <p className="text-sm text-gray-500">{title}</p>
-      <h2 className="mt-2 text-2xl font-bold text-gray-900">{value}</h2>
+    <div className="ba-card" style={{ padding: "1.5rem" }}>
+      <p className="ba-label">{title}</p>
+      <h2 className="ba-value mt-2" style={{ fontSize: 30 }}>
+        {value}
+      </h2>
     </div>
   );
 }
