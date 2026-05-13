@@ -286,19 +286,19 @@ export default function ActivitySplitsChart({
 
   if (!loaded && !loading) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-white/[0.035]" style={{ padding: "1.5rem 1.75rem", minHeight: "82px" }}>
-        <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
+      <div className="rounded-xl border border-white/[0.07] bg-white/[0.025]" style={{ padding: "0.8rem 0.95rem", minHeight: "58px" }}>
+        <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
           <div className="min-w-0">
-            <p className="text-base font-semibold leading-none text-white/90">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] leading-none text-white/45">
               Splits km a km
             </p>
             {activityName && (
-              <p className="mt-3 max-w-[720px] truncate text-xs leading-relaxed text-white/40">{activityName}</p>
+              <p className="mt-1.5 max-w-[720px] truncate text-[11px] leading-relaxed text-white/[0.32]">{activityName}</p>
             )}
           </div>
           <button
             onClick={fetchAndRender}
-            className="w-full min-w-[160px] rounded-full bg-[#f5a623] px-8 py-3.5 text-sm font-semibold leading-none text-black transition-colors hover:opacity-90 md:w-auto"
+            className="w-full min-w-[128px] rounded-full border border-orange-400/25 bg-orange-400/[0.12] px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] leading-none text-orange-200 transition-colors hover:bg-orange-400/[0.18] md:w-auto"
           >
             Ver splits
           </button>
@@ -309,7 +309,7 @@ export default function ActivitySplitsChart({
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-white/[0.035]" style={{ padding: "1.5rem" }}>
+      <div className="rounded-xl border border-white/[0.07] bg-white/[0.025]" style={{ padding: "0.95rem" }}>
         <div className="flex items-center gap-3">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
           <p className="text-sm text-white/45">Carregando splits...</p>
@@ -334,7 +334,7 @@ export default function ActivitySplitsChart({
 
   if (!splits || splits.length === 0) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-white/[0.035]" style={{ padding: "1.5rem" }}>
+      <div className="rounded-xl border border-white/[0.07] bg-white/[0.025]" style={{ padding: "0.95rem" }}>
         <p className="text-sm text-white/45">Splits não disponíveis para esta atividade.</p>
       </div>
     );
@@ -348,31 +348,31 @@ export default function ActivitySplitsChart({
   const hasHr = splits.some((s) => s.heartrate !== null);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.035]" style={{ padding: "1.5rem" }}>
-      <div className="mb-6 flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+    <div className="rounded-xl border border-white/[0.07] bg-white/[0.025]" style={{ padding: "0.95rem" }}>
+      <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
         <div>
-          <p className="text-base font-semibold text-white/90">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">
             Splits km a km
           </p>
           {activityName && (
-            <p className="mt-1 text-xs text-white/40">{activityName}</p>
+            <p className="mt-1 text-[11px] text-white/[0.32]">{activityName}</p>
           )}
         </div>
-        <div className="flex w-full flex-wrap gap-2 text-xs text-white/45 xl:w-auto xl:justify-end">
-          <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5">
+        <div className="flex w-full flex-wrap gap-1.5 text-[10px] text-white/[0.38] xl:w-auto xl:justify-end">
+          <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1">
             Ritmo médio:{" "}
             <span className="font-semibold text-white/85">
               {formatPace(avgPace)}/km
             </span>
           </span>
-          <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5">
+          <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1">
             Melhor km:{" "}
             <span className="font-semibold text-emerald-400">
               {formatPace(bestPace)}/km
             </span>
           </span>
           {goalPaceSecPerKm && (
-            <span className="rounded-full border border-orange-400/20 bg-orange-400/10 px-3 py-1.5 text-orange-200">
+            <span className="rounded-full border border-orange-400/20 bg-orange-400/10 px-2.5 py-1 text-orange-200">
               <span className="inline-block h-2 w-4 border-b-2 border-dashed border-orange-400 align-middle" />{" "}
               Meta BsAs: {formatPace(goalPaceSecPerKm)}/km
             </span>
@@ -380,7 +380,7 @@ export default function ActivitySplitsChart({
         </div>
       </div>
 
-      <div className="relative h-72">
+      <div className="relative h-64">
         <canvas
           ref={chartRef}
           role="img"
@@ -388,7 +388,7 @@ export default function ActivitySplitsChart({
         />
       </div>
 
-      <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-white/35">
+      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[10px] text-white/[0.30]">
         <span className="flex items-center gap-1">
           <span className="inline-block h-2.5 w-2.5 rounded-sm bg-emerald-500" />
           Acima da média

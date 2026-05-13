@@ -385,11 +385,9 @@ export default async function CorridasMundoPage() {
           <WorldRaceMap counts={counts} />
         </section>
 
-        <section className="ba-card" style={{ padding: "1.5rem" }}>
-          <p className="ba-eyebrow">
-            Ranking por país
-          </p>
-          <p className="mt-1 text-sm text-white/40">
+        <section className="ba-card" style={{ padding: "1.25rem" }}>
+          <p className="ba-eyebrow">Ranking por país</p>
+          <p className="mt-1 max-w-4xl text-xs leading-relaxed text-white/[0.38]">
             Lista detalhada das corridas identificadas como eventos/provas com
             distância mínima de 21 km. As medalhas destacam os 3 melhores paces
             médios da página.
@@ -400,27 +398,27 @@ export default async function CorridasMundoPage() {
               Nenhuma corrida acima de 21 km foi identificada com a regra atual.
             </p>
           ) : (
-            <div className="mt-5 grid gap-3 md:grid-cols-2">
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
               {grouped.map((item) => {
                 const displayCountry = normalizeCountryDisplay(item.country);
 
                 return (
                   <div
                     key={item.country}
-                    className="ba-card-soft" style={{ padding: "1rem" }}
+                    className="ba-card-soft" style={{ padding: "0.95rem" }}
                   >
-                    <div className="flex items-center justify-between">
-                      <p className="flex items-center gap-2" style={{ fontSize: 16, fontWeight: 600, color: "var(--text)" }}>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="flex min-w-0 items-center gap-2 text-sm font-semibold tracking-[-0.01em] text-white/90">
                         <CountryFlag country={item.country} />
-                        <span>{displayCountry}</span>
+                        <span className="truncate">{displayCountry}</span>
                       </p>
 
-                      <span className="rounded-full border border-orange-400/20 bg-orange-400/10 px-3 py-1 text-sm font-semibold text-orange-300">
+                      <span className="shrink-0 rounded-full border border-orange-400/20 bg-orange-400/10 px-2.5 py-1 text-[11px] font-semibold leading-none text-orange-300">
                         {item.count} {item.count === 1 ? "corrida" : "corridas"}
                       </span>
                     </div>
 
-                    <div className="mt-3 space-y-2">
+                    <div className="mt-3 space-y-2.5">
                       {item.races.map((race: Race, index) => {
                         const medal = topRaceMedals.get(race.id);
                         const previous = item.races[index + 1];
@@ -428,21 +426,21 @@ export default async function CorridasMundoPage() {
                         return (
                           <div
                             key={race.id}
-                            className="rounded-xl border border-white/5 bg-black/20 p-3 text-sm text-white/55"
+                            className="rounded-xl border border-white/[0.06] bg-black/[0.18] px-3 py-2.5 text-xs text-white/[0.45]"
                           >
-                            <p className="flex items-center gap-2 font-medium text-white">
+                            <p className="flex min-w-0 items-center gap-2 text-[13px] font-semibold leading-snug tracking-[-0.01em] text-white/[0.88]">
                               {medal ? (
                                 <span
-                                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-white/5 text-sm"
+                                  className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[11px]"
                                   title="Top 3 melhores paces"
                                 >
                                   {medal}
                                 </span>
                               ) : null}
-                              <span>{formatRaceName(race.name)}</span>
+                              <span className="truncate">{formatRaceName(race.name)}</span>
                             </p>
 
-                            <p className="text-white/40">
+                            <p className="mt-1 text-[11px] leading-relaxed text-white/[0.38]">
                               {race.city || "Não identificado"}
                               {race.state ? `, ${race.state}` : ""} •{" "}
                               {formatBRDate(race.date)} •{" "}
@@ -450,7 +448,7 @@ export default async function CorridasMundoPage() {
                               {formatPaceFromRace(race)}
                             </p>
 
-                            <p className="mt-1 text-white/40">
+                            <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-white/[0.28]">
                               FC{" "}
                               {race.averageHeartrate
                                 ? `${race.averageHeartrate.toFixed(0)} bpm`
@@ -460,7 +458,7 @@ export default async function CorridasMundoPage() {
                               {getTrend(race.efficiency, previous?.efficiency)}
                             </p>
 
-                            <div className="mt-3">
+                            <div className="mt-2.5">
                               <ActivitySplitsChart
                                 activityId={Number(String(race.id).replace("strava-", ""))}
                                 activityName={formatRaceName(race.name)}
