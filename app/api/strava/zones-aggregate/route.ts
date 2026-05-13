@@ -62,12 +62,31 @@ export async function GET(req: NextRequest) {
     // Fetch missing ones (max 5 to avoid rate limit)
     const missing = runs.filter((r) => !cached.has(r.id)).slice(0, 5);
     const newlyFetched: CachedActivityZones[] = [];
+    const fetchErrors: { id: number; error: string }[] = [];
 
     await Promise.all(
       missing.map(async (run) => {
         const date = run.start_date_local.slice(0, 10);
-        const result = await fetchAndCacheZones(run.id, date, token);
-        if (result) newlyFetched.push(result);
+        try {
+          const result = await fetchAndCacheZones(run.id, date, token);
+          if (result) {
+            newlyFetched.push(result);
+          } else {
+            // Debug: check what the streams and zones endpoints return
+            const [sRes, zRes] = await Promise.all([
+              fetch(`https://www.strava.com/api/v3/activities/${run.id}/streams?keys=velocity_smooth,time&key_by_type=true&resolution=medium`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }),
+              fetch("https://www.strava.com/api/v3/athlete/zones", { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }),
+            ]);
+            const sData = await sRes.json();
+            const zData = await zRes.json();
+            fetchErrors.push({
+              id: run.id,
+              error: `streams_ok=${sRes.ok} velocities=${sData.velocity_smooth?.data?.length ?? 0} zones_ok=${zRes.ok} pace_zones=${zData.pace?.zones?.length ?? 0} zone_keys=${Object.keys(zData).join(",")}`,
+            });
+          }
+        } catch (e) {
+          fetchErrors.push({ id: run.id, error: String(e) });
+        }
       })
     );
 
@@ -87,6 +106,7 @@ export async function GET(req: NextRequest) {
       cachedCount,
       missingCount,
       period,
+      debug: fetchErrors.length > 0 ? fetchErrors : undefined,
     });
   } catch (err) {
     console.error("zones-aggregate error:", err);
