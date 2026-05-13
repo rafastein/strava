@@ -192,7 +192,7 @@ export default function ZonesAggregate() {
           {/* Total time */}
           <p style={{ marginTop: 16, fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".08em", color: "rgba(255,255,255,.2)" }}>
             Total: {formatTime(allZones.reduce((a, z) => a + z.timeSec, 0))} · via stream Strava
-            {current?.missingCount > 0 && ` · ${current.missingCount} corrida${current.missingCount > 1 ? "s" : ""} sem cache (recarregue amanhã)`}
+            {(current?.missingCount ?? 0) > 0 && ` · ${current!.missingCount} corrida${current!.missingCount > 1 ? "s" : ""} sem cache (recarregue amanhã)`}
           </p>
         </>
       )}
