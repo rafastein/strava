@@ -68,6 +68,13 @@ function formatBRDate(iso: string): string {
   } catch { return iso.slice(0, 10); }
 }
 
+function cleanRaceName(name: string): string {
+  return name
+    .replace(/^\s*prova:\s*/i, "")
+    .replace(/\s*\*{2,}\s*$/g, "")
+    .trim();
+}
+
 export default async function MeiasPage() {
   const token = await getValidStravaAccessToken();
   const activities = await getActivities();
@@ -96,7 +103,7 @@ export default async function MeiasPage() {
 
       halves.push({
         id: activity.id,
-        name: activity.name,
+        name: cleanRaceName(activity.name),
         date: activity.start_date_local,
         splits,
       });

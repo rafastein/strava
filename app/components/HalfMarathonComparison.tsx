@@ -39,6 +39,13 @@ function formatShortDate(iso: string): string {
   } catch { return iso.slice(0, 10); }
 }
 
+function cleanRaceName(name: string): string {
+  return name
+    .replace(/^\s*prova:\s*/i, "")
+    .replace(/\s*\*{2,}\s*$/g, "")
+    .trim();
+}
+
 export default function HalfMarathonComparison({ races }: Props) {
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstance = useRef<unknown>(null);
@@ -79,7 +86,7 @@ export default function HalfMarathonComparison({ races }: Props) {
         const color = COLORS[origIdx % COLORS.length];
         return {
           type: "line" as const,
-          label: `${formatShortDate(race.date)} ${race.name}`,
+          label: `${formatShortDate(race.date)} ${cleanRaceName(race.name)}`,
           data: race.splits.map((s) =>
             s.paceSecPerKm > 0 && s.paceSecPerKm < 900
               ? s.paceSecPerKm / 60
@@ -193,7 +200,7 @@ export default function HalfMarathonComparison({ races }: Props) {
                 className="inline-block h-2 w-2 rounded-full"
                 style={{ background: isOn ? color : "rgba(255,255,255,.2)" }}
               />
-              {formatShortDate(race.date)} {race.name}
+              {formatShortDate(race.date)} {cleanRaceName(race.name)}
             </button>
           );
         })}
@@ -236,7 +243,7 @@ export default function HalfMarathonComparison({ races }: Props) {
                         className="inline-block h-2.5 w-2.5 rounded-full"
                         style={{ background: color }}
                       />
-                      <span style={{ fontWeight: 500, color: "var(--text)", fontSize: 13 }}>{race.name}</span>
+                      <span style={{ fontWeight: 500, color: "var(--text)", fontSize: 13 }}>{cleanRaceName(race.name)}</span>
                     </span>
                   </td>
                   <td style={{ padding: "8px 0", textAlign: "right", color: "var(--text-muted)", fontSize: 12 }}>{formatShortDate(race.date)}</td>
