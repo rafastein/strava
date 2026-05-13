@@ -9,6 +9,7 @@ import MarathonProjection from "../components/MarathonProjection";
 import RaceCountdown from "../components/RaceCountdown";
 import ActivitySplitsChart from "../components/ActivitySplitsChart";
 import WeeklyPlanVsActualChart from "../components/WeeklyPlanVsActualChart";
+import ZonesAggregate from "../components/ZonesAggregate";
 import { getValidStravaAccessToken } from "../lib/strava-auth";
 import { getDynamicAthleteProfile, formatPrTime } from "../lib/strava-prs";
 import { trainingPacesFromVdot } from "../lib/vdot";
@@ -1429,6 +1430,11 @@ export default async function BuenosAiresPage() {
             />
           </section>
         )}
+
+        {/* Zonas de ritmo agregadas */}
+        <section style={{ marginBottom: "1rem" }}>
+          <ZonesAggregate />
+        </section>
 
         <section className="ba-card" style={{ padding: "1.2rem" }}>
           <p className="ba-label">Resumo estratégico</p>
