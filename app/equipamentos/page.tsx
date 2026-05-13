@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import Navbar from "../components/Navbar";
 import BrandIcon from "../components/BrandIcon";
 import { getValidStravaAccessToken } from "../lib/strava-auth";
 import { formatBRDate } from "../lib/date-utils";
@@ -388,33 +389,20 @@ export default async function EquipamentosPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-gray-100 p-6 md:p-10">
-      <div className="mx-auto max-w-6xl">
-        <div className="ba-section flex items-center justify-between">
+    <div className="page"><Navbar />
+    <main className="ba-page">
+        <div className="ba-page-header">
           <div>
-            <p className="text-sm font-medium text-orange-600">Strava</p>
-            <h1 className="text-3xl font-bold text-gray-900 md:text-4xl">
-              Equipamentos
-            </h1>
-            <p className="mt-2 text-sm text-gray-500">
-              Quilometragem, desgaste, eficiência e recomendação automática de
-              tênis por tipo de treino.
-            </p>
+            <p className="ba-eyebrow">Strava</p>
+            <h1 className="ba-title">Equipamentos</h1>
+            <p className="ba-muted" style={{ marginTop: ".5rem" }}>Quilometragem, desgaste, eficiência e recomendação automática de tênis por tipo de treino.</p>
           </div>
-
-          <Link
-            href="/"
-            className="rounded-full bg-white px-5 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            Voltar ao dashboard
-          </Link>
+          <Link href="/" className="ba-back">← Voltar ao dashboard</Link>
         </div>
 
         {grouped.length === 0 ? (
-          <section className="rounded-3xl bg-white p-6 shadow-sm">
-            <p className="text-sm text-gray-500">
-              Nenhuma atividade com equipamento válido foi encontrada.
-            </p>
+          <section className="ba-card" style={{ padding: "1.5rem" }}>
+            <p className="ba-muted">Nenhuma atividade com equipamento válido foi encontrada.</p>
           </section>
         ) : (
           <>
@@ -430,21 +418,18 @@ export default async function EquipamentosPage() {
               />
             </section>
 
-            <section className="ba-section rounded-3xl bg-white p-6 shadow-sm">
-              <h2 className="text-xl font-bold text-gray-900">
-                Recomendação automática
-              </h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Sugestão baseada na função do tênis e na quilometragem acumulada.
-              </p>
+            <section className="ba-section ba-card" style={{ padding: "1.5rem" }}>
+              <p className="ba-eyebrow">Recomendação automática</p>
+              <h2 className="ba-title" style={{ fontSize: "1.8rem", marginTop: 4 }}>Tênis por tipo de treino</h2>
+              <p className="ba-muted" style={{ marginTop: ".4rem" }}>Sugestão baseada na função do tênis e na quilometragem acumulada.</p>
 
               <div className="mt-5 grid gap-3 md:grid-cols-4">
                 {recommendationTypes.map((type) => {
                   const shoe = getBestShoeForWorkout(grouped, type);
 
                   return (
-                    <div key={type} className="rounded-2xl bg-gray-50 p-4">
-                      <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                    <div key={type} className="ba-card-soft" style={{ padding: "1rem" }}>
+                      <p className="ba-label">
                         {getWorkoutLabel(type)}
                       </p>
 
@@ -452,18 +437,16 @@ export default async function EquipamentosPage() {
                         <div className="mt-2 flex items-center gap-3">
                           <BrandIcon brand={shoe.brand} />
                           <div>
-                            <p className="font-semibold text-gray-900">
+                            <p style={{ fontWeight: 600, color: "var(--text)", fontSize: 13 }}>
                               {shoe.name}
                             </p>
-                            <p className="text-xs text-gray-500">
+                            <p style={{ fontSize: 11, color: "var(--text-muted)" }}>
                               {shoe.totalKm.toFixed(0)} km acumulados
                             </p>
                           </div>
                         </div>
                       ) : (
-                        <p className="mt-2 text-sm text-gray-500">
-                          Sem sugestão disponível.
-                        </p>
+                        <p className="ba-muted" style={{ marginTop: 8 }}>Sem sugestão disponível.</p>
                       )}
                     </div>
                   );
@@ -494,14 +477,11 @@ export default async function EquipamentosPage() {
                 const wear = getWearStatus(gear.totalKm, gear.maxKm);
 
                 return (
-                  <article
-                    key={gear.gearId}
-                    className="rounded-3xl bg-white p-6 shadow-sm"
-                  >
+                  <article key={gear.gearId} className="ba-card" style={{ padding: "1.5rem" }}>
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-center gap-3">
                         <BrandIcon brand={gear.brand} />
-                        <h2 className="text-xl font-bold text-gray-900">
+                        <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text)" }}>
                           {gear.name}
                         </h2>
                       </div>
@@ -544,14 +524,14 @@ export default async function EquipamentosPage() {
                     </div>
 
                     <div className="mt-4">
-                      <div className="mb-1 flex justify-between text-xs text-gray-500">
+                      <div style={{ marginBottom: 4, display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text-muted)" }}>
                         <span>Desgaste estimado</span>
                         <span>{gear.totalKm.toFixed(0)} / {gear.maxKm} km</span>
                       </div>
 
-                      <div className="h-2 overflow-hidden rounded-full bg-gray-100">
+                      <div className="ba-progress">
                         <div
-                          className={`h-full rounded-full ${wear.bar}`}
+                          className="ba-progress-fill"
                           style={{ width: `${wear.progress}%` }}
                         />
                       </div>
@@ -562,16 +542,17 @@ export default async function EquipamentosPage() {
             </section>
           </>
         )}
-      </div>
     </main>
+    <footer className="site-footer">STRAVA · RAFAEL CABRAL · 2026</footer>
+    </div>
   );
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-gray-50 p-3">
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="mt-1 font-semibold text-gray-900">{value}</p>
+    <div className="ba-card-soft" style={{ padding: ".75rem 1rem" }}>
+      <p className="ba-label">{label}</p>
+      <p style={{ marginTop: 4, fontWeight: 600, color: "var(--text)", fontSize: 13 }}>{value}</p>
     </div>
   );
 }

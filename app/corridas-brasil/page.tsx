@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import Navbar from "../components/Navbar";
 import { formatBRDate } from "../lib/date-utils";
 import BrazilRaceMap from "../components/BrazilRaceMap";
 import ActivitySplitsChart from "../components/ActivitySplitsChart";
@@ -143,22 +144,18 @@ export default async function CorridasBrasilPage() {
   const top5k = getTopRaces(races, isFiveK);
 
   return (
-    <main className="min-h-screen bg-gray-100 p-6 md:p-10">
-      <div className="mx-auto max-w-6xl">
+    <div className="page"><Navbar />
+    <main className="ba-page">
         <div className="ba-section flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-orange-600">Corridas</p>
-            <h1 className="text-3xl font-bold text-gray-900 md:text-4xl">
-              Corridas pelo Brasil
-            </h1>
-            <p className="mt-2 text-sm text-gray-500">
-              Corridas puxadas do Strava e identificadas como provas no Brasil.
-            </p>
+            <p className="ba-eyebrow">Corridas</p>
+            <h1 className="ba-title">Corridas pelo Brasil</h1>
+            <p className="ba-muted" style={{ marginTop: ".5rem" }}>Corridas puxadas do Strava e identificadas como provas no Brasil.</p>
           </div>
 
           <Link
             href="/"
-            className="rounded-full bg-white px-5 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+            className="ba-back"
           >
             Voltar ao dashboard
           </Link>
@@ -180,11 +177,9 @@ export default async function CorridasBrasilPage() {
           />
         </section>
 
-        <section className="ba-section rounded-3xl bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-gray-900">
-            Top 3 por distância
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">
+        <section className="ba-section ba-card" style={{ padding: "1.5rem" }}>
+          <p className="ba-eyebrow">Top 3 por distância</p>
+          <p className="ba-muted" style={{ marginTop: 4 }}>
             Ranking automático das melhores provas no Brasil por pace médio,
             separado em meias, 10k e 5k.
           </p>
@@ -200,17 +195,17 @@ export default async function CorridasBrasilPage() {
           <BrazilRaceMap counts={counts} />
         </section>
 
-        <section className="rounded-3xl bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-gray-900">
+        <section className="ba-card" style={{ padding: "1.5rem" }}>
+          <p className="ba-eyebrow">
             Ranking por estado
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">
+          </p>
+          <p className="mt-1 text-sm text-white/40">
             Lista detalhada das corridas identificadas como eventos/provas no
             Brasil.
           </p>
 
           {grouped.length === 0 ? (
-            <p className="mt-5 text-sm text-gray-500">
+            <p className="ba-muted" style={{ marginTop: 20 }}>
               Nenhuma corrida foi identificada com a regra atual.
             </p>
           ) : (
@@ -218,10 +213,10 @@ export default async function CorridasBrasilPage() {
               {grouped.map((item) => (
                 <div
                   key={item.state}
-                  className="rounded-2xl border border-gray-200 bg-gray-50 p-4"
+                  className="ba-card-soft" style={{ padding: "1rem" }}
                 >
                   <div className="flex items-center justify-between">
-                    <p className="text-lg font-semibold text-gray-900">
+                    <p style={{ fontSize: 16, fontWeight: 600, color: "var(--text)" }}>
                       {item.stateName}
                     </p>
                     <span className="rounded-full bg-orange-100 px-3 py-1 text-sm font-semibold text-orange-700">
@@ -236,13 +231,13 @@ export default async function CorridasBrasilPage() {
                       return (
                         <div
                           key={race.id}
-                          className="rounded-xl bg-white p-3 text-sm text-gray-700"
+                          className="ba-card-soft" style={{ padding: "10px 12px", fontSize: 12 }}
                         >
-                          <p className="font-medium text-gray-900">
+                          <p style={{ fontWeight: 600, color: "var(--text)", fontSize: 12 }}>
                             {race.name}
                           </p>
 
-                          <p className="text-gray-500">
+                          <p style={{ fontSize: 11, color: "var(--text-muted)" }}>
                             {race.city || "Não identificado"}
                             {race.state ? `, ${race.state}` : ""} •{" "}
                             {formatBRDate(race.date)} •{" "}
@@ -250,7 +245,7 @@ export default async function CorridasBrasilPage() {
                             {formatPaceFromRace(race)}
                           </p>
 
-                          <p className="mt-1 text-gray-500">
+                          <p style={{ marginTop: 2, fontSize: 11, color: "var(--text-muted)" }}>
                             FC{" "}
                             {race.averageHeartrate
                               ? `${race.averageHeartrate.toFixed(0)} bpm`
@@ -277,8 +272,9 @@ export default async function CorridasBrasilPage() {
             </div>
           )}
         </section>
-      </div>
     </main>
+    <footer className="site-footer">STRAVA · RAFAEL CABRAL · 2026</footer>
+    </div>
   );
 }
 
@@ -290,11 +286,11 @@ function TopDistanceCard({
   races: Array<Race & { paceSeconds: number }>;
 }) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-      <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+    <div className="ba-card-soft" style={{ padding: "1rem" }}>
+      <p className="ba-eyebrow" style={{ marginBottom: 8 }}>{title}</p>
 
       {races.length === 0 ? (
-        <p className="mt-3 text-sm text-gray-500">
+        <p style={{ marginTop: 12, fontSize: 12, color: "var(--text-muted)" }}>
           Nenhuma prova encontrada nessa categoria.
         </p>
       ) : (
@@ -306,10 +302,10 @@ function TopDistanceCard({
             return (
               <div
                 key={race.id}
-                className="rounded-xl bg-white p-3 text-sm text-gray-700"
+                className="ba-card-soft" style={{ padding: "10px 12px", fontSize: 12 }}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <p className="font-medium text-gray-900">{race.name}</p>
+                  <p style={{ fontWeight: 600, color: "var(--text)", fontSize: 12 }}>{race.name}</p>
 
                   <span
                     className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${medal.className}`}
@@ -318,20 +314,20 @@ function TopDistanceCard({
                   </span>
                 </div>
 
-                <p className="mt-1 text-gray-500">
+                <p style={{ marginTop: 2, fontSize: 11, color: "var(--text-muted)" }}>
                   {race.city || "Não identificado"}
                   {race.state ? `, ${race.state}` : ""} •{" "}
                   {formatBRDate(race.date)}
                 </p>
 
-                <p className="mt-1 text-gray-500">
+                <p style={{ marginTop: 2, fontSize: 11, color: "var(--text-muted)" }}>
                   {race.distanceKm.toFixed(2)} km • {race.time} •{" "}
-                  <span className={isTopOne ? "font-bold text-gray-900" : ""}>
+                  <span className={isTopOne ? "font-bold text-white" : ""}>
                     {formatPaceFromRace(race)}
                   </span>
                 </p>
 
-                <p className="mt-1 text-gray-500">
+                <p style={{ marginTop: 2, fontSize: 11, color: "var(--text-muted)" }}>
                   Eficiência {formatRaceEfficiency(race.efficiency ?? null)}
                 </p>
               </div>
@@ -345,9 +341,9 @@ function TopDistanceCard({
 
 function InfoCard({ title, value }: { title: string; value: string }) {
   return (
-    <div className="rounded-3xl bg-white p-6 shadow-sm">
-      <p className="text-sm text-gray-500">{title}</p>
-      <h2 className="mt-2 text-2xl font-bold text-gray-900">{value}</h2>
+    <div className="ba-card" style={{ padding: "1.2rem", textAlign: "center" }}>
+      <p className="ba-label">{title}</p>
+      <h2 className="ba-value" style={{ fontSize: "2rem", marginTop: ".4rem" }}>{value}</h2>
     </div>
   );
 }

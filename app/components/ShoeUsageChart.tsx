@@ -136,10 +136,10 @@ export default function ShoeUsageChart({ shoes }: Props) {
   const alerts = shoes.filter((s) => (s.totalKm / s.maxKm) >= 0.65);
 
   return (
-    <div className="rounded-3xl bg-white p-6 shadow-sm">
+    <div className="ba-card" style={{ padding: "1.5rem" }}>
       <div className="mb-4">
-        <h2 className="text-xl font-semibold text-gray-900">Desgaste por tênis</h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="ba-eyebrow">Desgaste por tênis</p>
+        <p className="ba-muted" style={{ marginTop: 4 }}>
           Km rodados vs. vida útil estimada. Verde = novo · Amarelo = moderado · Laranja = atenção · Vermelho = trocar em breve.
         </p>
       </div>
@@ -175,13 +175,13 @@ export default function ShoeUsageChart({ shoes }: Props) {
       <div className="mt-4 overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
-            <tr className="border-b border-gray-100">
-              <th className="pb-2 text-left font-medium text-gray-400">Tênis</th>
-              <th className="pb-2 text-right font-medium text-gray-400">Km</th>
-              <th className="pb-2 text-right font-medium text-gray-400">Vida útil</th>
-              <th className="pb-2 text-right font-medium text-gray-400">Desgaste</th>
-              <th className="pb-2 text-right font-medium text-gray-400">Último uso</th>
-              <th className="pb-2 text-right font-medium text-gray-400">Status</th>
+            <tr style={{ borderBottom: "1px solid rgba(255,255,255,.05)" }}>
+              <th style={{ paddingBottom: 8, textAlign: "left", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)" }}>Tênis</th>
+              <th style={{ paddingBottom: 8, textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)" }}>Km</th>
+              <th style={{ paddingBottom: 8, textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)" }}>Vida útil</th>
+              <th style={{ paddingBottom: 8, textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)" }}>Desgaste</th>
+              <th style={{ paddingBottom: 8, textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)" }}>Último uso</th>
+              <th style={{ paddingBottom: 8, textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)" }}>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -192,11 +192,11 @@ export default function ShoeUsageChart({ shoes }: Props) {
                 const { text, cls } = wearLabel(pct);
                 return (
                   <tr key={s.name} className="border-b border-gray-50">
-                    <td className="py-2 font-medium text-gray-800">{s.name}</td>
-                    <td className="py-2 text-right text-gray-600">{s.totalKm.toFixed(0)}</td>
-                    <td className="py-2 text-right text-gray-400">{s.maxKm} km</td>
+                    <td style={{ padding: "8px 0", fontWeight: 500, color: "var(--text)" }}>{s.name}</td>
+                    <td style={{ padding: "8px 0", textAlign: "right", color: "var(--text-muted)" }}>{s.totalKm.toFixed(0)}</td>
+                    <td style={{ padding: "8px 0", textAlign: "right", color: "var(--text-faint)" }}>{s.maxKm} km</td>
                     <td className="py-2 text-right">
-                      <div className="ml-auto h-1.5 w-16 rounded-full bg-gray-100">
+                      <div style={{ marginLeft: "auto", height: 5, width: 64, borderRadius: 999, background: "rgba(255,255,255,.07)" }}>
                         <div
                           className="h-1.5 rounded-full"
                           style={{
@@ -206,7 +206,7 @@ export default function ShoeUsageChart({ shoes }: Props) {
                         />
                       </div>
                     </td>
-                    <td className="py-2 text-right text-gray-400">{formatDate(s.lastUse)}</td>
+                    <td style={{ padding: "8px 0", textAlign: "right", color: "var(--text-faint)" }}>{formatDate(s.lastUse)}</td>
                     <td className="py-2 text-right">
                       <span className={`rounded-full px-2 py-0.5 font-medium ${cls}`}>
                         {text}

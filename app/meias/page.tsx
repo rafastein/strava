@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import Navbar from "../components/Navbar";
 import { getValidStravaAccessToken } from "../lib/strava-auth";
 import HalfMarathonComparison from "../components/HalfMarathonComparison";
 import type { HalfMarathonEntry } from "../components/HalfMarathonComparison";
@@ -110,55 +111,42 @@ export default async function MeiasPage() {
   const bestIdx = validPaces.indexOf(Math.min(...validPaces.filter((p) => p > 0)));
 
   return (
-    <main className="min-h-screen bg-gray-100 p-6 md:p-10">
-      <div className="mx-auto max-w-6xl">
-        <div className="ba-section flex flex-wrap items-start justify-between gap-4">
+    <div className="page"><Navbar />
+    <main className="ba-page">
+        <div className="ba-page-header">
           <div>
-            <p className="text-sm font-medium text-orange-600">Análise</p>
-            <h1 className="text-3xl font-bold text-gray-900 md:text-4xl">
-              Comparativo de meias maratonas
-            </h1>
-            <p className="mt-2 text-sm text-gray-500">
-              {halves.length} meias encontradas desde jan/2024 — splits km a km sobrepostos.
-            </p>
+            <p className="ba-eyebrow">Análise</p>
+            <h1 className="ba-title">Comparativo de Meias</h1>
+            <p className="ba-muted" style={{ marginTop: ".5rem" }}>{halves.length} meias encontradas desde jan/2024 — splits km a km sobrepostos.</p>
           </div>
-          <Link
-            href="/"
-            className="rounded-full bg-white px-5 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            ← Voltar ao dashboard
-          </Link>
+          <Link href="/" className="ba-back">← Voltar ao dashboard</Link>
         </div>
 
         {halves.length === 0 ? (
-          <div className="rounded-3xl bg-white p-6 shadow-sm">
-            <p className="text-sm text-gray-500">
-              Nenhuma meia maratona com splits disponíveis encontrada.
-            </p>
+          <div className="ba-card" style={{ padding: "1.5rem" }}>
+            <p className="ba-muted">Nenhuma meia maratona com splits disponíveis encontrada.</p>
           </div>
         ) : (
           <>
-            <section className="ba-section grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-              <div className="rounded-3xl bg-white p-6 shadow-sm">
-                <p className="text-sm text-gray-500">Total de meias</p>
-                <p className="mt-2 text-2xl font-bold text-gray-900">{halves.length}</p>
-                <p className="mt-1 text-xs text-gray-400">desde jan/2024</p>
+            <section className="ba-grid-4 ba-section">
+              <div className="ba-card" style={{ padding: "1.2rem", textAlign: "center" }}>
+                <p className="ba-label">Total de meias</p>
+                <p className="ba-value" style={{ fontSize: "2rem", marginTop: ".4rem" }}>{halves.length}</p>
+                <p className="ba-muted" style={{ marginTop: ".3rem" }}>desde jan/2024</p>
               </div>
-              <div className="rounded-3xl bg-white p-6 shadow-sm">
-                <p className="text-sm text-gray-500">Mais recente</p>
-                <p className="mt-2 text-lg font-bold text-gray-900">{halves[0]?.name}</p>
-                <p className="mt-1 text-xs text-gray-400">{formatBRDate(halves[0]?.date ?? "")}</p>
+              <div className="ba-card" style={{ padding: "1.2rem", textAlign: "center" }}>
+                <p className="ba-label">Mais recente</p>
+                <p className="ba-value" style={{ fontSize: "1rem", marginTop: ".4rem", lineHeight: 1.3 }}>{halves[0]?.name}</p>
+                <p className="ba-muted" style={{ marginTop: ".3rem" }}>{formatBRDate(halves[0]?.date ?? "")}</p>
               </div>
-              <div className="rounded-3xl bg-white p-6 shadow-sm">
-                <p className="text-sm text-gray-500">Melhor prova</p>
-                <p className="mt-2 text-lg font-bold text-emerald-600">
-                  {halves[bestIdx]?.name ?? "-"}
-                </p>
-                <p className="mt-1 text-xs text-gray-400">{formatBRDate(halves[bestIdx]?.date ?? "")}</p>
+              <div className="ba-card" style={{ padding: "1.2rem", textAlign: "center" }}>
+                <p className="ba-label">Melhor prova</p>
+                <p className="ba-value" style={{ fontSize: "1rem", marginTop: ".4rem", lineHeight: 1.3, color: "#10b981" }}>{halves[bestIdx]?.name ?? "-"}</p>
+                <p className="ba-muted" style={{ marginTop: ".3rem" }}>{formatBRDate(halves[bestIdx]?.date ?? "")}</p>
               </div>
-              <div className="rounded-3xl bg-white p-6 shadow-sm">
-                <p className="text-sm text-gray-500">Evolução</p>
-                <p className="mt-2 text-2xl font-bold text-blue-600">
+              <div className="ba-card" style={{ padding: "1.2rem", textAlign: "center" }}>
+                <p className="ba-label">Evolução</p>
+                <p className="ba-value" style={{ fontSize: "2rem", marginTop: ".4rem", color: "#60a5fa" }}>
                   {halves.length >= 2 ? (
                     (() => {
                       const first = validPaces[validPaces.length - 1];
@@ -169,7 +157,7 @@ export default async function MeiasPage() {
                     })()
                   ) : "-"}
                 </p>
-                <p className="mt-1 text-xs text-gray-400">1ª vs última prova</p>
+                <p className="ba-muted" style={{ marginTop: ".3rem" }}>1ª vs última prova</p>
               </div>
             </section>
 
@@ -178,7 +166,8 @@ export default async function MeiasPage() {
             </section>
           </>
         )}
-      </div>
     </main>
+    <footer className="site-footer">STRAVA · RAFAEL CABRAL · 2026</footer>
+    </div>
   );
 }

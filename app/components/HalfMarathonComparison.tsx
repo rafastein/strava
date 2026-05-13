@@ -64,9 +64,9 @@ export default function HalfMarathonComparison({ races }: Props) {
       chartInstance.current = null;
     }
 
-    const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const gridColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
-    const tickColor = isDark ? "#9ca3af" : "#6b7280";
+    const isDark = true; // site sempre dark
+    const gridColor = "rgba(255,255,255,0.06)";
+    const tickColor = "rgba(255,255,255,0.4)";
 
     const maxKm = Math.max(...races.map((r) => r.splits.length));
     const labels = Array.from({ length: maxKm }, (_, i) => `${i + 1}km`);
@@ -161,17 +161,17 @@ export default function HalfMarathonComparison({ races }: Props) {
 
   if (races.length === 0) {
     return (
-      <div className="rounded-3xl bg-white p-6 shadow-sm">
-        <p className="text-sm text-gray-500">Nenhuma meia maratona com splits disponíveis.</p>
+      <div className="ba-card" style={{ padding: "1.5rem" }}>
+        <p className="ba-muted">Nenhuma meia maratona com splits disponíveis.</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-3xl bg-white p-6 shadow-sm">
+    <div className="ba-card" style={{ padding: "1.5rem" }}>
       <div className="mb-4">
-        <h2 className="text-xl font-semibold text-gray-900">Comparativo de meias maratonas</h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="ba-eyebrow">Comparativo de meias maratonas</p>
+        <p className="ba-muted" style={{ marginTop: 4 }}>
           Splits km a km sobrepostos — clique para mostrar/ocultar cada prova.
         </p>
       </div>
@@ -187,11 +187,11 @@ export default function HalfMarathonComparison({ races }: Props) {
               className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-opacity ${
                 isOn ? "opacity-100" : "opacity-40"
               }`}
-              style={{ borderColor: color, color: isOn ? color : "#9ca3af" }}
+              style={{ borderColor: isOn ? color : "rgba(255,255,255,.15)", color: isOn ? color : "rgba(255,255,255,.35)" }}
             >
               <span
                 className="inline-block h-2 w-2 rounded-full"
-                style={{ background: isOn ? color : "#d1d5db" }}
+                style={{ background: isOn ? color : "rgba(255,255,255,.2)" }}
               />
               {formatShortDate(race.date)} {race.name}
             </button>
@@ -210,12 +210,12 @@ export default function HalfMarathonComparison({ races }: Props) {
       <div className="mt-4 overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
-            <tr className="border-b border-gray-100">
-              <th className="pb-2 text-left font-medium text-gray-400">Prova</th>
-              <th className="pb-2 text-right font-medium text-gray-400">Data</th>
-              <th className="pb-2 text-right font-medium text-gray-400">Dist</th>
-              <th className="pb-2 text-right font-medium text-gray-400">Ritmo médio</th>
-              <th className="pb-2 text-right font-medium text-gray-400">Melhor km</th>
+            <tr style={{ borderBottom: "1px solid rgba(255,255,255,.05)" }}>
+              <th style={{ paddingBottom: 8, textAlign: "left", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)" }}>Prova</th>
+              <th style={{ paddingBottom: 8, textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)" }}>Data</th>
+              <th style={{ paddingBottom: 8, textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)" }}>Dist</th>
+              <th style={{ paddingBottom: 8, textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)" }}>Ritmo médio</th>
+              <th style={{ paddingBottom: 8, textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)" }}>Melhor km</th>
             </tr>
           </thead>
           <tbody>
@@ -229,22 +229,22 @@ export default function HalfMarathonComparison({ races }: Props) {
                 : 0;
               const best = validPaces.length ? Math.min(...validPaces) : 0;
               return (
-                <tr key={race.id} className="border-b border-gray-50">
+                <tr key={race.id} style={{ borderBottom: "1px solid rgba(255,255,255,.05)" }}>
                   <td className="py-2">
                     <span className="flex items-center gap-1.5">
                       <span
                         className="inline-block h-2.5 w-2.5 rounded-full"
                         style={{ background: color }}
                       />
-                      <span className="font-medium text-gray-800">{race.name}</span>
+                      <span style={{ fontWeight: 500, color: "var(--text)", fontSize: 13 }}>{race.name}</span>
                     </span>
                   </td>
-                  <td className="py-2 text-right text-gray-500">{formatShortDate(race.date)}</td>
-                  <td className="py-2 text-right text-gray-500">{race.splits.length} km</td>
-                  <td className="py-2 text-right font-mono font-medium text-gray-800">
+                  <td style={{ padding: "8px 0", textAlign: "right", color: "var(--text-muted)", fontSize: 12 }}>{formatShortDate(race.date)}</td>
+                  <td style={{ padding: "8px 0", textAlign: "right", color: "var(--text-muted)", fontSize: 12 }}>{race.splits.length} km</td>
+                  <td style={{ padding: "8px 0", textAlign: "right", fontFamily: "var(--font-mono)", fontWeight: 500, color: "var(--text)", fontSize: 12 }}>
                     {formatPace(avg)}/km
                   </td>
-                  <td className="py-2 text-right font-mono font-medium text-emerald-600">
+                  <td style={{ padding: "8px 0", textAlign: "right", fontFamily: "var(--font-mono)", fontWeight: 500, color: "#10b981", fontSize: 12 }}>
                     {formatPace(best)}/km
                   </td>
                 </tr>
