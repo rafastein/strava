@@ -15,6 +15,16 @@ export type QualityWorkout = {
   elev: number;
   cal: number;
   kmSplits: { km: number; pace: number | null; fc: number | null }[];
+  laps?: {
+    index: number;
+    name: string;
+    distKm: number;
+    timeSec: number;
+    paceMinPerKm: number | null;
+    fcAvg: number | null;
+    fcMax: number | null;
+    speedKmh: number;
+  }[];
 };
 
 type Props = {
@@ -290,6 +300,51 @@ function SplitsMiniChart({ splits, label }: { splits: QualityWorkout["kmSplits"]
   return <canvas ref={ref} role="img" aria-label={`Splits do treino de ${label}`} />;
 }
 
+
+function LapsTable({ laps, label }: { laps: NonNullable<QualityWorkout["laps"]>; label: string }) {
+  const color = TYPE_COLORS[label] || "#6b7280";
+  const speeds = laps.map((l) => l.speedKmh).filter((s) => s > 0);
+  const avgSpeed = speeds.length ? speeds.reduce((a, b) => a + b, 0) / speeds.length : 0;
+  const FAST_THRESH = avgSpeed * 1.08; // 8% above avg = fast lap
+
+  function formatTime(sec: number) {
+    const m = Math.floor(sec / 60);
+    const s = Math.round(sec % 60);
+    return `${m}:${String(s).padStart(2, "0")}`;
+  }
+  function formatPaceStr(p: number | null) {
+    if (!p || p < 3 || p > 12) return "—";
+    const m = Math.floor(p);
+    const s = Math.round((p - m) * 60);
+    return `${m}:${String(s).padStart(2, "0")}/km`;
+  }
+
+  return (
+    <div style={{ marginTop: 12 }}>
+      <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", color: "rgba(255,255,255,.3)", marginBottom: 8 }}>
+        Voltas · {laps.length} laps
+      </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        {laps.map((lap) => {
+          const isFast = lap.speedKmh >= FAST_THRESH;
+          const isWarm = lap.index === 1;
+          const bgColor = isWarm ? "rgba(255,255,255,0.03)" : isFast ? color + "22" : "rgba(255,255,255,0.04)";
+          const borderColor = isFast ? color + "55" : "rgba(255,255,255,0.07)";
+          return (
+            <div key={lap.index} style={{ display: "grid", gridTemplateColumns: "24px 1fr auto auto auto", gap: 8, alignItems: "center", background: bgColor, border: `1px solid ${borderColor}`, borderRadius: 10, padding: "7px 12px" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: isFast ? color : "rgba(255,255,255,.3)", fontWeight: isFast ? 700 : 400 }}>{lap.index}</span>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,.5)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{lap.name}</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: isFast ? "#fff" : "rgba(255,255,255,.45)", fontWeight: isFast ? 600 : 400 }}>{formatPaceStr(lap.paceMinPerKm)}</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "rgba(255,255,255,.3)" }}>{lap.distKm.toFixed(2)} km</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "rgba(255,255,255,.25)" }}>{formatTime(lap.timeSec)}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 const ALL_TYPES = ["Todos", ...Object.keys(TYPE_COLORS)];
 
@@ -473,12 +528,14 @@ export default function QualityWorkoutsChart({ workouts }: Props) {
                     )}
                   </div>
 
-                  {w.kmSplits.length > 0 ? (
+                  {w.laps && w.laps.length > 1 ? (
+                    <LapsTable laps={w.laps} label={w.label} />
+                  ) : w.kmSplits.length > 0 ? (
                     <div className="relative h-44">
                       <SplitsMiniChart splits={w.kmSplits} label={w.label} />
                     </div>
                   ) : (
-                    <p style={{ fontSize: 11, color: "rgba(255,255,255,.3)" }}>Splits km a km não disponíveis para este treino.</p>
+                    <p style={{ fontSize: 11, color: "rgba(255,255,255,.3)" }}>Splits não disponíveis para este treino.</p>
                   )}
                 </div>
               )}

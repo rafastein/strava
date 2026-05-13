@@ -24,6 +24,20 @@ type StravaActivity = {
   max_speed?: number;
   calories?: number;
   splits_metric?: StravaSplit[];
+  laps?: StravaLap[];
+};
+
+type StravaLap = {
+  id: number;
+  name: string;
+  lap_index: number;
+  distance: number;
+  moving_time: number;
+  elapsed_time: number;
+  average_speed: number;
+  average_heartrate?: number | null;
+  max_heartrate?: number | null;
+  pace_zone?: number;
 };
 
 type StravaSplit = {
@@ -68,6 +82,20 @@ async function getDetailedActivity(
     if (!res.ok) return null;
     return await res.json();
   } catch { return null; }
+}
+
+async function getActivityLaps(
+  id: number,
+  token: string
+): Promise<StravaLap[]> {
+  try {
+    const res = await fetch(`https://www.strava.com/api/v3/activities/${id}/laps`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch { return []; }
 }
 
 // ── Workout classifier ───────────────────────────────────────────────────────
@@ -119,6 +147,48 @@ function classifyBySplits(
   return { label: "Corrida base", confidence: 0.60 };
 }
 
+function classifyByLaps(
+  laps: StravaLap[],
+  nameHint: string
+): { label: string; confidence: number } | null {
+  if (!laps || laps.length < 2) return null;
+
+  const name = nameHint.toLowerCase();
+  if (name.includes("interval")) return { label: "Intervalado", confidence: 0.99 };
+  if (name.includes("fartlek"))  return { label: "Fartlek", confidence: 0.99 };
+
+  // Detect fast laps (< 5:00/km = > 12 km/h)
+  const speeds = laps.map((l) =>
+    l.distance > 0 && l.moving_time > 0 ? (l.distance / l.moving_time) * 3.6 : 0
+  ).filter((s) => s > 0);
+
+  if (speeds.length < 2) return null;
+
+  const avg = speeds.reduce((a, b) => a + b, 0) / speeds.length;
+  const max = Math.max(...speeds);
+  const min = Math.min(...speeds);
+  const range = max - min;
+  const fastLaps = speeds.filter((s) => s > 12.0);
+  const slowLaps = speeds.filter((s) => s < 10.5);
+
+  // Clear intervals: alternating fast/slow laps with large range
+  if (fastLaps.length >= 2 && slowLaps.length >= 1 && range > 2.5)
+    return { label: "Intervalado", confidence: Math.min(0.97, 0.75 + fastLaps.length * 0.04) };
+
+  // Fartlek: variation but not as structured
+  if (range > 1.8 && fastLaps.length >= 1)
+    return { label: "Fartlek", confidence: 0.80 };
+
+  // Progressive: last third faster than first third
+  const thirds = Math.floor(speeds.length / 3);
+  const firstAvg = speeds.slice(0, thirds).reduce((a, b) => a + b, 0) / thirds;
+  const lastAvg = speeds.slice(-thirds).reduce((a, b) => a + b, 0) / thirds;
+  if (lastAvg - firstAvg > 0.8 && range < 2.0)
+    return { label: "Progressivo", confidence: 0.80 };
+
+  return null;
+}
+
 const QUALITY_TYPES = new Set([
   "Intervalado", "Fartlek", "Tiro", "Progressivo", "Tempo Run", "Rodagem",
 ]);
@@ -152,17 +222,21 @@ export default async function TreinosQualidadePage() {
     const BATCH_SIZE = 5;
     for (let i = 0; i < candidates.length; i += BATCH_SIZE) {
       const batch = candidates.slice(i, i + BATCH_SIZE);
-      const details = await Promise.all(
-        batch.map((a) => getDetailedActivity(a.id, token))
-      );
+      const [details, lapsAll] = await Promise.all([
+        Promise.all(batch.map((a) => getDetailedActivity(a.id, token))),
+        Promise.all(batch.map((a) => getActivityLaps(a.id, token))),
+      ]);
 
       batch.forEach((activity, idx) => {
         const detail = details[idx];
         const splits = detail?.splits_metric ?? [];
-        const { label, confidence } = classifyBySplits(splits, activity.name);
+        const laps = lapsAll[idx] ?? [];
+
+        // Classify: laps first (more accurate), fallback to splits
+        const lapClass = classifyByLaps(laps, activity.name);
+        const { label, confidence } = lapClass ?? classifyBySplits(splits, activity.name);
 
         const kmSplits = splits.map((s) => {
-          // moving_time em segundos, distance em metros → pace em min/km
           const paceMinPerKm =
             s.distance > 0 && s.moving_time > 0
               ? (s.moving_time / s.distance) * (1000 / 60)
@@ -173,6 +247,22 @@ export default async function TreinosQualidadePage() {
             fc: s.average_heartrate ? Math.round(s.average_heartrate) : null,
           };
         });
+
+        // Build lap data for visualization
+        const lapData = laps
+          .filter((l) => l.distance > 50) // ignore very short laps
+          .map((l) => ({
+            index: l.lap_index,
+            name: l.name,
+            distKm: parseFloat((l.distance / 1000).toFixed(3)),
+            timeSec: l.moving_time,
+            paceMinPerKm: l.distance > 0 && l.moving_time > 0
+              ? parseFloat(((l.moving_time / l.distance) * (1000 / 60)).toFixed(3))
+              : null,
+            fcAvg: l.average_heartrate ? Math.round(l.average_heartrate) : null,
+            fcMax: l.max_heartrate ? Math.round(l.max_heartrate) : null,
+            speedKmh: parseFloat(((l.distance / l.moving_time) * 3.6).toFixed(2)),
+          }));
 
         workouts.push({
           id: String(activity.id),
@@ -190,6 +280,7 @@ export default async function TreinosQualidadePage() {
           elev: Math.round(activity.total_elevation_gain),
           cal: detail?.calories ?? 0,
           kmSplits,
+          laps: lapData,
         });
       });
     }
