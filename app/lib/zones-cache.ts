@@ -111,7 +111,22 @@ export async function fetchAndCacheZones(
 
     const velocities: number[] = streams.velocity_smooth?.data ?? [];
     const times: number[]      = streams.time?.data ?? [];
-    const paceZones: { min: number; max: number }[] = zonesData.pace?.zones ?? [];
+    let paceZones: { min: number; max: number }[] = zonesData.pace?.zones ?? [];
+
+    // Fallback: zonas padrão se Strava não tiver zonas configuradas
+    // Baseado em pace típico para VDOT ~45 (min/max em m/s, Z1=mais lento)
+    if (!paceZones.length) {
+      // Pace ranges: Z1 >5:44, Z2 4:32-5:44, Z3 4:03-4:32, Z4 3:49-4:03, Z5 3:25-3:49, Z6 <3:25
+      // Convertido para m/s: pace(sec/km) → speed = 1000/pace_sec
+      paceZones = [
+        { min: -1,                  max: 1000 / 344 }, // Z1: > 5:44/km
+        { min: 1000 / 344,          max: 1000 / 272 }, // Z2: 4:32–5:44/km
+        { min: 1000 / 272,          max: 1000 / 243 }, // Z3: 4:03–4:32/km
+        { min: 1000 / 243,          max: 1000 / 229 }, // Z4: 3:49–4:03/km
+        { min: 1000 / 229,          max: 1000 / 205 }, // Z5: 3:25–3:49/km
+        { min: 1000 / 205,          max: -1          }, // Z6: < 3:25/km
+      ];
+    }
 
     if (!velocities.length || !paceZones.length) return null;
 
