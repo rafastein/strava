@@ -318,7 +318,17 @@ export default async function Home() {
               { label: "Planejado (SisRUN)", value: sisrunWeek ? `${plannedWeekKm.toFixed(1)} km` : "—", accent: false },
               { label: "Executado (Strava)", value: `${currentWeekKm.toFixed(1)} km`, accent: true },
               { label: "Aderência", value: sisrunWeek ? `${weeklyAdherencePct.toFixed(0)}%` : "—", accent: weeklyAdherencePct >= 90 },
-              { label: "Longão", value: sisrunWeek ? `${currentWeekLongestRunKm.toFixed(1)} / ${(sisrunWeek.longRunPlannedKm ?? 0).toFixed(1)} km` : `${currentWeekLongestRunKm.toFixed(1)} km`, accent: false },
+              {
+                label: "Longão",
+                value: sisrunWeek
+                  ? `${currentWeekLongestRunKm.toFixed(1)} / ${(sisrunWeek.longRunPlannedKm ?? 0).toFixed(1)} km • ${
+                      plannedWeekKm > 0
+                        ? ((currentWeekLongestRunKm / plannedWeekKm) * 100).toFixed(0)
+                        : 0
+                    }% da semana`
+                  : `${currentWeekLongestRunKm.toFixed(1)} km`,
+                accent: false,
+              },
             ].map((c) => (
               <MetricCard key={c.label} label={c.label} value={c.value} accent={c.accent} />
             ))}
