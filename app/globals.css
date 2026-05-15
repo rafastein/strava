@@ -165,3 +165,240 @@ body {
   .ba-title { font-size: 3.2rem; }
   .ba-page-header { flex-direction: column; }
 }
+
+/* ─────────────────────────────────────────────
+   MOBILE HARDENING · ajuste global das páginas internas
+   ───────────────────────────────────────────── */
+
+img,
+svg,
+canvas,
+video {
+  max-width: 100%;
+}
+
+.page,
+.ba-page,
+.card,
+.ba-card,
+.ba-card-soft,
+.list-item {
+  min-width: 0;
+}
+
+.ba-card,
+.ba-card-soft,
+.card,
+.list-item {
+  overflow: hidden;
+}
+
+.ba-muted,
+.card__sub,
+.metric-pill__value,
+.dark-table,
+.ba-card p,
+.ba-card-soft p {
+  overflow-wrap: anywhere;
+}
+
+/* Navbar: mantém navegável no mobile sem quebrar o topo */
+@media (max-width: 768px) {
+  .site-nav__inner {
+    height: auto;
+    min-height: 52px;
+    padding: .65rem 1rem;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: .55rem;
+  }
+
+  .site-nav__brand {
+    width: 100%;
+  }
+
+  .site-nav__links {
+    width: 100%;
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: .15rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .site-nav__link {
+    font-size: 9px;
+    padding: 6px 9px;
+  }
+}
+
+/* Header das páginas internas */
+@media (max-width: 768px) {
+  .page__inner,
+  .ba-page {
+    width: 100%;
+    max-width: 100%;
+    padding: 1.25rem .9rem 3rem;
+  }
+
+  .page-header,
+  .ba-page-header,
+  .ba-section.flex.items-center.justify-between {
+    flex-direction: column;
+    align-items: stretch;
+    gap: .85rem;
+  }
+
+  .page-header__title,
+  .ba-title {
+    font-size: clamp(2.45rem, 16vw, 3.2rem);
+    line-height: .92;
+    max-width: 100%;
+  }
+
+  .page-header__sub,
+  .ba-muted {
+    max-width: 100%;
+  }
+
+  .btn-back,
+  .ba-back {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+/* Grids padrão */
+@media (max-width: 1020px) {
+  .ba-hero,
+  .ba-week,
+  .ba-two,
+  .ba-grid-2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .ba-grid-4,
+  .ba-grid-3,
+  .stat-grid--4,
+  .stat-grid--5,
+  .stat-grid--3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .ba-grid-4,
+  .ba-grid-3,
+  .ba-grid-2,
+  .stat-grid--2,
+  .stat-grid--3,
+  .stat-grid--4,
+  .stat-grid--5,
+  .grid.md\:grid-cols-4,
+  .grid.md\:grid-cols-3,
+  .grid.md\:grid-cols-2,
+  .grid.lg\:grid-cols-\[1fr_\.95fr\],
+  .grid.lg\:grid-cols-\[1\.28fr_2fr\] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .ba-section {
+    margin-bottom: .9rem;
+  }
+
+  .ba-card,
+  .ba-card-soft,
+  .card,
+  .list-item {
+    border-radius: 18px;
+  }
+
+  .ba-card[style],
+  .ba-card-soft[style],
+  .card[style] {
+    padding: 1rem !important;
+  }
+
+  .ba-value,
+  .card__value {
+    line-height: 1;
+  }
+}
+
+/* Flex rows que ficavam espremidas */
+@media (max-width: 640px) {
+  .ba-page .flex.items-center.justify-between,
+  .ba-page .flex.items-start.justify-between,
+  .ba-page .flex.items-end.justify-between,
+  .page .flex.items-center.justify-between,
+  .page .flex.items-start.justify-between,
+  .page .flex.items-end.justify-between {
+    flex-wrap: wrap;
+  }
+
+  .ba-page .flex.items-center.justify-between > *,
+  .ba-page .flex.items-start.justify-between > *,
+  .ba-page .flex.items-end.justify-between > * {
+    min-width: 0;
+  }
+
+  .ba-page .whitespace-nowrap,
+  .page .whitespace-nowrap {
+    white-space: normal !important;
+  }
+
+  .ba-pill {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Tabelas e rankings: deixam de estourar a tela */
+@media (max-width: 768px) {
+  .dark-table {
+    min-width: 620px;
+  }
+
+  .dark-table-wrapper,
+  .table-wrapper,
+  .ba-card:has(.dark-table),
+  .card:has(.dark-table) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Recharts e gráficos grandes */
+@media (max-width: 640px) {
+  .recharts-wrapper,
+  .recharts-surface {
+    max-width: 100% !important;
+  }
+
+  .recharts-legend-wrapper {
+    max-width: 100% !important;
+  }
+}
+
+/* Mapas */
+@media (max-width: 640px) {
+  .ba-card svg,
+  .ba-card-soft svg {
+    height: auto;
+  }
+}
+
+/* SisRUN / cards de agenda: evita colunas apertadas demais */
+@media (max-width: 640px) {
+  .ba-page .sm\:grid-cols-2,
+  .ba-page .sm\:grid-cols-3,
+  .ba-page .sm\:grid-cols-4 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .ba-page .truncate {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+}
