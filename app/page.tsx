@@ -200,25 +200,48 @@ export default async function Home() {
         .nav-link:hover { color: #fff !important; }
         .explore-card:hover { border-color: rgba(245,166,35,0.3) !important; background: rgba(245,166,35,0.04) !important; }
         .nav-links-wrap { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+
         @media (max-width: 640px) {
-          .nav-links-wrap { display: none; }
+          .nav-links-wrap { display: none !important; }
+
+          .home-hero-actions {
+            flex-direction: column;
+            width: 100%;
+          }
+
+          .home-hero-actions a {
+            justify-content: center;
+            width: 100%;
+          }
+
           :root {
             --hero-cols: 1fr;
             --metrics-cols: repeat(2, 1fr);
             --longoes-cols: repeat(2, 1fr);
             --explore-cols: 1fr;
             --today-cols: 1fr;
+            --alerts-cols: 1fr;
           }
         }
+
+        @media (max-width: 420px) {
+          :root {
+            --metrics-cols: 1fr;
+            --longoes-cols: 1fr;
+          }
+        }
+
         @media (min-width: 641px) and (max-width: 1023px) {
           :root {
             --hero-cols: 1fr;
             --metrics-cols: repeat(2, 1fr);
             --longoes-cols: repeat(2, 1fr);
             --explore-cols: repeat(2, 1fr);
-            --today-cols: 1fr 2fr;
+            --today-cols: 1fr;
+            --alerts-cols: repeat(2, 1fr);
           }
         }
+
         @media (min-width: 1024px) {
           :root {
             --hero-cols: 1fr 1fr;
@@ -226,6 +249,7 @@ export default async function Home() {
             --longoes-cols: repeat(3, 1fr) 1.2fr;
             --explore-cols: repeat(3, 1fr);
             --today-cols: 1fr 2fr;
+            --alerts-cols: repeat(2, 1fr);
           }
         }
       `}</style>
@@ -242,7 +266,7 @@ export default async function Home() {
             </span>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#f5a623", display: "inline-block", marginLeft: 2 }} />
           </div>
-          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+          <div className="nav-links-wrap">
             {NAV_LINKS.map((l) => (
               <Link key={l.href} href={l.href} className="nav-link" style={{ fontSize: 11, fontWeight: 500, letterSpacing: "0.07em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)", padding: "6px 10px", borderRadius: 6, textDecoration: "none", transition: "color 0.2s" }}
 
@@ -272,7 +296,7 @@ export default async function Home() {
             <p style={{ fontSize: 15, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, maxWidth: 380, marginBottom: "1.25rem" }}>
               Dashboard de treinos, projeções e análise de corrida. Powered by Strava + SisRUN.
             </p>
-            <div style={{ display: "flex", gap: 12 }}>
+            <div className="home-hero-actions" style={{ display: "flex", gap: 12 }}>
               <Link href="/buenos-aires" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#f5a623", color: "#000", padding: "12px 24px", borderRadius: 10, fontWeight: 600, fontSize: 14, textDecoration: "none", letterSpacing: "0.02em" }}>
                 Modo maratona →
               </Link>
@@ -336,7 +360,7 @@ export default async function Home() {
         </section>
 
         {/* ── HOJE + ALERTAS ── */}
-        <section style={{ marginBottom: "1.75rem", display: "grid", gridTemplateColumns: "1fr 2fr", gap: 12 }}>
+        <section style={{ marginBottom: "1.75rem", display: "grid", gridTemplateColumns: "var(--today-cols, 1fr 2fr)", gap: 12 }}>
           <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "1.5rem" }}>
             <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: "0.75rem" }}>Hoje</p>
             {todaySisrunRow ? (
@@ -352,7 +376,7 @@ export default async function Home() {
             </span>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "var(--alerts-cols, repeat(2,1fr))", gap: 10 }}>
             {alerts.map((a, i) => (
               <div key={i} style={{ background: a.ok ? "rgba(16,185,129,0.06)" : "rgba(245,166,35,0.06)", border: `1px solid ${a.ok ? "rgba(16,185,129,0.15)" : "rgba(245,166,35,0.15)"}`, borderRadius: 16, padding: "1.25rem 1.5rem" }}>
                 <p style={{ fontSize: 13, fontWeight: 600, color: a.ok ? "#10b981" : "#f5a623", marginBottom: 4 }}>{a.title}</p>
