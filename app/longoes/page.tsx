@@ -137,7 +137,7 @@ function InfoCard({
   }[accent ?? "accent"];
 
   return (
-    <div className="ba-card" style={{ padding: "1.2rem 1.4rem", textAlign: "center" }}>
+    <div className="ba-card longoes-info-card" style={{ padding: "1.2rem 1.4rem", textAlign: "center" }}>
       <p className="ba-label">{title}</p>
       <h2 className={`card__value ${accent ? valueClass : ""}`} style={{ marginTop: ".4rem", fontSize: "clamp(1.4rem, 2.5vw, 2rem)" }}>{value}</h2>
       {sub && <p className="ba-muted" style={{ marginTop: ".3rem" }}>{sub}</p>}
@@ -147,7 +147,7 @@ function InfoCard({
 
 function MetricPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="ba-card-soft" style={{ padding: ".65rem 1rem" }}>
+    <div className="ba-card-soft longoes-metric-pill" style={{ padding: ".65rem 1rem" }}>
       <p className="metric-pill__label">{label}</p>
       <p className="metric-pill__value" style={{ marginTop: ".25rem" }}>{value}</p>
     </div>
@@ -224,7 +224,7 @@ export default async function LongoesPage() {
   }));
 
   return (
-    <main className="page">
+    <main className="page longoes-page">
       <Navbar />
       <div className="page__inner pb-24">
         <div className="ba-page-header">
@@ -242,9 +242,9 @@ export default async function LongoesPage() {
           </Link>
         </div>
 
-        <section style={{ marginBottom: "4rem" }}>
+        <section className="longoes-section longoes-summary-section" style={{ marginBottom: "4rem" }}>
           <p className="ba-eyebrow" style={{ marginBottom: ".75rem" }}>Resumo geral</p>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5 longoes-summary-grid">
             <InfoCard title="Total de longões" value={String(summary.totalLongRuns)} sub="desde jan/2024" />
             <InfoCard title="Maior distância" value={`${summary.longestRunKm.toFixed(1)} km`} accent="accent" />
             <InfoCard title="Melhor ritmo" value={formatLongRunPace(bestPace)} sub={bestEffRun ? formatBRDate(bestEffRun.date) : undefined} accent="blue" />
@@ -253,8 +253,8 @@ export default async function LongoesPage() {
           </div>
         </section>
 
-        <section className="grid gap-8 lg:grid-cols-3" style={{ marginBottom: "3.5rem" }}>
-          <div className="card card--accent min-h-[340px]" style={{ padding: "2rem" }}>
+        <section className="grid gap-8 lg:grid-cols-3 longoes-section longoes-insights-grid" style={{ marginBottom: "3.5rem" }}>
+          <div className="card card--accent min-h-[340px] longoes-insight-card" style={{ padding: "2rem" }}>
             <p className="section-label ba-section">Último longão</p>
             {lastLongRun ? (
               <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", height: "calc(100% - 2rem)" }}>
@@ -283,7 +283,7 @@ export default async function LongoesPage() {
             )}
           </div>
 
-          <div className="card min-h-[340px]" style={{ padding: "2rem" }}>
+          <div className="card min-h-[340px] longoes-insight-card" style={{ padding: "2rem" }}>
             <p className="section-label mb-7">Tendência de eficiência</p>
             <div className="flex items-center gap-4">
               <span className="text-3xl">{efficiencyTrend.emoji}</span>
@@ -300,7 +300,7 @@ export default async function LongoesPage() {
             </div>
           </div>
 
-          <div className="card min-h-[340px]" style={{ padding: "2rem" }}>
+          <div className="card min-h-[340px] longoes-insight-card longoes-pattern-card" style={{ padding: "2rem" }}>
             <p className="section-label mb-7">Padrões identificados</p>
             <div className="space-y-5">
               <MetricPill label="Longões com melhora" value={`${progressiveRuns} em relação ao anterior`} />
@@ -311,12 +311,12 @@ export default async function LongoesPage() {
           </div>
         </section>
 
-        <section style={{ marginBottom: "3.5rem" }}>
+        <section className="longoes-section longoes-evolution-section" style={{ marginBottom: "3.5rem" }}>
           <p className="ba-eyebrow" style={{ marginBottom: "1.25rem" }}>Evolução</p>
           <LongRunCharts longRuns={chartData} />
         </section>
 
-        <section className="ba-card" style={{ padding: "2rem", marginTop: "0" }}>
+        <section className="ba-card longoes-history-card" style={{ padding: "2rem", marginTop: "0" }}>
           <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="ba-eyebrow" style={{ marginBottom: ".75rem" }}>Histórico completo</p>
@@ -333,7 +333,7 @@ export default async function LongoesPage() {
           {longRuns.length === 0 ? (
             <p className="text-sm text-white/50">Nenhuma atividade com nome “Longão” foi encontrada.</p>
           ) : (
-            <div className="space-y-12">
+            <div className="space-y-12 longoes-history-list">
               {longRuns.map((run, index) => {
                 const previous = longRuns[index + 1];
                 const trend = getEfficiencyTrend(run.efficiency, previous?.efficiency);
@@ -341,7 +341,7 @@ export default async function LongoesPage() {
                 const isBest = run.efficiency === bestEffValue;
 
                 return (
-                  <div key={run.id} className={`list-item ${isBest ? "list-item--accent" : ""}`} style={{ padding: "2rem 2rem 3rem" }}>
+                  <div key={run.id} className={`list-item longoes-run-card ${isBest ? "list-item--accent" : ""}`} style={{ padding: "2rem 2rem 3rem" }}>
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                       <div className="flex items-start gap-3">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-sm font-bold text-white/35">
@@ -367,7 +367,7 @@ export default async function LongoesPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6" style={{ marginTop: "1.75rem" }}>
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 longoes-run-metrics" style={{ marginTop: "1.75rem" }}>
                       <MetricPill label="Tempo" value={formatLongRunDuration(run.movingTimeSec)} />
                       <MetricPill label="Ritmo" value={formatLongRunPace(run.paceSecPerKm)} />
                       <MetricPill label="Ritmo ajustado" value={formatLongRunPace(run.adjustedPaceSecPerKm)} />
@@ -377,7 +377,7 @@ export default async function LongoesPage() {
                     </div>
 
                     <div
-                      className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10"
+                      className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 longoes-efficiency-row"
                       style={{ marginTop: "1.75rem", paddingTop: "1.5rem" }}
                     >
                       <div className="flex items-center gap-2">
@@ -391,12 +391,12 @@ export default async function LongoesPage() {
                       </div>
                     </div>
 
-                    <div style={{ marginTop: "1rem", marginBottom: "1.75rem" }}>
+                    <div className="longoes-pace-block" style={{ marginTop: "1rem", marginBottom: "1.75rem" }}>
                       <PaceBar paceSecPerKm={run.paceSecPerKm} best={bestPace} worst={worstPace} />
                       <p className="mt-2 text-right text-xs text-white/20">posição de ritmo no histórico</p>
                     </div>
 
-                    <div className="border-t border-white/10" style={{ paddingTop: "1.5rem" }}>
+                    <div className="border-t border-white/10 longoes-splits-block" style={{ paddingTop: "1.5rem" }}>
                       <ActivitySplitsChart
                         activityId={Number(run.id)}
                         activityName={run.name}

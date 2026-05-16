@@ -240,8 +240,8 @@ export default function LongRunCharts({ longRuns }: Props) {
   ];
 
   return (
-    <div className="card" style={{ padding: "2rem" }}>
-      <div className="mb-7 flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+    <div className="card long-run-chart-card" style={{ padding: "2rem" }}>
+      <div className="mb-7 flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between long-run-chart-header">
         <div>
           <h2 className="text-xl font-semibold text-white/90">
             Evolução dos longões
@@ -250,12 +250,12 @@ export default function LongRunCharts({ longRuns }: Props) {
             {sorted.length} longões — do mais antigo ao mais recente
           </p>
         </div>
-        <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3 xl:w-auto xl:min-w-[540px]">
+        <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3 xl:w-auto xl:min-w-[540px] long-run-chart-tabs">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setMode(tab.key)}
-              className={`min-w-[165px] rounded-full border px-7 py-3.5 text-center text-sm font-semibold leading-none transition-colors ${
+              className={`long-run-chart-tab min-w-[165px] rounded-full border px-7 py-3.5 text-center text-sm font-semibold leading-none transition-colors ${
                 mode === tab.key
                   ? "bg-[rgba(245,166,35,0.18)] text-[#f5a623] border border-[rgba(245,166,35,0.3)]"
                   : "bg-white/[0.04] text-white/45 border border-white/10 hover:text-white/75"
@@ -266,14 +266,14 @@ export default function LongRunCharts({ longRuns }: Props) {
           ))}
         </div>
       </div>
-      <div className="relative h-[340px]">
+      <div className="relative h-[340px] long-run-chart-canvas">
         <canvas
           ref={chartRef}
           role="img"
           aria-label={`Gráfico de evolução de ${mode} nos longões`}
         />
       </div>
-      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-white/35">
+      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-white/35 long-run-chart-legend">
         {mode === "pace" && (
           <>
             <span className="flex items-center gap-1">

@@ -413,14 +413,7 @@ export default function MarathonProjection({
         <canvas ref={canvasRef} />
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-          gap: 18,
-          marginBottom: 28,
-        }}
-      >
+      <div className="marathon-projection-metrics">
         <MetricCard
           label="Melhora de pace/mês"
           value={`${data.pacePerMonth < 0 ? "−" : "+"}${Math.abs(
@@ -647,6 +640,7 @@ function MetricCard({
 }) {
   return (
     <div
+      className="marathon-projection-metric-card"
       style={{
         minHeight: 86,
         borderRadius: 18,
