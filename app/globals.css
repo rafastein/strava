@@ -402,3 +402,111 @@ video {
     text-overflow: clip;
   }
 }
+
+/* Buenos Aires refactor helpers */
+.ba-hero {
+  display: grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap: 2rem;
+  align-items: stretch;
+}
+
+.ba-race-glow {
+  position: absolute;
+  inset: -120px -120px auto auto;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245,166,35,.16), transparent 68%);
+  pointer-events: none;
+}
+
+.ba-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.ba-alert-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .8rem;
+  margin-top: 1.25rem;
+}
+
+.ba-readiness-section {
+  padding: 1.35rem;
+  margin-bottom: 1rem;
+  display: grid;
+  grid-template-columns: 1.2fr .8fr;
+  gap: 1rem;
+  align-items: center;
+}
+
+.ba-weekly-goal-value {
+  font-size: 32px;
+}
+
+.ba-training-pace-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .75rem .85rem;
+  border-radius: 14px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.055);
+}
+
+.ba-manual-prediction {
+  margin-top: .9rem;
+  padding: .85rem;
+  border-radius: 18px;
+  background: rgba(255,255,255,.032);
+  border: 1px solid rgba(255,255,255,.07);
+}
+
+.ba-recent-longrun {
+  padding: .8rem;
+  border-radius: 16px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.06);
+}
+
+.ba-chip-row {
+  display: flex;
+  gap: .45rem;
+  flex-wrap: wrap;
+  margin-top: .7rem;
+}
+
+.ba-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .85rem;
+  margin-top: .9rem;
+}
+
+@media (max-width: 1020px) {
+  .ba-hero,
+  .ba-readiness-section,
+  .ba-summary-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .ba-card-head,
+  .ba-training-pace-row {
+    flex-direction: column;
+  }
+
+  .ba-alert-grid,
+  .ba-summary-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .ba-weekly-goal-value {
+    font-size: 28px;
+  }
+}
