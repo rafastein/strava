@@ -8,6 +8,7 @@ import RaceCountdown from "../components/RaceCountdown";
 import ActivitySplitsChart from "../components/ActivitySplitsChart";
 import WeeklyPlanVsActualChart from "../components/WeeklyPlanVsActualChart";
 import ZonesAggregate from "../components/ZonesAggregate";
+import TodayWorkoutCard from "../components/TodayWorkoutCard";
 import { getValidStravaAccessToken } from "../lib/strava-auth";
 import { getDynamicAthleteProfile } from "../lib/strava-prs";
 import { trainingPacesFromVdot } from "../lib/vdot";
@@ -515,60 +516,10 @@ export default async function BuenosAiresPage() {
         </section>
 
         <section className="ba-week" style={{ marginBottom: "1rem" }}>
-          <div className="ba-card" style={{ padding: "1.2rem" }}>
-            <p className="ba-label">Hoje</p>
-            <h2
-              style={{
-                color: "#fff",
-                fontSize: 20,
-                fontWeight: 700,
-                marginTop: 8,
-              }}
-            >
-              Treino de hoje
-            </h2>
-            <div style={{ display: "grid", gap: ".7rem", marginTop: "1rem" }}>
-              <div className="ba-card-soft" style={{ padding: ".85rem" }}>
-                <p className="ba-label">Planejado</p>
-                <p style={{ color: "#fff", fontWeight: 800, marginTop: 4 }}>
-                  {todaySisrunRow
-                    ? `${todaySisrunRow.plannedDistanceKm.toFixed(1)} km`
-                    : "Sem treino"}
-                </p>
-              </div>
-              <div className="ba-card-soft" style={{ padding: ".85rem" }}>
-                <p className="ba-label">Strava</p>
-                <p style={{ color: "#fff", fontWeight: 800, marginTop: 4 }}>
-                  {todayStravaKm.toFixed(1)} km
-                </p>
-              </div>
-              <div className="ba-card-soft" style={{ padding: ".85rem" }}>
-                <p className="ba-label">Janela</p>
-                <p style={{ color: "#fff", fontWeight: 800, marginTop: 4 }}>
-                  {todaySisrunRow
-                    ? `${todaySisrunRow.minPlannedTime ?? "—"} / ${todaySisrunRow.maxPlannedTime ?? "—"}`
-                    : "—"}
-                </p>
-              </div>
-            </div>
-            <span
-              style={{
-                display: "inline-flex",
-                marginTop: "1rem",
-                padding: ".35rem .65rem",
-                borderRadius: 999,
-                background: todayStatus.includes("Concl")
-                  ? "rgba(16,185,129,.15)"
-                  : "rgba(245,166,35,.12)",
-                color: todayStatus.includes("Concl") ? "#34d399" : "#f5a623",
-                border: `1px solid ${todayStatus.includes("Concl") ? "rgba(16,185,129,.25)" : "rgba(245,166,35,.25)"}`,
-                fontSize: 12,
-                fontWeight: 800,
-              }}
-            >
-              {todayStatus}
-            </span>
-          </div>
+          <TodayWorkoutCard
+            todaySisrunRow={todaySisrunRow}
+            todayStravaKm={todayStravaKm}
+          />
 
           <div className="ba-card" style={{ padding: "1.2rem" }}>
             <div
