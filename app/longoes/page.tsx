@@ -193,12 +193,20 @@ export default async function LongoesPage() {
     .filter((p): p is number => p !== null && Number.isFinite(p));
   const bestPace = validPaces.length ? Math.min(...validPaces) : 0;
   const worstPace = validPaces.length ? Math.max(...validPaces) : 0;
+  const bestPaceRun = bestPace
+    ? longRuns.find((r) => r.paceSecPerKm === bestPace)
+    : null;
+  const longestDistanceRun = longRuns.length
+    ? longRuns.reduce((best, run) =>
+        run.distanceKm > best.distanceKm ? run : best,
+      )
+    : null;
 
   const validEff = longRuns
     .map((r) => r.efficiency)
     .filter((e): e is number => e !== null && Number.isFinite(e));
   const bestEffValue = validEff.length ? Math.max(...validEff) : null;
-  const bestEffRun = bestEffValue
+  const bestEffRun = bestEffValue !== null
     ? longRuns.find((r) => r.efficiency === bestEffValue)
     : null;
 
@@ -246,9 +254,24 @@ export default async function LongoesPage() {
           <p className="ba-eyebrow" style={{ marginBottom: ".75rem" }}>Resumo geral</p>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5 longoes-summary-grid">
             <InfoCard title="Total de longões" value={String(summary.totalLongRuns)} sub="desde jan/2024" />
-            <InfoCard title="Maior distância" value={`${summary.longestRunKm.toFixed(1)} km`} accent="accent" />
-            <InfoCard title="Melhor ritmo" value={formatLongRunPace(bestPace)} sub={bestEffRun ? formatBRDate(bestEffRun.date) : undefined} accent="blue" />
-            <InfoCard title="Melhor eficiência" value={formatEfficiency(summary.bestEfficiency)} sub={bestEffRun?.name} accent="success" />
+            <InfoCard
+              title="Maior distância"
+              value={`${summary.longestRunKm.toFixed(1)} km`}
+              sub={longestDistanceRun ? formatBRDate(longestDistanceRun.date) : undefined}
+              accent="accent"
+            />
+            <InfoCard
+              title="Melhor ritmo"
+              value={formatLongRunPace(bestPace)}
+              sub={bestPaceRun ? formatBRDate(bestPaceRun.date) : undefined}
+              accent="blue"
+            />
+            <InfoCard
+              title="Melhor eficiência"
+              value={formatEfficiency(summary.bestEfficiency)}
+              sub={bestEffRun ? formatBRDate(bestEffRun.date) : undefined}
+              accent="success"
+            />
             <InfoCard title="FC média geral" value={summary.averageHeartrate ? `${summary.averageHeartrate.toFixed(0)} bpm` : "—"} />
           </div>
         </section>
@@ -414,3 +437,4 @@ export default async function LongoesPage() {
     </main>
   );
 }
+  
