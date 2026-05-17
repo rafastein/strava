@@ -110,24 +110,9 @@ function getTopRaces(races: Race[], filterFn: (race: Race) => boolean) {
 }
 
 function getMedalMeta(index: number) {
-  if (index === 0) {
-    return {
-      label: "🥇 Ouro",
-      className: "border border-amber-200 bg-amber-100 text-amber-800",
-    };
-  }
-
-  if (index === 1) {
-    return {
-      label: "🥈 Prata",
-      className: "border border-slate-200 bg-slate-100 text-slate-700",
-    };
-  }
-
-  return {
-    label: "🥉 Bronze",
-    className: "border border-orange-200 bg-orange-100 text-orange-800",
-  };
+  if (index === 0) return { label: "Ouro",   icon: "🥇", badgeClass: "badge--accent" };
+  if (index === 1) return { label: "Prata",  icon: "🥈", badgeClass: "badge--muted"  };
+  return             { label: "Bronze", icon: "🥉", badgeClass: "badge--orange" };
 }
 
 export default async function CorridasBrasilPage() {
@@ -184,7 +169,7 @@ export default async function CorridasBrasilPage() {
             separado em meias, 10k e 5k.
           </p>
 
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: ".9rem", marginTop: "1.25rem" }}>
             <TopDistanceCard title="Top 3 Meias" races={topHalf} />
             <TopDistanceCard title="Top 3 10k" races={top10k} />
             <TopDistanceCard title="Top 3 5k" races={top5k} />
@@ -196,73 +181,42 @@ export default async function CorridasBrasilPage() {
         </section>
 
         <section className="ba-card" style={{ padding: "1.5rem" }}>
-          <p className="ba-eyebrow">
-            Ranking por estado
-          </p>
-          <p className="mt-1 text-sm text-white/40">
-            Lista detalhada das corridas identificadas como eventos/provas no
-            Brasil.
-          </p>
+          <p className="ba-eyebrow">Ranking por estado</p>
+          <p className="ba-muted" style={{ marginTop: ".4rem", marginBottom: "1.25rem" }}>Lista detalhada das corridas identificadas como eventos/provas no Brasil.</p>
 
           {grouped.length === 0 ? (
             <p className="ba-muted" style={{ marginTop: 20 }}>
               Nenhuma corrida foi identificada com a regra atual.
             </p>
           ) : (
-            <div className="mt-5 grid gap-3 md:grid-cols-2">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: ".9rem" }}>
               {grouped.map((item) => (
                 <div
                   key={item.state}
                   className="ba-card-soft" style={{ padding: "1rem" }}
                 >
-                  <div className="flex items-center justify-between">
-                    <p style={{ fontSize: 16, fontWeight: 600, color: "var(--text)" }}>
-                      {item.stateName}
-                    </p>
-                    <span className="rounded-full bg-orange-100 px-3 py-1 text-sm font-semibold text-orange-700">
-                      {item.count} {item.count === 1 ? "corrida" : "corridas"}
-                    </span>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: "1rem" }}>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text)" }}>{item.stateName}</p>
+                    <span className="badge badge--accent">{item.count} {item.count === 1 ? "corrida" : "corridas"}</span>
                   </div>
 
-                  <div className="mt-3 space-y-2">
+                  <div style={{ display: "flex", flexDirection: "column", gap: ".5rem" }}>
                     {item.races.map((race, index) => {
                       const previous = item.races[index + 1];
 
                       return (
-                        <div
-                          key={race.id}
-                          className="ba-card-soft" style={{ padding: "10px 12px", fontSize: 12 }}
-                        >
-                          <p style={{ fontWeight: 600, color: "var(--text)", fontSize: 12 }}>
-                            {race.name}
-                          </p>
-
-                          <p style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                            {race.city || "Não identificado"}
-                            {race.state ? `, ${race.state}` : ""} •{" "}
-                            {formatBRDate(race.date)} •{" "}
-                            {race.distanceKm.toFixed(2)} km • {race.time} •{" "}
-                            {formatPaceFromRace(race)}
-                          </p>
-
-                          <p style={{ marginTop: 2, fontSize: 11, color: "var(--text-muted)" }}>
-                            FC{" "}
-                            {race.averageHeartrate
-                              ? `${race.averageHeartrate.toFixed(0)} bpm`
-                              : "-"}{" "}
-                            • Alt {race.elevationGain ?? 0} m • Eficiência{" "}
-                            {formatRaceEfficiency(race.efficiency ?? null)} •{" "}
-                            {getTrend(race.efficiency, previous?.efficiency)}
-                          </p>
-
-                          <div className="mt-3">
-                            <ActivitySplitsChart
-                              activityId={Number(String(race.id).replace("strava-", ""))}
-                              activityName={race.name}
-                              targetPaceSecPerKm={race.paceSecPerKm ?? undefined}
-                              goalPaceSecPerKm={320}
-                            />
+                        <div key={race.id} style={{ background: "rgba(0,0,0,.18)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "10px 12px", display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "center" }}>
+                          <div style={{ minWidth: 0 }}>
+                            <p style={{ fontWeight: 600, color: "rgba(255,255,255,.88)", fontSize: 13, marginBottom: 4 }}>{race.name}</p>
+                            <p style={{ fontSize: 11, color: "rgba(255,255,255,.38)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{race.city || "Não identificado"}{race.state ? `, ${race.state}` : ""} · {formatBRDate(race.date)} · {race.distanceKm.toFixed(2)} km · {race.time} · {formatPaceFromRace(race)}</p>
+                            <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: "rgba(255,255,255,.28)", marginTop: 3 }}>FC {race.averageHeartrate ? `${race.averageHeartrate.toFixed(0)} bpm` : "-"} · Alt {race.elevationGain ?? 0} m · Ef {formatRaceEfficiency(race.efficiency ?? null)} · {getTrend(race.efficiency, previous?.efficiency)}</p>
                           </div>
+                          <ActivitySplitsChart
+                            activityId={Number(String(race.id).replace("strava-", ""))}
+                            activityName={race.name}
+                            targetPaceSecPerKm={race.paceSecPerKm ?? undefined}
+                            goalPaceSecPerKm={320}
+                          />
                         </div>
                       );
                     })}
@@ -294,7 +248,7 @@ function TopDistanceCard({
           Nenhuma prova encontrada nessa categoria.
         </p>
       ) : (
-        <div className="mt-3 space-y-2">
+        <div style={{ display: "flex", flexDirection: "column", gap: ".5rem", marginTop: 12 }}>
           {races.map((race, index) => {
             const medal = getMedalMeta(index);
             const isTopOne = index === 0;
@@ -302,16 +256,12 @@ function TopDistanceCard({
             return (
               <div
                 key={race.id}
-                className="ba-card-soft" style={{ padding: "10px 12px", fontSize: 12 }}
+  style={{ background: "rgba(0,0,0,.18)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "10px 12px" }}
               >
-                <div className="flex items-start justify-between gap-3">
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
                   <p style={{ fontWeight: 600, color: "var(--text)", fontSize: 12 }}>{race.name}</p>
 
-                  <span
-                    className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${medal.className}`}
-                  >
-                    {medal.label}
-                  </span>
+                  <span className={`badge ${medal.badgeClass ?? "badge--muted"}`}>{medal.icon} {medal.label}</span>
                 </div>
 
                 <p style={{ marginTop: 2, fontSize: 11, color: "var(--text-muted)" }}>

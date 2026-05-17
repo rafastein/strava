@@ -47,17 +47,19 @@ export default function SisrunUploadForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="ba-card p-4 md:p-5">
+    <form onSubmit={handleSubmit} className="ba-card" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
       <div>
         <p className="ba-eyebrow">Upload</p>
-        <h2 className="mt-1 text-lg font-semibold text-white">Atualizar SisRUN</h2>
-        <p className="mt-1 text-sm leading-relaxed text-white/45">
+        <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.6rem", color: "#fff", marginTop: 4 }}>
+          Atualizar SisRUN
+        </h2>
+        <p className="ba-muted" style={{ marginTop: ".4rem" }}>
           Envie a planilha exportada para atualizar o planejamento semanal.
         </p>
       </div>
 
-      <div className="mt-5 rounded-2xl border border-dashed border-white/10 bg-white/[.025] p-4">
-        <label className="ba-label block">Arquivo da planilha</label>
+      <div className="ba-card-soft" style={{ padding: "1rem" }}>
+        <p className="ba-label" style={{ marginBottom: ".75rem" }}>Arquivo da planilha</p>
 
         <input
           ref={inputRef}
@@ -71,31 +73,31 @@ export default function SisrunUploadForm() {
           className="sr-only"
         />
 
-        <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/20 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="min-w-0 truncate text-sm text-white/55">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "rgba(0,0,0,.2)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 12, padding: "10px 14px" }}>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,.55)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {file ? file.name : "Nenhum arquivo escolhido"}
           </p>
-
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="inline-flex shrink-0 items-center justify-center rounded-full border border-orange-400/30 bg-orange-400/10 px-4 py-2 text-[11px] font-black uppercase tracking-[.14em] text-orange-300 transition hover:border-orange-300/55 hover:bg-orange-400/15 hover:text-orange-200"
+            className="ba-pill ba-pill-dark"
+            style={{ flexShrink: 0, fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase" }}
           >
             Escolher arquivo
           </button>
         </div>
       </div>
 
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <button
           type="submit"
           disabled={loading}
-          className="inline-flex items-center justify-center rounded-full border border-orange-400/35 bg-orange-400/90 px-5 py-2.5 text-[11px] font-black uppercase tracking-[.14em] text-black shadow-[0_0_30px_rgba(251,146,60,.13)] transition hover:bg-orange-300 disabled:cursor-not-allowed disabled:opacity-50"
+          className="ba-pill ba-pill-orange"
+          style={{ fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", opacity: loading ? .5 : 1, cursor: loading ? "not-allowed" : "pointer" }}
         >
           {loading ? "Processando..." : "Enviar planilha"}
         </button>
-
-        {status && <p className="text-sm text-white/45">{status}</p>}
+        {status && <p style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>{status}</p>}
       </div>
     </form>
   );

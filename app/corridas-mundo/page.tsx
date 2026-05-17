@@ -385,78 +385,66 @@ export default async function CorridasMundoPage() {
           <WorldRaceMap counts={counts} />
         </section>
 
-        <section className="ba-card" style={{ padding: "1.25rem" }}>
+        <section className="ba-card" style={{ padding: "1.5rem" }}>
           <p className="ba-eyebrow">Ranking por país</p>
-          <p className="mt-1 max-w-4xl text-xs leading-relaxed text-white/[0.38]">
+          <p className="ba-muted" style={{ marginTop: ".4rem", marginBottom: "1.25rem" }}>
             Lista detalhada das corridas identificadas como eventos/provas com
             distância mínima de 21 km. As medalhas destacam os 3 melhores paces
             médios da página.
           </p>
 
           {grouped.length === 0 ? (
-            <p className="ba-muted" style={{ marginTop: 20 }}>
+            <p className="ba-muted">
               Nenhuma corrida acima de 21 km foi identificada com a regra atual.
             </p>
           ) : (
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: ".9rem" }}>
               {grouped.map((item) => {
                 const displayCountry = normalizeCountryDisplay(item.country);
 
                 return (
-                  <div
-                    key={item.country}
-                    className="ba-card-soft" style={{ padding: "0.95rem" }}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="flex min-w-0 items-center gap-2 text-sm font-semibold tracking-[-0.01em] text-white/90">
+                  <div key={item.country} className="ba-card-soft" style={{ padding: "1.1rem" }}>
+                    {/* País header */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: "1rem" }}>
+                      <p style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 600, color: "var(--text)" }}>
                         <CountryFlag country={item.country} />
-                        <span className="truncate">{displayCountry}</span>
+                        <span>{displayCountry}</span>
                       </p>
-
-                      <span className="shrink-0 rounded-full border border-orange-400/20 bg-orange-400/10 px-2.5 py-1 text-[11px] font-semibold leading-none text-orange-300">
+                      <span className="badge badge--accent">
                         {item.count} {item.count === 1 ? "corrida" : "corridas"}
                       </span>
                     </div>
 
-                    <div className="mt-3 space-y-2.5">
+                    {/* Corridas */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: ".5rem" }}>
                       {item.races.map((race: Race, index) => {
-                        const medal = topRaceMedals.get(race.id);
+                        const medal    = topRaceMedals.get(race.id);
                         const previous = item.races[index + 1];
 
                         return (
-                          <div
-                            key={race.id}
-                            className="grid gap-2 rounded-xl border border-white/[0.06] bg-black/[0.18] px-3 py-2 text-xs text-white/[0.45] md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
-                          >
-                            <div className="min-w-0">
-                              <p className="flex min-w-0 items-center gap-2 text-[13px] font-semibold leading-snug tracking-[-0.01em] text-white/[0.88]">
-                                {medal ? (
-                                  <span
-                                    className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[11px]"
-                                    title="Top 3 melhores paces"
-                                  >
+                          <div key={race.id} style={{ background: "rgba(0,0,0,.18)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "10px 12px", display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "center" }}>
+                            <div style={{ minWidth: 0 }}>
+                              {/* Nome */}
+                              <p style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,.88)", marginBottom: 4 }}>
+                                {medal && (
+                                  <span style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, flexShrink: 0 }}>
                                     {medal}
                                   </span>
-                                ) : null}
-                                <span className="truncate">{formatRaceName(race.name)}</span>
+                                )}
+                                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {formatRaceName(race.name)}
+                                </span>
                               </p>
 
-                              <p className="mt-1 truncate text-[11px] leading-relaxed text-white/[0.38]">
+                              {/* Detalhes */}
+                              <p style={{ fontSize: 11, color: "rgba(255,255,255,.38)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                 {race.city || "Não identificado"}
-                                {race.state ? `, ${race.state}` : ""} •{" "}
-                                {formatBRDate(race.date)} •{" "}
-                                {race.distanceKm.toFixed(2)} km • {race.time} •{" "}
-                                {formatPaceFromRace(race)}
+                                {race.state ? `, ${race.state}` : ""} · {formatBRDate(race.date)} · {race.distanceKm.toFixed(2)} km · {race.time} · {formatPaceFromRace(race)}
                               </p>
 
-                              <p className="mt-0.5 truncate text-[10px] font-medium uppercase tracking-[0.12em] text-white/[0.28]">
-                                FC{" "}
-                                {race.averageHeartrate
-                                  ? `${race.averageHeartrate.toFixed(0)} bpm`
-                                  : "-"}{" "}
-                                • Alt {race.elevationGain ?? 0} m • Eficiência{" "}
-                                {formatRaceEfficiency(race.efficiency ?? null)} •{" "}
-                                {getTrend(race.efficiency, previous?.efficiency)}
+                              {/* Stats */}
+                              <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: "rgba(255,255,255,.28)", marginTop: 3 }}>
+                                FC {race.averageHeartrate ? `${race.averageHeartrate.toFixed(0)} bpm` : "-"} · Alt {race.elevationGain ?? 0} m · Ef {formatRaceEfficiency(race.efficiency ?? null)} · {getTrend(race.efficiency, previous?.efficiency)}
                               </p>
                             </div>
 
