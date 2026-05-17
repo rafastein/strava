@@ -981,3 +981,324 @@ body {
     padding-right: 0.85rem;
   }
 }
+
+
+/* ── MARATHON CYCLE PHASE ── */
+
+.marathon-cycle-card {
+  position: relative;
+  overflow: hidden;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.marathon-cycle-card__glow {
+  position: absolute;
+  inset: -120px -120px auto auto;
+  width: 360px;
+  height: 360px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(245, 166, 35, 0.14), transparent 68%);
+  pointer-events: none;
+}
+
+.marathon-cycle-card__header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.marathon-cycle-card__title {
+  margin-top: 0.45rem;
+  color: #fff;
+  font-size: clamp(1.25rem, 2.4vw, 1.85rem);
+  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.marathon-cycle-card__subtitle {
+  max-width: 720px;
+  margin-top: 0.65rem;
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.marathon-cycle-card__status {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.marathon-cycle-card__status--on-track {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.26);
+}
+
+.marathon-cycle-card__status--building {
+  color: #f5a623;
+  background: rgba(245, 166, 35, 0.11);
+  border: 1px solid rgba(245, 166, 35, 0.25);
+}
+
+.marathon-cycle-card__status--attention {
+  color: #fb7185;
+  background: rgba(244, 63, 94, 0.11);
+  border: 1px solid rgba(244, 63, 94, 0.24);
+}
+
+.marathon-cycle-card__status--polishing {
+  color: #a78bfa;
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+}
+
+.marathon-cycle-timeline {
+  position: relative;
+  z-index: 1;
+  margin-top: 1.35rem;
+  padding: 0.75rem 0 0.35rem;
+}
+
+.marathon-cycle-timeline__track {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 1.35rem;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
+  overflow: hidden;
+}
+
+.marathon-cycle-timeline__progress {
+  width: var(--cycle-progress, 0%);
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #f5a623, #fb923c, #34d399);
+  box-shadow: 0 0 20px rgba(245, 166, 35, 0.25);
+}
+
+.marathon-cycle-timeline__steps {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.marathon-cycle-step {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+  color: rgba(255, 255, 255, 0.34);
+}
+
+.marathon-cycle-step__dot {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #161616;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+}
+
+.marathon-cycle-step--past .marathon-cycle-step__dot {
+  background: #f5a623;
+  border-color: rgba(245, 166, 35, 0.95);
+  box-shadow: 0 0 16px rgba(245, 166, 35, 0.22);
+}
+
+.marathon-cycle-step--current {
+  color: #fff;
+}
+
+.marathon-cycle-step--current .marathon-cycle-step__dot {
+  background: #34d399;
+  border-color: rgba(52, 211, 153, 0.95);
+  box-shadow: 0 0 22px rgba(52, 211, 153, 0.34);
+}
+
+.marathon-cycle-step__pulse {
+  position: absolute;
+  inset: -8px;
+  border-radius: inherit;
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  animation: cyclePulse 1.8s ease-out infinite;
+}
+
+@keyframes cyclePulse {
+  from {
+    opacity: 0.8;
+    transform: scale(0.72);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+}
+
+.marathon-cycle-step__content {
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
+  text-align: center;
+}
+
+.marathon-cycle-step__label {
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.1;
+}
+
+.marathon-cycle-step__range {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.34);
+}
+
+.marathon-cycle-card__grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 1rem;
+  margin-top: 1.35rem;
+}
+
+.marathon-cycle-focus,
+.marathon-cycle-metrics,
+.marathon-cycle-next {
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.marathon-cycle-focus {
+  padding: 1rem;
+}
+
+.marathon-cycle-focus__eyebrow {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-mono);
+  color: rgba(255, 255, 255, 0.38);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.marathon-cycle-focus ul {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.marathon-cycle-focus li {
+  position: relative;
+  padding-left: 1.05rem;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.marathon-cycle-focus li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.5rem;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #f5a623;
+  box-shadow: 0 0 12px rgba(245, 166, 35, 0.35);
+}
+
+.marathon-cycle-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+}
+
+.marathon-cycle-metrics > div {
+  min-width: 0;
+  padding: 1rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.marathon-cycle-metrics > div:last-child {
+  border-right: 0;
+}
+
+.marathon-cycle-metrics span {
+  display: block;
+  color: rgba(255, 255, 255, 0.38);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.marathon-cycle-metrics strong {
+  display: block;
+  margin-top: 0.45rem;
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+}
+
+.marathon-cycle-metrics small {
+  display: block;
+  margin-top: 0.4rem;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.marathon-cycle-next {
+  position: relative;
+  z-index: 1;
+  margin-top: 0.85rem;
+  padding: 0.9rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  background:
+    linear-gradient(90deg, rgba(245, 166, 35, 0.1), rgba(255, 255, 255, 0.03));
+}
+
+.marathon-cycle-next span {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  color: #f5a623;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.marathon-cycle-next strong {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 650;
+}

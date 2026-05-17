@@ -7,6 +7,7 @@ import ZonesAggregate from "../components/ZonesAggregate";
 import MetricCard from "../components/MetricCard";
 import TodayWorkoutCard from "../components/TodayWorkoutCard";
 import WeeklyGoalCard from "../components/WeeklyGoalCard";
+
 import { getValidStravaAccessToken } from "../lib/strava-auth";
 import { getDynamicAthleteProfile } from "../lib/strava-prs";
 import { trainingPacesFromVdot } from "../lib/vdot";
@@ -23,7 +24,9 @@ import {
   type SisrunWeek,
 } from "../lib/sisrun-utils";
 import { getBRDate, getActivityDate } from "../lib/date-utils";
+
 import BuenosAiresHero from "./_components/BuenosAiresHero";
+import CyclePhaseSection from "./_components/CyclePhaseSection";
 import PerformanceSection from "./_components/PerformanceSection";
 import ProjectionSection from "./_components/ProjectionSection";
 import ReadinessSection from "./_components/ReadinessSection";
@@ -39,7 +42,6 @@ import {
   formatSecondsPerKm,
   getActivities,
   getActivityDetail,
-  getAthlete,
   getCyclePhase,
   getIdealWeeklyVolume,
   getManualPredictions,
@@ -77,25 +79,39 @@ export default async function BuenosAiresPage() {
   const today = new Date();
   const daysToRace = daysUntil(marathonGoal.date);
   const cyclePhase = getCyclePhase(today, marathonGoal.date);
+
   const runs = activities.filter((a) => a.type === "Run");
 
   const longestRun = runs.length
-    ? runs.reduce((m, a) => (a.distance > m.distance ? a : m))
+    ? runs.reduce((max, activity) =>
+        activity.distance > max.distance ? activity : max,
+      )
     : null;
+
   const longestRunKm = longestRun ? longestRun.distance / 1000 : 0;
 
-  const weekMap = new Map<string, { label: string; distanceKm: number }>();
-  runs.forEach((a) => {
-    const date = getBRDate(getActivityDate(a));
+  const weekMap = new Map<
+    string,
+    {
+      label: string;
+      distanceKm: number;
+    }
+  >();
+
+  runs.forEach((activity) => {
+    const date = getBRDate(getActivityDate(activity));
     if (!date) return;
-    const ws = getWeekStart(date);
-    const key = ws.toISOString();
-    const cur = weekMap.get(key);
-    if (cur) cur.distanceKm += a.distance / 1000;
-    else {
+
+    const weekStart = getWeekStart(date);
+    const key = weekStart.toISOString();
+    const current = weekMap.get(key);
+
+    if (current) {
+      current.distanceKm += activity.distance / 1000;
+    } else {
       weekMap.set(key, {
-        label: formatWeekLabel(ws),
-        distanceKm: a.distance / 1000,
+        label: formatWeekLabel(weekStart),
+        distanceKm: activity.distance / 1000,
       });
     }
   });
@@ -103,24 +119,31 @@ export default async function BuenosAiresPage() {
   const weeklyData = Array.from(weekMap.entries())
     .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime())
     .slice(-10)
-    .map(([, v]) => ({
-      label: v.label,
-      distanceKm: Number(v.distanceKm.toFixed(1)),
+    .map(([, value]) => ({
+      label: value.label,
+      distanceKm: Number(value.distanceKm.toFixed(1)),
     }));
+
+  const weeklyComparison = buildWeeklyComparison(sisrunData, activities, 16)
+    .slice()
+    .reverse();
 
   const currentWeekKm = getCurrentWeekStravaKm(activities);
   const currentWeekLongestRunKm = getCurrentWeekLongestRunKm(activities);
   const todayStravaKm = getTodayStravaKm(activities);
+
   const plannedWeekKm = sisrunWeek?.totalPlannedKm ?? 0;
   const weeklyAdherencePct =
     plannedWeekKm > 0 ? (currentWeekKm / plannedWeekKm) * 100 : 0;
+
   const targetPaceLabel = formatSecondsPerKm(
     marathonGoal.targetPaceSecondsPerKm,
   );
   const targetPredictionSeconds = marathonTimeFromPace(
     marathonGoal.targetPaceSecondsPerKm,
   );
-  const longRuns28Plus = runs.filter((a) => a.distance >= 28000);
+
+  const longRuns28Plus = runs.filter((activity) => activity.distance >= 28000);
   const idealWeekKm = getIdealWeeklyVolume(daysToRace);
 
   const readiness = getReadinessStatus({
@@ -132,24 +155,24 @@ export default async function BuenosAiresPage() {
 
   const bestHalf =
     runs
-      .filter((a) => {
-        const km = a.distance / 1000;
+      .filter((activity) => {
+        const km = activity.distance / 1000;
         return km >= 20 && km <= 22;
       })
       .sort((a, b) => a.moving_time - b.moving_time)[0] ?? null;
 
   const racePointsForProjection = runs
-    .filter((a) => {
-      const km = a.distance / 1000;
+    .filter((activity) => {
+      const km = activity.distance / 1000;
       return km >= 9.5 && km <= 22.5;
     })
-    .map((a) => ({
-      date: a.start_date_local,
-      name: a.name,
-      distanceKm: a.distance / 1000,
-      paceSeconds: Math.round(a.moving_time / (a.distance / 1000)),
+    .map((activity) => ({
+      date: activity.start_date_local,
+      name: activity.name,
+      distanceKm: activity.distance / 1000,
+      paceSeconds: Math.round(activity.moving_time / (activity.distance / 1000)),
     }))
-    .filter((r) => r.paceSeconds > 200 && r.paceSeconds < 500)
+    .filter((race) => race.paceSeconds > 200 && race.paceSeconds < 500)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const predictedFromHalf = predictFromHalf(bestHalf);
@@ -166,7 +189,7 @@ export default async function BuenosAiresPage() {
   const trainingPaces = vdot ? trainingPacesFromVdot(vdot) : null;
 
   const recentLongRunsBase = runs
-    .filter((a) => a.distance >= 18000)
+    .filter((activity) => activity.distance >= 18000)
     .sort(
       (a, b) =>
         new Date(getActivityDate(b)).getTime() -
@@ -177,16 +200,20 @@ export default async function BuenosAiresPage() {
   const recentLongRuns = await Promise.all(
     recentLongRunsBase.map(async (run) => {
       if (run.average_heartrate) return run;
+
       if (accessToken) {
-        const d = await getActivityDetail(run.id, accessToken);
-        if (d?.average_heartrate) return { ...run, ...d };
+        const detail = await getActivityDetail(run.id, accessToken);
+        if (detail?.average_heartrate) return { ...run, ...detail };
       }
+
       return run;
     }),
   );
 
   const projRunsBase = runs
-    .filter((a) => a.distance / 1000 >= PROJECTION_LONG_RUN_MIN_KM)
+    .filter(
+      (activity) => activity.distance / 1000 >= PROJECTION_LONG_RUN_MIN_KM,
+    )
     .sort(
       (a, b) =>
         new Date(getActivityDate(a)).getTime() -
@@ -196,10 +223,12 @@ export default async function BuenosAiresPage() {
   const projRunsEnriched = await Promise.all(
     projRunsBase.map(async (run) => {
       if (run.average_heartrate) return run;
+
       if (accessToken) {
-        const d = await getActivityDetail(run.id, accessToken);
-        if (d?.average_heartrate) return { ...run, ...d };
+        const detail = await getActivityDetail(run.id, accessToken);
+        if (detail?.average_heartrate) return { ...run, ...detail };
       }
+
       return run;
     }),
   );
@@ -208,6 +237,7 @@ export default async function BuenosAiresPage() {
     projRunsBase,
     projRunsEnriched,
   );
+
   const weeksToRace = Math.max(1, Math.ceil(daysToRace / 7));
 
   const todayStatus = !todaySisrunRow
@@ -231,6 +261,14 @@ export default async function BuenosAiresPage() {
     vdot,
   });
 
+  const weeklyGoalAlerts = alerts.map((alert) => ({
+    title: alert.title,
+    text: alert.text,
+    ok:
+      alert.title.toLowerCase().includes("bem encaminhado") ||
+      alert.title.toLowerCase().includes("ok"),
+  }));
+
   const weeklyAdherenceForUi = Number.isFinite(weeklyAdherencePct)
     ? Math.min(weeklyAdherencePct, 100)
     : 0;
@@ -239,15 +277,21 @@ export default async function BuenosAiresPage() {
     ? [
         {
           label: "Regenerativo / Fácil",
-          value: `${formatSecondsPerKm(trainingPaces.easy.min)}–${formatSecondsPerKm(trainingPaces.easy.max)}`,
+          value: `${formatSecondsPerKm(trainingPaces.easy.min)}–${formatSecondsPerKm(
+            trainingPaces.easy.max,
+          )}`,
         },
         {
           label: "Pace de maratona",
-          value: `${formatSecondsPerKm(trainingPaces.marathon.min)}–${formatSecondsPerKm(trainingPaces.marathon.max)}`,
+          value: `${formatSecondsPerKm(trainingPaces.marathon.min)}–${formatSecondsPerKm(
+            trainingPaces.marathon.max,
+          )}`,
         },
         {
           label: "Limiar",
-          value: `${formatSecondsPerKm(trainingPaces.threshold.min)}–${formatSecondsPerKm(trainingPaces.threshold.max)}`,
+          value: `${formatSecondsPerKm(trainingPaces.threshold.min)}–${formatSecondsPerKm(
+            trainingPaces.threshold.max,
+          )}`,
         },
         {
           label: "Intervalado",
@@ -258,7 +302,7 @@ export default async function BuenosAiresPage() {
 
   const recentLongRunItems = recentLongRuns.slice(0, 4).map((run) => {
     const km = run.distance / 1000;
-    const hr = run.average_heartrate;
+    const heartRate = run.average_heartrate;
 
     return {
       id: run.id,
@@ -266,7 +310,7 @@ export default async function BuenosAiresPage() {
       dateLabel: formatDate(run.start_date_local),
       distanceLabel: `${km.toFixed(1)} km`,
       paceLabel: formatSecondsPerKm(run.moving_time / km),
-      heartRateLabel: hr ? `${Math.round(hr)} bpm` : undefined,
+      heartRateLabel: heartRate ? `${Math.round(heartRate)} bpm` : undefined,
       elevationLabel:
         run.total_elevation_gain > 0
           ? `+${Math.round(run.total_elevation_gain)} m`
@@ -275,49 +319,83 @@ export default async function BuenosAiresPage() {
   });
 
   const weekSummaryText = sisrunWeek
-    ? `${currentWeekKm.toFixed(1)} km executados de ${plannedWeekKm.toFixed(1)} km planejados.`
+    ? `${currentWeekKm.toFixed(1)} km executados de ${plannedWeekKm.toFixed(
+        1,
+      )} km planejados.`
     : "Sem SisRUN carregado para a semana.";
 
   return (
-    <main
-      className="min-h-screen"
-      style={{ background: "#0d0d0d", fontFamily: "'DM Sans', sans-serif" }}
-    >
+    <>
       <Navbar />
-      <link
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap"
-        rel="stylesheet"
-      />
 
-      <div className="ba-page">
+      <main className="ba-page">
         <BuenosAiresHero
           targetPaceLabel={targetPaceLabel}
           targetPredictionLabel={formatDurationShort(targetPredictionSeconds)}
           cyclePhaseName={cyclePhase.name}
         />
 
+        <CyclePhaseSection
+          daysToRace={daysToRace}
+          weeksToRace={weeksToRace}
+          currentWeekKm={currentWeekKm}
+          plannedWeekKm={plannedWeekKm}
+          currentWeekLongestRunKm={currentWeekLongestRunKm}
+          longestRunKm={longestRunKm}
+          longRuns28Plus={longRuns28Plus.length}
+          weeklyAdherencePct={weeklyAdherencePct}
+        />
+
         <section className="ba-grid-4" style={{ marginBottom: "1rem" }}>
           <MetricCard
-            label="Semana planejada"
-            value={sisrunWeek ? `${plannedWeekKm.toFixed(1)} km` : "—"}
-          />
-          <MetricCard
-            label="Executado"
-            value={`${currentWeekKm.toFixed(1)} km`}
+            label="Dias até a prova"
+            value={String(daysToRace)}
+            caption={`${weeksToRace} semanas restantes`}
             accent
           />
+
           <MetricCard
-            label="Aderência"
-            value={
-              sisrunWeek
-                ? `${Math.min(weeklyAdherencePct, 100).toFixed(0)}%`
-                : "—"
+            label="Pace-alvo"
+            value={targetPaceLabel}
+            caption={formatFullDuration(targetPredictionSeconds)}
+          />
+
+          <MetricCard
+            label="Maior longão"
+            value={`${longestRunKm.toFixed(1)} km`}
+            caption={
+              longestRun
+                ? `${formatDate(longestRun.start_date_local)} · ${formatSecondsPerKm(
+                    longestRun.moving_time / (longestRun.distance / 1000),
+                  )}`
+                : "Sem longão identificado"
             }
           />
+
           <MetricCard
-            label="Longão semana"
-            value={`${currentWeekLongestRunKm.toFixed(1)} / ${sisrunWeek ? sisrunWeek.longRunPlannedKm.toFixed(1) : "—"}`}
-            caption="km feito / previsto"
+            label="Longões 28 km+"
+            value={String(longRuns28Plus.length)}
+            caption={`Meta-chave: ${marathonGoal.targetLongRunKm} km`}
+          />
+        </section>
+
+        <section
+          className="ba-grid-2"
+          style={{ marginBottom: "1rem", alignItems: "stretch" }}
+        >
+          <TodayWorkoutCard
+            todaySisrunRow={todaySisrunRow}
+            todayStravaKm={todayStravaKm}
+          />
+
+          <WeeklyGoalCard
+            currentKm={currentWeekKm}
+            plannedKm={plannedWeekKm}
+            progressPct={weeklyAdherenceForUi}
+            alerts={weeklyGoalAlerts}
+            eyebrow="SisRUN x Strava"
+            title="Meta semanal"
+            subtitle="Volume planejado contra execução real da semana."
           />
         </section>
 
@@ -329,28 +407,16 @@ export default async function BuenosAiresPage() {
           cycleDescription={cyclePhase.description}
         />
 
-        <section className="ba-week" style={{ marginBottom: "1rem" }}>
-          <TodayWorkoutCard
-            todaySisrunRow={todaySisrunRow}
-            todayStravaKm={todayStravaKm}
-          />
-
-          <WeeklyGoalCard
-            currentKm={currentWeekKm}
-            plannedKm={plannedWeekKm}
-            progressPct={weeklyAdherenceForUi}
-            alerts={alerts.slice(0, 2)}
-          />
-        </section>
-
         {vdot && trainingPaces && (
           <PerformanceSection
             vdot={vdot}
             vo2max={vo2max}
             marathonPaceLabel={
               marathonPaces
-                ? `${formatSecondsPerKm(marathonPaces.min).replace("/km", "")}–${formatSecondsPerKm(marathonPaces.max).replace("/km", "")}`
-                : "—"
+                ? `${formatSecondsPerKm(marathonPaces.min)}–${formatSecondsPerKm(
+                    marathonPaces.max,
+                  )}`
+                : targetPaceLabel
             }
             trainingPaces={trainingPaceItems}
           />
@@ -360,27 +426,31 @@ export default async function BuenosAiresPage() {
           targetPredictionLabel={formatFullDuration(targetPredictionSeconds)}
           targetPaceLabel={targetPaceLabel}
           bestHalfPredictionLabel={
-            predictedFromHalf && bestHalf
-              ? formatFullDuration(predictedFromHalf)
-              : "Sem dado"
+            predictedFromHalf ? formatFullDuration(predictedFromHalf) : "—"
           }
           bestHalfCaption={
-            predictedFromHalf && bestHalf ? `${bestHalf.name}` : "Sem meia válida."
+            bestHalf
+              ? `${formatDate(bestHalf.start_date_local)} · ${(
+                  bestHalf.distance / 1000
+                ).toFixed(1)} km`
+              : "Sem meia identificada"
           }
           longRunPredictionLabel={
-            predictedFromLongRun && longestRun
-              ? formatFullDuration(predictedFromLongRun)
-              : "Sem dado"
+            predictedFromLongRun ? formatFullDuration(predictedFromLongRun) : "—"
           }
           longRunCaption={
-            predictedFromLongRun && longestRun
-              ? `${(longestRun.distance / 1000).toFixed(1)} km`
-              : "Falta longão robusto."
+            longestRun
+              ? `${longestRunKm.toFixed(1)} km · ${formatSecondsPerKm(
+                  longestRun.moving_time / longestRunKm,
+                )}`
+              : "Sem longão identificado"
           }
           sitePredictionLabel={
-            predictedBySite ? formatFullDuration(predictedBySite) : "Sem dado"
+            predictedBySite ? formatFullDuration(predictedBySite) : "—"
           }
-          manualPredictionInitialValue={manualPredictions.stravaMarathonPrediction}
+          manualPredictionInitialValue={
+            manualPredictions.stravaMarathonPrediction
+          }
           recentLongRuns={recentLongRunItems}
         />
 
@@ -394,16 +464,14 @@ export default async function BuenosAiresPage() {
           </section>
         )}
 
-        {weeklyData.length > 0 && (
+        {weeklyComparison.length > 0 && (
           <section style={{ marginBottom: "1rem" }}>
             <WeeklyPlanVsActualChart
-              weeks={buildWeeklyComparison(sisrunData, activities, 16)
-                .reverse()
-                .map((w) => ({
-                  label: w.label,
-                  planned: w.plannedKm,
-                  actual: w.executedKm,
-                }))}
+              weeks={weeklyComparison.map((week) => ({
+                label: week.label,
+                planned: week.plannedKm,
+                actual: week.executedKm,
+              }))}
               title="Volume semanal — planejado vs. executado"
             />
           </section>
@@ -419,11 +487,11 @@ export default async function BuenosAiresPage() {
           targetPaceLabel={targetPaceLabel}
           weekText={weekSummaryText}
         />
-      </div>
+      </main>
 
       <footer className="site-footer">
         STRAVA · RAFAEL CABRAL · BUENOS AIRES 2026
       </footer>
-    </main>
+    </>
   );
 }
