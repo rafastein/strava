@@ -5,7 +5,7 @@ import Link from "next/link";
 
 type Race = {
   name: string;
-  date: string; // ISO
+  date: string;
   location: string;
   distanceKm: number;
   objective: string;
@@ -20,11 +20,7 @@ function formatPace(sec: number): string {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 function daysUntil(iso: string): number {
@@ -33,9 +29,8 @@ function daysUntil(iso: string): number {
 
 type Props = { races: Race[]; dark?: boolean };
 
-export default function NextRaceCard({ races, dark }: Props) {
+export default function NextRaceCard({ races }: Props) {
   const [now, setNow] = useState(Date.now());
-
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(t);
@@ -51,53 +46,46 @@ export default function NextRaceCard({ races, dark }: Props) {
   const days = daysUntil(next.date);
 
   return (
-    <div style={{ background: dark ? "rgba(255,255,255,0.04)" : "#fff", border: dark ? "1px solid rgba(255,255,255,0.08)" : "none", borderRadius: 16, padding: "1.25rem 1.5rem" }}>
-      <div className="mb-4 flex items-start justify-between gap-2">
+    <div className="ba-card" style={{ padding: "1.25rem 1.5rem" }}>
+
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: "1rem" }}>
         <div>
-          <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "#f5a623", marginBottom: 4 }}>
-            Próxima prova
-          </p>
-          <h3 style={{ fontSize: 18, fontWeight: 700, color: dark ? "#fff" : "#111", marginBottom: 2 }}>{next.name}</h3>
-          <p style={{ fontSize: 12, color: dark ? "rgba(255,255,255,0.4)" : "#6b7280" }}>
-            {formatDate(next.date)} · {next.location}
-          </p>
+          <p className="ba-eyebrow" style={{ marginBottom: 4 }}>Próxima prova</p>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 2 }}>{next.name}</h3>
+          <p className="ba-muted" style={{ fontSize: 12 }}>{formatDate(next.date)} · {next.location}</p>
         </div>
-        <div className="flex flex-col items-end gap-1">
-          <span style={{ background: "rgba(245,166,35,0.15)", color: "#f5a623", padding: "3px 10px", borderRadius: 20, fontSize: 13, fontWeight: 700 }}>
-            {days}d
-          </span>
-          <span style={{ fontSize: 11, color: dark ? "rgba(255,255,255,0.3)" : "#9ca3af" }}>{next.distanceKm} km</span>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
+          <span className="badge badge--accent" style={{ fontSize: 13, fontWeight: 700, padding: "3px 10px" }}>{days}d</span>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,.3)", fontFamily: "var(--font-mono)" }}>{next.distanceKm} km</span>
         </div>
       </div>
 
-      <div className="space-y-2">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: dark ? "rgba(255,255,255,0.05)" : "#f9fafb", borderRadius: 10, padding: "8px 14px" }}>
-          <span style={{ fontSize: 12, color: dark ? "rgba(255,255,255,0.4)" : "#6b7280" }}>Objetivo</span>
-          <span style={{ fontSize: 12, fontWeight: 600, color: dark ? "#fff" : "#111" }}>{next.objective}</span>
+      {/* Details */}
+      <div style={{ display: "flex", flexDirection: "column", gap: ".5rem" }}>
+        <div className="ba-card-soft" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 14px" }}>
+          <span className="ba-label">Objetivo</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: "#fff" }}>{next.objective}</span>
         </div>
         {next.targetPaceSecPerKm && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: dark ? "rgba(255,255,255,0.05)" : "#f9fafb", borderRadius: 10, padding: "8px 14px" }}>
-            <span style={{ fontSize: 12, color: dark ? "rgba(255,255,255,0.4)" : "#6b7280" }}>Pace-alvo</span>
-            <span style={{ fontSize: 12, fontWeight: 600, color: dark ? "#f5a623" : "#111" }}>
+          <div className="ba-card-soft" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 14px" }}>
+            <span className="ba-label">Pace-alvo</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", fontFamily: "var(--font-mono)" }}>
               {formatPace(next.targetPaceSecPerKm)}
             </span>
           </div>
         )}
       </div>
 
+      {/* Em seguida */}
       {upcoming.length > 1 && (
-        <div style={{ marginTop: 12, borderTop: dark ? "1px solid rgba(255,255,255,0.07)" : "1px solid #f3f4f6", paddingTop: 12 }}>
-          <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: dark ? "rgba(255,255,255,0.25)" : "#9ca3af", marginBottom: 8 }}>
-            Em seguida
-          </p>
-          <div className="space-y-1.5">
+        <div style={{ marginTop: "1rem", borderTop: "1px solid rgba(255,255,255,.07)", paddingTop: "1rem" }}>
+          <p className="ba-label" style={{ marginBottom: 8 }}>Em seguida</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {upcoming.slice(1, 3).map((r) => (
-              <div
-                key={r.date}
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12 }}
-              >
-                <span style={{ color: dark ? "rgba(255,255,255,0.6)" : "#374151" }}>{r.name}</span>
-                <span style={{ color: dark ? "rgba(255,255,255,0.3)" : "#9ca3af" }}>
+              <div key={r.date} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12 }}>
+                <span style={{ color: "rgba(255,255,255,.6)" }}>{r.name}</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "rgba(255,255,255,.3)" }}>
                   {formatDate(r.date)} · {daysUntil(r.date)}d
                 </span>
               </div>
@@ -106,11 +94,9 @@ export default function NextRaceCard({ races, dark }: Props) {
         </div>
       )}
 
+      {/* CTA */}
       {next.href && (
-        <Link
-          href={next.href}
-          className="mt-4 flex w-full items-center justify-center rounded-2xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
-        >
+        <Link href={next.href} className="ba-pill ba-pill-orange" style={{ marginTop: "1rem", width: "100%", justifyContent: "center" }}>
           Ver painel completo →
         </Link>
       )}

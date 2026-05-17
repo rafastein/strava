@@ -335,16 +335,16 @@ export default async function Home() {
         {/* ── NAVEGAÇÃO ── */}
         <section style={{ marginBottom: "1.75rem" }}>
           <p className="ba-label" style={{ marginBottom: "0.75rem" }}>Explorar</p>
-          <div style={{ display: "grid", gridTemplateColumns: "var(--explore-cols, 1fr)", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
             {[
-              { href: "/treinos-qualidade", label: "Treinos de qualidade", desc: "Intervalados, fartleks e progressivos detectados automaticamente.", tag: "Treinos" },
-              { href: "/meias", label: "Meias maratonas", desc: "Splits km a km sobrepostos — compare evolução prova a prova.", tag: "Análise" },
-              { href: "/corridas-brasil", label: "Corridas pelo Brasil", desc: "Mapa do Brasil com corridas por estado.", tag: "Mapas" },
+              { href: "/treinos-qualidade", label: "Treinos de qualidade", desc: "Intervalados, fartleks e progressivos.", tag: "Treinos" },
+              { href: "/meias", label: "Meias maratonas", desc: "Splits sobrepostos, prova a prova.", tag: "Análise" },
+              { href: "/corridas-brasil", label: "Corridas pelo Brasil", desc: "Mapa com corridas por estado.", tag: "Mapas" },
               { href: "/corridas-mundo", label: "Corridas pelo mundo", desc: "Mapa-múndi com corridas por país.", tag: "Mapas" },
               { href: "/equipamentos", label: "Equipamentos", desc: "Km, desgaste e eficiência por tênis.", tag: "Strava" },
-              { href: "/sisrun", label: "SisRUN", desc: "Atualize o planejamento e acompanhe aderência semanal.", tag: "Planejamento" },
+              { href: "/sisrun", label: "SisRUN", desc: "Planejamento e aderência semanal.", tag: "Planejamento" },
             ].map((c) => (
-              <Link key={c.href} href={c.href} className="ba-card-soft explore-card" style={{ padding: "1.1rem 1.25rem", textDecoration: "none", display: "block" }}>
+              <Link key={c.href} href={c.href} className="ba-card-soft explore-card" style={{ padding: ".85rem 1rem", textDecoration: "none", display: "block" }}>
                 <p className="ba-eyebrow" style={{ marginBottom: "0.6rem", fontSize: 9 }}>{c.tag}</p>
                 <p style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: "0.35rem" }}>{c.label}</p>
                 <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", lineHeight: 1.5 }}>{c.desc}</p>
