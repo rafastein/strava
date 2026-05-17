@@ -22,6 +22,8 @@ export type Phase = {
   endWeek: number;
   description: string;
   focus: string[];
+  recommendedWeeklyVolume: string;
+  volumeNote: string;
 };
 
 export type MarathonCycleInfo = {
@@ -44,6 +46,8 @@ const PHASES: Phase[] = [
     description:
       "Construir consistência, fortalecer o corpo e sustentar volume sem acumular fadiga desnecessária.",
     focus: ["consistência semanal", "Z2 bem controlado", "força e mobilidade"],
+    recommendedWeeklyVolume: "35–45 km",
+    volumeNote: "faixa segura para consolidar base",
   },
   {
     key: "development",
@@ -54,6 +58,8 @@ const PHASES: Phase[] = [
     description:
       "Elevar a capacidade aeróbica, consolidar volume e transformar condicionamento em ritmo sustentável.",
     focus: ["volume progressivo", "ritmos moderados", "provas como estímulo"],
+    recommendedWeeklyVolume: "45–55 km",
+    volumeNote: "subida gradual sem queimar etapas",
   },
   {
     key: "specific",
@@ -64,6 +70,8 @@ const PHASES: Phase[] = [
     description:
       "Aproximar o treino da prova: longões maiores, blocos em ritmo de maratona, gel, hidratação e estratégia.",
     focus: ["longões progressivos", "ritmo de maratona", "nutrição em treino"],
+    recommendedWeeklyVolume: "55–65 km",
+    volumeNote: "bloco central para sustentar o sub-4",
   },
   {
     key: "peak",
@@ -74,6 +82,8 @@ const PHASES: Phase[] = [
     description:
       "Concentrar o maior bloco útil do ciclo, com longão-chave e alta especificidade antes da redução de carga.",
     focus: ["longão-chave", "simulação de prova", "controle de fadiga"],
+    recommendedWeeklyVolume: "60–70 km",
+    volumeNote: "maior carga útil do ciclo",
   },
   {
     key: "taper",
@@ -84,6 +94,8 @@ const PHASES: Phase[] = [
     description:
       "Reduzir volume, manter o corpo ativo e chegar descansado, confiante e afiado para a largada.",
     focus: ["redução de volume", "sono e recuperação", "chegar inteiro"],
+    recommendedWeeklyVolume: "25–45 km",
+    volumeNote: "redução progressiva para absorver o ciclo",
   },
 ];
 
@@ -352,13 +364,22 @@ export default function CyclePhaseSection({
       </div>
 
       <div className="marathon-cycle-card__grid">
-        <div className="marathon-cycle-focus">
-          <p className="marathon-cycle-focus__eyebrow">Prioridade da fase</p>
-          <ul>
-            {currentPhase.focus.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
+        <div className="marathon-cycle-insights">
+          <div className="marathon-cycle-focus">
+            <p className="marathon-cycle-focus__eyebrow">Prioridade da fase</p>
+            <ul>
+              {currentPhase.focus.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="marathon-cycle-volume">
+            <p className="marathon-cycle-focus__eyebrow">Volume médio recomendado</p>
+            <strong>{currentPhase.recommendedWeeklyVolume}</strong>
+            <span>por semana</span>
+            <small>{currentPhase.volumeNote}</small>
+          </div>
         </div>
 
         <div className="marathon-cycle-metrics">
