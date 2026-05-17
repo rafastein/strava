@@ -1,6 +1,7 @@
-"use client";
+import type { CSSProperties } from "react";
 
 type CyclePhaseSectionProps = {
+  raceDate: Date;
   daysToRace: number;
   weeksToRace: number;
   currentWeekKm: number;
@@ -11,15 +12,26 @@ type CyclePhaseSectionProps = {
   weeklyAdherencePct: number;
 };
 
-type PhaseKey = "base" | "development" | "specific" | "peak" | "taper";
+export type PhaseKey = "base" | "development" | "specific" | "peak" | "taper";
 
-type Phase = {
+export type Phase = {
   key: PhaseKey;
   label: string;
   shortLabel: string;
-  range: string;
+  startWeek: number;
+  endWeek: number;
   description: string;
   focus: string[];
+};
+
+export type MarathonCycleInfo = {
+  phase: Phase;
+  phaseIndex: number;
+  startDate: Date;
+  endDate: Date;
+  dateRangeLabel: string;
+  progress: number;
+  phaseDateRanges: Record<PhaseKey, string>;
 };
 
 const PHASES: Phase[] = [
@@ -27,7 +39,8 @@ const PHASES: Phase[] = [
     key: "base",
     label: "Base / Consolidação",
     shortLabel: "Base",
-    range: "24–17 sem.",
+    startWeek: 24,
+    endWeek: 17,
     description:
       "Construir consistência, fortalecer o corpo e sustentar volume sem acumular fadiga desnecessária.",
     focus: ["consistência semanal", "Z2 bem controlado", "força e mobilidade"],
@@ -36,7 +49,8 @@ const PHASES: Phase[] = [
     key: "development",
     label: "Desenvolvimento",
     shortLabel: "Desenv.",
-    range: "16–11 sem.",
+    startWeek: 16,
+    endWeek: 11,
     description:
       "Elevar a capacidade aeróbica, consolidar volume e transformar condicionamento em ritmo sustentável.",
     focus: ["volume progressivo", "ritmos moderados", "provas como estímulo"],
@@ -45,7 +59,8 @@ const PHASES: Phase[] = [
     key: "specific",
     label: "Específico de Maratona",
     shortLabel: "Específico",
-    range: "10–4 sem.",
+    startWeek: 10,
+    endWeek: 5,
     description:
       "Aproximar o treino da prova: longões maiores, blocos em ritmo de maratona, gel, hidratação e estratégia.",
     focus: ["longões progressivos", "ritmo de maratona", "nutrição em treino"],
@@ -54,16 +69,18 @@ const PHASES: Phase[] = [
     key: "peak",
     label: "Pico",
     shortLabel: "Pico",
-    range: "4–3 sem.",
+    startWeek: 4,
+    endWeek: 3,
     description:
       "Concentrar o maior bloco útil do ciclo, com longão-chave e alta especificidade antes da redução de carga.",
     focus: ["longão-chave", "simulação de prova", "controle de fadiga"],
   },
   {
     key: "taper",
-    label: "Polimento",
+    label: "Polimento / Taper",
     shortLabel: "Taper",
-    range: "2–0 sem.",
+    startWeek: 2,
+    endWeek: 0,
     description:
       "Reduzir volume, manter o corpo ativo e chegar descansado, confiante e afiado para a largada.",
     focus: ["redução de volume", "sono e recuperação", "chegar inteiro"],
@@ -90,6 +107,83 @@ function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
+function normalizeDate(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+}
+
+function addDays(date: Date, days: number) {
+  const next = normalizeDate(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function subtractWeeks(date: Date, weeks: number) {
+  return addDays(date, -weeks * 7);
+}
+
+function getPhaseStartDate(raceDate: Date, phase: Phase) {
+  return subtractWeeks(raceDate, phase.startWeek);
+}
+
+function getPhaseEndDate(raceDate: Date, phase: Phase) {
+  if (phase.endWeek <= 0) return normalizeDate(raceDate);
+
+  // endWeek é inclusiva. Ex.: 17 semanas termina no sábado anterior
+  // ao início da semana 16.
+  return addDays(subtractWeeks(raceDate, phase.endWeek - 1), -1);
+}
+
+function formatDateRangePart(date: Date) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+  }).format(date);
+}
+
+function formatDateRange(startDate: Date, endDate: Date) {
+  return `${formatDateRangePart(startDate)}–${formatDateRangePart(endDate)}`;
+}
+
+function getProgressByWeeks(weeksToRace: number) {
+  // Janela visual de 24 semanas até a prova.
+  // 24 semanas = início da barra; 0 semana = chegada.
+  return clamp(((24 - weeksToRace) / 24) * 100, 0, 100);
+}
+
+export function getMarathonCyclePhase({
+  raceDate,
+  weeksToRace,
+}: {
+  raceDate: Date;
+  weeksToRace: number;
+}): MarathonCycleInfo {
+  const phaseKey = getPhaseKey(weeksToRace);
+  const phase = PHASES.find((item) => item.key === phaseKey) ?? PHASES[0];
+
+  const phaseDateRanges = PHASES.reduce(
+    (acc, item) => {
+      const startDate = getPhaseStartDate(raceDate, item);
+      const endDate = getPhaseEndDate(raceDate, item);
+      acc[item.key] = formatDateRange(startDate, endDate);
+      return acc;
+    },
+    {} as Record<PhaseKey, string>,
+  );
+
+  const startDate = getPhaseStartDate(raceDate, phase);
+  const endDate = getPhaseEndDate(raceDate, phase);
+
+  return {
+    phase,
+    phaseIndex: PHASE_INDEX[phase.key],
+    startDate,
+    endDate,
+    dateRangeLabel: formatDateRange(startDate, endDate),
+    progress: getProgressByWeeks(weeksToRace),
+    phaseDateRanges,
+  };
+}
+
 function formatKm(value: number) {
   if (!Number.isFinite(value)) return "0 km";
   return `${value.toFixed(1).replace(".", ",")} km`;
@@ -98,12 +192,6 @@ function formatKm(value: number) {
 function formatPct(value: number) {
   if (!Number.isFinite(value)) return "0%";
   return `${Math.round(value)}%`;
-}
-
-function getProgressByWeeks(weeksToRace: number) {
-  // Janela visual de 24 semanas até a prova.
-  // 24 semanas = início da barra; 0 semana = chegada.
-  return clamp(((24 - weeksToRace) / 24) * 100, 0, 100);
 }
 
 function getNextMilestone(phaseKey: PhaseKey, currentWeekLongestRunKm: number) {
@@ -144,7 +232,10 @@ function getStatusTone(
   }
 
   if (phaseKey === "specific") {
-    if (currentWeekLongestRunKm >= 24 && weeklyAdherencePct >= 85) return "on-track";
+    if (currentWeekLongestRunKm >= 24 && weeklyAdherencePct >= 85) {
+      return "on-track";
+    }
+
     if (weeklyAdherencePct < 70) return "attention";
     return "building";
   }
@@ -162,6 +253,7 @@ function getStatusLabel(tone: string) {
 }
 
 export default function CyclePhaseSection({
+  raceDate,
   daysToRace,
   weeksToRace,
   currentWeekKm,
@@ -171,13 +263,16 @@ export default function CyclePhaseSection({
   longRuns28Plus,
   weeklyAdherencePct,
 }: CyclePhaseSectionProps) {
-  const phaseKey = getPhaseKey(weeksToRace);
-  const currentPhase = PHASES.find((phase) => phase.key === phaseKey) ?? PHASES[0];
-  const currentIndex = PHASE_INDEX[phaseKey];
-  const progress = getProgressByWeeks(weeksToRace);
-  const nextMilestone = getNextMilestone(phaseKey, currentWeekLongestRunKm);
+  const cycle = getMarathonCyclePhase({ raceDate, weeksToRace });
+  const currentPhase = cycle.phase;
+  const currentIndex = cycle.phaseIndex;
+  const nextMilestone = getNextMilestone(
+    currentPhase.key,
+    currentWeekLongestRunKm,
+  );
+
   const statusTone = getStatusTone(
-    phaseKey,
+    currentPhase.key,
     weeklyAdherencePct,
     currentWeekLongestRunKm,
     longRuns28Plus,
@@ -189,24 +284,35 @@ export default function CyclePhaseSection({
       : "sem SisRUN carregado";
 
   return (
-    <section className="ba-card marathon-cycle-card" style={{ "--cycle-progress": `${progress}%` } as React.CSSProperties}>
+    <section
+      className="ba-card marathon-cycle-card"
+      style={{ "--cycle-progress": `${cycle.progress}%` } as CSSProperties}
+    >
       <div className="marathon-cycle-card__glow" />
 
       <div className="marathon-cycle-card__header">
         <div>
           <p className="ba-label">Ciclo Buenos Aires 2026</p>
-          <h2 className="marathon-cycle-card__title">Fase atual: {currentPhase.label}</h2>
+          <h2 className="marathon-cycle-card__title">
+            Fase atual: {currentPhase.label}
+          </h2>
           <p className="marathon-cycle-card__subtitle">
-            {weeksToRace} semanas / {daysToRace} dias até a maratona. {currentPhase.description}
+            {weeksToRace} semanas / {daysToRace} dias até a maratona.{" "}
+            {currentPhase.description}
           </p>
         </div>
 
-        <div className={`marathon-cycle-card__status marathon-cycle-card__status--${statusTone}`}>
+        <div
+          className={`marathon-cycle-card__status marathon-cycle-card__status--${statusTone}`}
+        >
           <span>{getStatusLabel(statusTone)}</span>
         </div>
       </div>
 
-      <div className="marathon-cycle-timeline" aria-label="Linha do tempo do ciclo de treinamento">
+      <div
+        className="marathon-cycle-timeline"
+        aria-label="Linha do tempo do ciclo de treinamento"
+      >
         <div className="marathon-cycle-timeline__track">
           <div className="marathon-cycle-timeline__progress" />
         </div>
@@ -232,8 +338,12 @@ export default function CyclePhaseSection({
                 </div>
 
                 <div className="marathon-cycle-step__content">
-                  <span className="marathon-cycle-step__label">{phase.shortLabel}</span>
-                  <span className="marathon-cycle-step__range">{phase.range}</span>
+                  <span className="marathon-cycle-step__label">
+                    {phase.shortLabel}
+                  </span>
+                  <span className="marathon-cycle-step__range">
+                    {cycle.phaseDateRanges[phase.key]}
+                  </span>
                 </div>
               </div>
             );

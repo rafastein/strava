@@ -26,7 +26,9 @@ import {
 import { getBRDate, getActivityDate } from "../lib/date-utils";
 
 import BuenosAiresHero from "./_components/BuenosAiresHero";
-import CyclePhaseSection from "./_components/CyclePhaseSection";
+import CyclePhaseSection, {
+  getMarathonCyclePhase,
+} from "./_components/CyclePhaseSection";
 import PerformanceSection from "./_components/PerformanceSection";
 import ProjectionSection from "./_components/ProjectionSection";
 import ReadinessSection from "./_components/ReadinessSection";
@@ -42,7 +44,6 @@ import {
   formatSecondsPerKm,
   getActivities,
   getActivityDetail,
-  getCyclePhase,
   getIdealWeeklyVolume,
   getManualPredictions,
   getReadinessStatus,
@@ -76,11 +77,14 @@ export default async function BuenosAiresPage() {
     targetLongRunKm: 30,
   };
 
-  const today = new Date();
   const daysToRace = daysUntil(marathonGoal.date);
-  const cyclePhase = getCyclePhase(today, marathonGoal.date);
+  const weeksToRace = Math.max(1, Math.ceil(daysToRace / 7));
+  const marathonCycle = getMarathonCyclePhase({
+    raceDate: marathonGoal.date,
+    weeksToRace,
+  });
 
-  const runs = activities.filter((a) => a.type === "Run");
+  const runs = activities.filter((activity) => activity.type === "Run");
 
   const longestRun = runs.length
     ? runs.reduce((max, activity) =>
@@ -238,8 +242,6 @@ export default async function BuenosAiresPage() {
     projRunsEnriched,
   );
 
-  const weeksToRace = Math.max(1, Math.ceil(daysToRace / 7));
-
   const todayStatus = !todaySisrunRow
     ? "Sem treino previsto hoje"
     : todayStravaKm <= 0
@@ -332,10 +334,11 @@ export default async function BuenosAiresPage() {
         <BuenosAiresHero
           targetPaceLabel={targetPaceLabel}
           targetPredictionLabel={formatDurationShort(targetPredictionSeconds)}
-          cyclePhaseName={cyclePhase.name}
+          cyclePhaseName={marathonCycle.phase.label}
         />
 
         <CyclePhaseSection
+          raceDate={marathonGoal.date}
           daysToRace={daysToRace}
           weeksToRace={weeksToRace}
           currentWeekKm={currentWeekKm}
@@ -404,7 +407,7 @@ export default async function BuenosAiresPage() {
           label={readiness.label}
           title={readiness.title}
           description={readiness.description}
-          cycleDescription={cyclePhase.description}
+          cycleDescription={marathonCycle.phase.description}
         />
 
         {vdot && trainingPaces && (
@@ -482,7 +485,7 @@ export default async function BuenosAiresPage() {
         </section>
 
         <StrategicSummarySection
-          cyclePhaseName={cyclePhase.name}
+          cyclePhaseName={marathonCycle.phase.label}
           readinessLabel={readiness.label}
           targetPaceLabel={targetPaceLabel}
           weekText={weekSummaryText}
