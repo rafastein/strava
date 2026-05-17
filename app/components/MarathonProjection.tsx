@@ -20,7 +20,7 @@ Chart.register(
   LinearScale,
   CategoryScale,
   Tooltip,
-  Legend
+  Legend,
 );
 
 type LongRunPoint = {
@@ -62,7 +62,7 @@ function linReg(xs: number[], ys: number[]) {
   let num = 0;
   let den = 0;
 
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < n; i += 1) {
     num += (xs[i] - mx) * (ys[i] - my);
     den += (xs[i] - mx) ** 2;
   }
@@ -75,16 +75,29 @@ function linReg(xs: number[], ys: number[]) {
   };
 }
 
-function secToStr(s: number) {
-  const m = Math.floor(s / 60);
-  const sec = Math.round(s % 60);
+function secToStr(seconds: number) {
+  if (!Number.isFinite(seconds)) return "--:--";
+
+  const absSeconds = Math.abs(seconds);
+  const m = Math.floor(absSeconds / 60);
+  const sec = Math.round(absSeconds % 60);
+
   return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
-function totalTimeStr(s: number) {
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = Math.round(s % 60);
+function signedSecToStr(seconds: number) {
+  if (!Number.isFinite(seconds)) return "--:--";
+
+  const sign = seconds > 0 ? "+" : seconds < 0 ? "-" : "";
+  return `${sign}${secToStr(seconds)}`;
+}
+
+function totalTimeStr(seconds: number) {
+  if (!Number.isFinite(seconds)) return "--";
+
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const sec = Math.round(seconds % 60);
 
   return `${h}h ${m.toString().padStart(2, "0")}min ${sec
     .toString()
@@ -98,12 +111,17 @@ function formatDateLabel(iso: string) {
   });
 }
 
+function formatDeltaLabel(seconds: number, ok: boolean) {
+  const normalized = secToStr(seconds).replace(":", "min ");
+  return ok ? `${normalized}s de sobra` : `faltam ~${normalized}s`;
+}
+
 export default function MarathonProjection({
   longRuns,
   weeksToRace,
   races = [],
 }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const chartRef = useRef<Chart | null>(null);
 
   const [weeks, setWeeks] = useState(weeksToRace);
@@ -114,24 +132,23 @@ export default function MarathonProjection({
 
     const t0 = new Date(longRuns[0].date).getTime();
     const days = longRuns.map(
-      (l) => (new Date(l.date).getTime() - t0) / 86400000
+      (longRun) => (new Date(longRun.date).getTime() - t0) / 86400000,
     );
-
     const today = (Date.now() - t0) / 86400000;
+
     const paceReg = linReg(
       days,
-      longRuns.map((l) => l.paceSeconds)
+      longRuns.map((longRun) => longRun.paceSeconds),
     );
 
-    const effData = longRuns.filter((l) => l.efficiency !== null);
-
+    const effData = longRuns.filter((longRun) => longRun.efficiency !== null);
     const effReg =
       effData.length >= 2
         ? linReg(
             effData.map(
-              (l) => (new Date(l.date).getTime() - t0) / 86400000
+              (longRun) => (new Date(longRun.date).getTime() - t0) / 86400000,
             ),
-            effData.map((l) => l.efficiency as number)
+            effData.map((longRun) => longRun.efficiency as number),
           )
         : null;
 
@@ -142,18 +159,15 @@ export default function MarathonProjection({
     const projEff = effReg ? effReg.slope * futureDays + effReg.intercept : null;
     const racePace = projPace * pacingFactor;
     const totalSec = racePace * DIST_MARATHON;
-
     const pacePerMonth = paceReg.slope * 30;
     const effPerMonth = effReg ? effReg.slope * 30 : null;
-
     const biggestLongRun = longRuns.reduce((a, b) => (a.km >= b.km ? a : b));
-
-    const runsWithFc = longRuns.filter((l) => l.fc);
+    const runsWithFc = longRuns.filter((longRun) => longRun.fc);
     const avgFc =
       runsWithFc.length > 0
         ? Math.round(
             runsWithFc.reduce((a, b) => a + (b.fc ?? 0), 0) /
-              runsWithFc.length
+              runsWithFc.length,
           )
         : null;
 
@@ -176,21 +190,21 @@ export default function MarathonProjection({
 
     if (chartRef.current) chartRef.current.destroy();
 
-    const labels = longRuns.map((l) => formatDateLabel(l.date));
-
-    const raceDataOnAxis: (number | null)[] = longRuns.map(() => null);
-    const raceLabelsOnAxis: (string | null)[] = longRuns.map(() => null);
+    const labels = longRuns.map((longRun) => formatDateLabel(longRun.date));
+    const raceDataOnAxis: Array<number | null> = longRuns.map(() => null);
+    const raceLabelsOnAxis: Array<string | null> = longRuns.map(() => null);
 
     races.forEach((race) => {
       const raceTime = new Date(race.date).getTime();
       let nearest = 0;
       let minDiff = Infinity;
 
-      longRuns.forEach((l, i) => {
-        const diff = Math.abs(new Date(l.date).getTime() - raceTime);
+      longRuns.forEach((longRun, index) => {
+        const diff = Math.abs(new Date(longRun.date).getTime() - raceTime);
+
         if (diff < minDiff) {
           minDiff = diff;
-          nearest = i;
+          nearest = index;
         }
       });
 
@@ -203,7 +217,7 @@ export default function MarathonProjection({
     const datasets: any[] = [
       {
         label: "Pace",
-        data: longRuns.map((l) => l.paceSeconds),
+        data: longRuns.map((longRun) => longRun.paceSeconds),
         borderColor: "#f97316",
         backgroundColor: "rgba(249,115,22,0.08)",
         tension: 0.35,
@@ -216,7 +230,7 @@ export default function MarathonProjection({
     if (data.effData.length >= 2) {
       datasets.push({
         label: "Eficiência",
-        data: longRuns.map((l) => l.efficiency ?? null),
+        data: longRuns.map((longRun) => longRun.efficiency ?? null),
         borderColor: "#10b981",
         backgroundColor: "rgba(16,185,129,0.08)",
         tension: 0.35,
@@ -232,8 +246,10 @@ export default function MarathonProjection({
         data: raceDataOnAxis,
         borderColor: "transparent",
         backgroundColor: "transparent",
-        pointRadius: raceDataOnAxis.map((v) => (v !== null ? 6 : 0)),
-        pointHoverRadius: raceDataOnAxis.map((v) => (v !== null ? 8 : 0)),
+        pointRadius: raceDataOnAxis.map((value) => (value !== null ? 6 : 0)),
+        pointHoverRadius: raceDataOnAxis.map((value) =>
+          value !== null ? 8 : 0,
+        ),
         pointBackgroundColor: "#8b5cf6",
         pointBorderColor: "#111214",
         pointBorderWidth: 2,
@@ -276,16 +292,15 @@ export default function MarathonProjection({
             callbacks: {
               label: (ctx) => {
                 if (ctx.dataset.label === "Provas") {
-                  const s = ctx.raw as number | null;
-                  if (!s) return "";
-
+                  const seconds = ctx.raw as number | null;
+                  if (!seconds) return "";
                   const name = raceLabelsOnAxis[ctx.dataIndex] ?? "Prova";
-                  return ` ${name}: ${secToStr(s)}/km`;
+                  return ` ${name}: ${secToStr(seconds)}/km`;
                 }
 
                 if ((ctx.dataset as any).yAxisID === "yPace") {
-                  const s = ctx.raw as number;
-                  return ` Pace: ${secToStr(s)}/km`;
+                  const seconds = ctx.raw as number;
+                  return ` Pace: ${secToStr(seconds)}/km`;
                 }
 
                 return ` Eficiência: ${(ctx.raw as number).toFixed(2)}`;
@@ -310,7 +325,7 @@ export default function MarathonProjection({
             ticks: {
               color: "#f97316",
               font: { size: 10 },
-              callback: (v) => secToStr(Number(v)),
+              callback: (value) => secToStr(Number(value)),
             },
             grid: {
               color: "rgba(255,255,255,0.055)",
@@ -349,135 +364,87 @@ export default function MarathonProjection({
 
   return (
     <section
-      style={{
-        background:
-          "linear-gradient(180deg, rgba(20,20,22,0.96) 0%, rgba(12,12,14,0.98) 100%)",
-        border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: 24,
-        padding: 24,
-        marginTop: 28,
-        overflow: "hidden",
-        boxShadow: "0 18px 45px rgba(0,0,0,0.28)",
-      }}
+      className="ba-card marathon-projection-card"
+      style={{ padding: "1.2rem", marginBottom: "1rem" }}
     >
-      <div style={{ marginBottom: 22 }}>
-        <p
-          style={{
-            color: "#f59e0b",
-            fontSize: 10,
-            fontWeight: 800,
-            letterSpacing: 2.4,
-            textTransform: "uppercase",
-            marginBottom: 8,
-          }}
-        >
-          Calculadora de projeção
-        </p>
-
-        <h2
-          style={{
-            color: "#fff",
-            fontSize: 22,
-            lineHeight: 1.1,
-            fontWeight: 800,
-            margin: 0,
-          }}
-        >
-          Projeção para Buenos Aires
-        </h2>
-
-        <p
-          style={{
-            color: "rgba(255,255,255,0.55)",
-            fontSize: 13,
-            lineHeight: 1.5,
-            marginTop: 8,
-            marginBottom: 0,
-          }}
-        >
-          Regressão linear sobre os longões para estimar o tempo em Buenos
-          Aires.
-        </p>
+      <div className="ba-card-head">
+        <div>
+          <p className="ba-label">Calculadora de projeção</p>
+          <h2
+            style={{
+              color: "#fff",
+              fontSize: 20,
+              fontWeight: 750,
+              marginTop: 8,
+            }}
+          >
+            Projeção para Buenos Aires
+          </h2>
+          <p className="ba-muted" style={{ marginTop: 6, maxWidth: 620 }}>
+            Regressão linear sobre os longões para estimar o tempo em Buenos
+            Aires.
+          </p>
+        </div>
       </div>
 
-      <div
-        style={{
-          height: 360,
-          borderRadius: 20,
-          background: "rgba(255,255,255,0.025)",
-          border: "1px solid rgba(255,255,255,0.06)",
-          padding: 14,
-          marginBottom: 28,
-        }}
-      >
-        <canvas ref={canvasRef} />
-      </div>
-
-      <div className="marathon-projection-metrics">
-        <MetricCard
-          label="Melhora de pace/mês"
-          value={`${data.pacePerMonth < 0 ? "−" : "+"}${Math.abs(
-            data.pacePerMonth
-          ).toFixed(1)}s/km`}
-          helper={data.pacePerMonth < 0 ? "melhorando" : "piora no período"}
-        />
-
-        {data.effPerMonth !== null && (
-          <MetricCard
-            label="Eficiência/mês"
-            value={`${data.effPerMonth > 0 ? "+" : ""}${data.effPerMonth.toFixed(
-              2
-            )}`}
-            helper={data.effPerMonth > 0 ? "crescendo" : "estabilizando"}
-          />
-        )}
-
+      <div className="ba-grid-4" style={{ marginTop: "1rem" }}>
         <MetricCard
           label="Maior longão"
           value={`${data.biggestLongRun.km.toFixed(1)} km`}
           helper={formatDateLabel(data.biggestLongRun.date)}
         />
-
         <MetricCard
-          label="FC média longões"
-          value={data.avgFc ? `${data.avgFc} bpm` : "—"}
-          helper={`média de ${longRuns.length} longões`}
+          label="FC média"
+          value={data.avgFc ? `${data.avgFc} bpm` : "--"}
+          helper="longões com FC"
         />
+        <MetricCard
+          label="Tendência de pace"
+          value={`${signedSecToStr(data.pacePerMonth)}/km`}
+          helper={data.pacePerMonth <= 0 ? "melhorando/mês" : "mais lento/mês"}
+        />
+        {data.effPerMonth !== null ? (
+          <MetricCard
+            label="Eficiência/mês"
+            value={`${data.effPerMonth > 0 ? "+" : ""}${data.effPerMonth.toFixed(
+              2,
+            )}`}
+            helper={data.effPerMonth > 0 ? "crescendo" : "estabilizando"}
+          />
+        ) : (
+          <MetricCard label="Eficiência/mês" value="--" helper="sem série" />
+        )}
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gap: 18,
-          marginBottom: 28,
-        }}
-      >
+      <div className="marathon-projection-chart-wrap">
+        <canvas ref={canvasRef} />
+      </div>
+
+      <div className="marathon-projection-controls">
         <SliderRow
           label="Semanas até a prova"
-          valueLabel={`${weeks} sem`}
+          valueLabel={`${weeks} semanas`}
           min={1}
-          max={24}
+          max={32}
           step={1}
           value={weeks}
           onChange={setWeeks}
         />
-
         <SliderRow
-          label="Fator de pacing"
-          valueLabel={`+${Math.round((pacingFactor - 1) * 100)}%`}
-          min={1.05}
-          max={1.15}
+          label="Fator treino → prova"
+          valueLabel={`${Math.round(pacingFactor * 100)}%`}
+          min={1.07}
+          max={1.12}
           step={0.01}
           value={pacingFactor}
           onChange={setPacingFactor}
         />
-
         <p
           style={{
             margin: 0,
-            color: "rgba(255,255,255,0.36)",
-            fontSize: 11,
-            lineHeight: 1.4,
+            color: "rgba(255,255,255,0.42)",
+            fontSize: 12,
+            lineHeight: 1.45,
           }}
         >
           +7–12% é o delta típico entre pace de longão de treino e pace real em
@@ -487,8 +454,8 @@ export default function MarathonProjection({
 
       <div
         style={{
-          borderRadius: 22,
-          padding: 22,
+          borderRadius: 26,
+          padding: "1.3rem 1.1rem",
           textAlign: "center",
           background:
             "linear-gradient(180deg, rgba(120,53,15,0.38) 0%, rgba(67,27,8,0.44) 100%)",
@@ -508,7 +475,6 @@ export default function MarathonProjection({
         >
           Tempo projetado na maratona
         </p>
-
         <h3
           style={{
             color: "#fff",
@@ -521,7 +487,6 @@ export default function MarathonProjection({
         >
           {totalTimeStr(data.totalSec)}
         </h3>
-
         <p
           style={{
             color: "rgba(255,255,255,0.6)",
@@ -557,30 +522,17 @@ export default function MarathonProjection({
         </p>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
-          gap: 16,
-        }}
-      >
-        {GOALS.map((g) => {
-          const needPace = g.totalSec / DIST_MARATHON;
-          const ok = data.totalSec <= g.totalSec;
-          const diffSec = Math.abs(data.totalSec - g.totalSec);
+      <div className="marathon-goals-grid">
+        {GOALS.map((goal) => {
+          const needPace = goal.totalSec / DIST_MARATHON;
+          const ok = data.totalSec <= goal.totalSec;
+          const diffSec = Math.abs(data.totalSec - goal.totalSec);
 
           return (
             <div
-              key={g.label}
+              key={goal.label}
+              className="marathon-goal-card"
               style={{
-                minHeight: 92,
-                borderRadius: 18,
-                padding: 16,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-                textAlign: "center",
                 background: ok
                   ? "rgba(16,185,129,0.13)"
                   : "rgba(255,255,255,0.035)",
@@ -589,37 +541,17 @@ export default function MarathonProjection({
                   : "1px solid rgba(255,255,255,0.075)",
               }}
             >
-              <p
-                style={{
-                  color: "rgba(255,255,255,0.5)",
-                  fontSize: 11,
-                  margin: 0,
-                }}
-              >
-                {g.label}
-              </p>
+              <p className="marathon-goal-card__label">{goal.label}</p>
 
-              <strong
-                style={{
-                  color: "#fff",
-                  fontSize: 18,
-                  lineHeight: 1.1,
-                  marginTop: 7,
-                }}
-              >
+              <strong className="marathon-goal-card__pace">
                 {secToStr(needPace)}/km
               </strong>
 
               <span
-                style={{
-                  color: ok ? "#34d399" : "#f87171",
-                  fontSize: 11,
-                  marginTop: 7,
-                }}
+                className="marathon-goal-card__delta"
+                style={{ color: ok ? "#34d399" : "#f87171" }}
               >
-                {ok
-                  ? `${secToStr(diffSec).replace(":", "min ")}s de sobra`
-                  : `faltam ~${secToStr(diffSec).replace(":", "min ")}s`}
+                {formatDeltaLabel(diffSec, ok)}
               </span>
             </div>
           );
@@ -639,21 +571,7 @@ function MetricCard({
   helper: string;
 }) {
   return (
-    <div
-      className="marathon-projection-metric-card"
-      style={{
-        minHeight: 86,
-        borderRadius: 18,
-        padding: 16,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        textAlign: "center",
-        background: "rgba(255,255,255,0.035)",
-        border: "1px solid rgba(255,255,255,0.075)",
-      }}
-    >
+    <div className="marathon-projection-metric-card">
       <p
         style={{
           margin: 0,
@@ -664,7 +582,6 @@ function MetricCard({
       >
         {label}
       </p>
-
       <strong
         style={{
           marginTop: 6,
@@ -675,7 +592,6 @@ function MetricCard({
       >
         {value}
       </strong>
-
       <span
         style={{
           marginTop: 5,
@@ -708,46 +624,20 @@ function SliderRow({
   onChange: (value: number) => void;
 }) {
   return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: 16,
-          marginBottom: 8,
-        }}
-      >
-        <span
-          style={{
-            color: "rgba(255,255,255,0.56)",
-            fontSize: 12,
-          }}
-        >
-          {label}
-        </span>
-
-        <strong
-          style={{
-            color: "#fff",
-            fontSize: 12,
-          }}
-        >
-          {valueLabel}
-        </strong>
-      </div>
-
+    <label className="marathon-projection-slider-row">
+      <span className="marathon-projection-slider-row__head">
+        <span>{label}</span>
+        <strong>{valueLabel}</strong>
+      </span>
       <input
         type="range"
         min={min}
         max={max}
         step={step}
         value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        style={{
-          width: "100%",
-          accentColor: "#0ea5e9",
-        }}
+        onChange={(event) => onChange(Number(event.target.value))}
+        style={{ width: "100%", accentColor: "#0ea5e9" }}
       />
-    </div>
+    </label>
   );
 }
