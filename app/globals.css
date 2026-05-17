@@ -139,28 +139,218 @@ body {
 .explore-card:hover { border-color: rgba(245,166,35,0.3) !important; background: rgba(245,166,35,0.04) !important; }
 
 /* ── RESPONSIVE ── */
-@media (max-width: 1020px) {
-  .ba-hero, .ba-readiness-section, .ba-summary-grid { grid-template-columns: 1fr !important; }
+
+.home-hero__stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
-@media (max-width: 768px) {
-  .ba-page { padding: 2rem 1rem 3rem; }
-  .ba-grid-4 { grid-template-columns: repeat(2, 1fr); }
-  .ba-grid-3 { grid-template-columns: repeat(2, 1fr); }
-  .ba-page-header { flex-direction: column; }
-  .ba-title { font-size: 3.2rem; }
+
+.home-today-section {
+  margin-bottom: 1.75rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 12px;
 }
-@media (max-width: 640px) {
-  :root { --hero-cols: 1fr; }
-  .home-hero__actions { flex-direction: column; width: 100%; }
-  .home-hero__actions a { justify-content: center; width: 100%; }
-  .ba-grid-4, .ba-grid-3, .ba-grid-2 { grid-template-columns: 1fr; }
-  .ba-card-head, .ba-training-pace-row { flex-direction: column; }
-  .ba-alert-grid, .ba-summary-grid { grid-template-columns: 1fr !important; }
-  .ba-weekly-goal-value { font-size: 28px; }
-  .ba-card svg, .ba-card-soft svg { height: auto; }
-  .ba-page .sm\:grid-cols-2, .ba-page .sm\:grid-cols-3, .ba-page .sm\:grid-cols-4 { grid-template-columns: 1fr !important; }
-  .ba-page .truncate { white-space: normal; overflow: visible; text-overflow: clip; }
+
+.ba-week {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 1rem;
 }
+
+.ba-card,
+.ba-card-soft,
+.home-stat-card,
+.home-hero__countdown {
+  min-width: 0;
+}
+
+.chart-scroll,
+.table-scroll,
+.ba-card:has(.dark-table),
+.ba-card-soft:has(.dark-table) {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.recharts-wrapper,
+.recharts-surface {
+  max-width: 100% !important;
+}
+
 @media (min-width: 1024px) {
-  :root { --hero-cols: 1fr 1fr; }
+  :root {
+    --hero-cols: 1fr 1fr;
+  }
+}
+
+@media (max-width: 1020px) {
+  :root {
+    --hero-cols: 1fr;
+  }
+
+  .ba-hero,
+  .ba-readiness-section,
+  .ba-summary-grid,
+  .ba-week,
+  .home-today-section {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 768px) {
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .site-nav__inner {
+    height: auto;
+    min-height: 52px;
+    padding: 0.65rem 1rem;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .site-nav__brand {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .site-nav__links {
+    width: 100%;
+    gap: 6px;
+    padding-bottom: 2px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+  }
+
+  .site-nav__link {
+    scroll-snap-align: start;
+    padding: 7px 10px;
+    background: rgba(255,255,255,0.035);
+    border: 1px solid rgba(255,255,255,0.055);
+  }
+
+  .ba-page {
+    width: 100%;
+    padding: 1.35rem 1rem 3rem;
+  }
+
+  .home-hero {
+    padding: 2rem 1rem 1.75rem;
+  }
+
+  .home-hero__inner,
+  .home-content {
+    width: 100%;
+  }
+
+  .home-content {
+    padding: 1.25rem 1rem 2.25rem;
+  }
+
+  .ba-grid-4,
+  .ba-grid-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ba-grid-2,
+  .ba-alert-grid,
+  .ba-summary-grid,
+  .ba-page-header {
+    grid-template-columns: 1fr !important;
+  }
+
+  .ba-page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ba-title {
+    font-size: clamp(2.65rem, 14vw, 3.35rem);
+  }
+
+  .ba-muted,
+  .home-hero__sub {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .home-hero__actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .home-hero__actions a {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .home-hero__countdown,
+  .home-stat-card,
+  .ba-card,
+  .ba-card-soft {
+    border-radius: 16px;
+  }
+
+  .ba-grid-4,
+  .ba-grid-3,
+  .ba-grid-2,
+  .ba-alert-grid,
+  .ba-summary-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .ba-card-head,
+  .ba-training-pace-row {
+    flex-direction: column;
+  }
+
+  .ba-weekly-goal-value {
+    font-size: 28px;
+  }
+
+  .ba-card svg,
+  .ba-card-soft svg {
+    height: auto;
+  }
+
+  .ba-page .sm\:grid-cols-2,
+  .ba-page .sm\:grid-cols-3,
+  .ba-page .sm\:grid-cols-4 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .ba-page .truncate {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .dark-table {
+    min-width: 620px;
+  }
+}
+
+@media (max-width: 430px) {
+  .home-hero__stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-hero__title {
+    font-size: clamp(2.5rem, 18vw, 3.2rem);
+  }
+
+  .ba-page,
+  .home-hero,
+  .home-content {
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+  }
 }

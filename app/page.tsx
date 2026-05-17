@@ -230,7 +230,7 @@ export default async function Home() {
               <RaceCountdown targetDate="2026-09-20T06:00:00-03:00" raceName="Buenos Aires" />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10 }}>
+            <div className="home-hero__stats-grid">
               {[
                 { label: "km em 2026", value: totalKm.toFixed(0) },
                 { label: "corridas", value: String(runs.length) },
@@ -271,7 +271,7 @@ export default async function Home() {
         </section>
 
         {/* ── HOJE + ALERTAS ── */}
-        <section style={{ marginBottom: "1.75rem", display: "grid", gridTemplateColumns: "var(--today-cols, 1fr 2fr)", gap: 12 }}>
+        <section className="home-today-section">
           <div className="ba-card" style={{ padding: "1.5rem" }}>
             <p className="ba-label" style={{ marginBottom: "0.75rem" }}>Hoje</p>
             {todaySisrunRow ? (
