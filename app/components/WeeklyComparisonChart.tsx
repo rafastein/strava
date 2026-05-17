@@ -173,10 +173,10 @@ export default function WeeklyComparisonChart({
           const isDone = adherencePct >= 100;
           const isPartial = adherencePct >= 70 && adherencePct < 100;
 
-          const barColor = isCurrent
-            ? "linear-gradient(90deg, #f5a623, #fb923c, #ff6b00)"
-            : isDone
-              ? "#22c55e"
+          const barColor = isDone
+            ? "linear-gradient(90deg, #22c55e, #34d399)"
+            : isCurrent
+              ? "linear-gradient(90deg, #f5a623, #fb923c, #ff6b00)"
               : isPartial
                 ? "#f97316"
                 : "#ef4444";
