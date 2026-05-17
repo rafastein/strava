@@ -14,6 +14,11 @@ type WeeklyItem = {
   stravaKm?: number;
   adherencePct?: number | null;
   adherence?: number | null;
+
+  // Vem do buildWeeklyComparison(), em app/lib/sisrun-utils.ts
+  isCurrentWeek?: boolean;
+
+  // Mantidos por compatibilidade com usos antigos.
   isCurrent?: boolean;
   current?: boolean;
 };
@@ -32,6 +37,41 @@ function getNumber(...values: Array<number | undefined | null>) {
 
 function getLabel(item: WeeklyItem) {
   return item.label ?? item.weekLabel ?? item.week ?? item.range ?? "Semana";
+}
+
+function parseBrDatePart(value: string, fallbackYear: number) {
+  const [day, month, year] = value.trim().split("/").map(Number);
+
+  if (!day || !month) return null;
+
+  return new Date(year || fallbackYear, month - 1, day, 12, 0, 0, 0);
+}
+
+function isCurrentWeekLabel(label: string) {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+
+  const normalized = label
+    .replace(/\s/g, "")
+    .replace(/[–—]/g, "-");
+
+  const [startRaw, endRaw] = normalized.split("-");
+
+  if (!startRaw || !endRaw) return false;
+
+  const start = parseBrDatePart(startRaw, currentYear);
+  const end = parseBrDatePart(endRaw, currentYear);
+
+  if (!start || !end) return false;
+
+  if (end.getTime() < start.getTime()) {
+    end.setFullYear(end.getFullYear() + 1);
+  }
+
+  start.setHours(0, 0, 0, 0);
+  end.setHours(23, 59, 59, 999);
+
+  return now >= start && now <= end;
 }
 
 export default function WeeklyComparisonChart({
@@ -101,14 +141,14 @@ export default function WeeklyComparisonChart({
           const plannedKm = getNumber(
             item.plannedKm,
             item.planned,
-            item.totalPlannedKm
+            item.totalPlannedKm,
           );
 
           const executedKm = getNumber(
             item.executedKm,
             item.doneKm,
             item.actualKm,
-            item.stravaKm
+            item.stravaKm,
           );
 
           const adherencePct =
@@ -117,32 +157,44 @@ export default function WeeklyComparisonChart({
             (plannedKm > 0 ? (executedKm / plannedKm) * 100 : 0);
 
           const progressPct =
-            plannedKm > 0 ? Math.min((executedKm / plannedKm) * 100, 100) : 0;
+            plannedKm > 0
+              ? Math.min((executedKm / plannedKm) * 100, 100)
+              : 0;
 
-          const isCurrent = Boolean(item.isCurrent ?? item.current);
+          const label = getLabel(item);
+
+          const isCurrent = Boolean(
+            item.isCurrentWeek ??
+              item.isCurrent ??
+              item.current ??
+              isCurrentWeekLabel(label),
+          );
+
           const isDone = adherencePct >= 100;
           const isPartial = adherencePct >= 70 && adherencePct < 100;
 
-          const barColor = isDone
-            ? "#22c55e"
-            : isPartial
-            ? "#f97316"
-            : "#ef4444";
+          const barColor = isCurrent
+            ? "linear-gradient(90deg, #f5a623, #fb923c, #ff6b00)"
+            : isDone
+              ? "#22c55e"
+              : isPartial
+                ? "#f97316"
+                : "#ef4444";
 
           return (
             <article
-              key={`${getLabel(item)}-${index}`}
+              key={`${label}-${index}`}
               style={{
                 borderRadius: 22,
                 padding: 22,
                 background: isCurrent
-                  ? "linear-gradient(180deg, rgba(245,166,35,0.14) 0%, rgba(245,166,35,0.055) 100%)"
+                  ? "radial-gradient(circle at 92% 0%, rgba(245,166,35,0.22), transparent 38%), linear-gradient(180deg, rgba(120,53,15,0.38) 0%, rgba(67,27,8,0.48) 100%)"
                   : "linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.025) 100%)",
                 border: isCurrent
-                  ? "1px solid rgba(245,166,35,0.34)"
+                  ? "1px solid rgba(245,166,35,0.46)"
                   : "1px solid rgba(255,255,255,0.08)",
                 boxShadow: isCurrent
-                  ? "0 12px 34px rgba(245,166,35,0.08)"
+                  ? "0 0 0 1px rgba(245,166,35,0.08), 0 22px 56px rgba(245,166,35,0.12), 0 20px 60px rgba(0,0,0,0.24)"
                   : "none",
               }}
             >
@@ -173,7 +225,7 @@ export default function WeeklyComparisonChart({
                         margin: 0,
                       }}
                     >
-                      {getLabel(item)}
+                      {label}
                     </h3>
 
                     {isCurrent && (
@@ -186,9 +238,12 @@ export default function WeeklyComparisonChart({
                           padding: "3px 8px",
                           fontSize: 10,
                           fontWeight: 800,
+                          fontFamily: "'DM Mono', monospace",
+                          letterSpacing: "0.08em",
+                          textTransform: "uppercase",
                         }}
                       >
-                        Atual
+                        Semana atual
                       </span>
                     )}
                   </div>
@@ -244,6 +299,9 @@ export default function WeeklyComparisonChart({
                       height: "100%",
                       borderRadius: 999,
                       background: barColor,
+                      boxShadow: isCurrent
+                        ? "0 0 18px rgba(245,166,35,0.32)"
+                        : "none",
                     }}
                   />
                 </div>
@@ -275,7 +333,7 @@ export default function WeeklyComparisonChart({
                       executedKm - plannedKm
                     ).toFixed(1)} km.`
                   : `Faltam ${Math.max(plannedKm - executedKm, 0).toFixed(
-                      1
+                      1,
                     )} km para cumprir o planejado da semana.`}
               </p>
             </article>
@@ -291,20 +349,18 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
     <div
       style={{
         borderRadius: 14,
-        padding: "14px 16px",
-        background: "rgba(255,255,255,0.04)",
+        padding: "12px 14px",
+        background: "rgba(255,255,255,0.045)",
         border: "1px solid rgba(255,255,255,0.07)",
       }}
     >
       <p
         style={{
-          color: "rgba(255,255,255,0.34)",
-          fontFamily: "'DM Mono', monospace",
-          fontSize: 9,
-          letterSpacing: "0.12em",
+          color: "rgba(255,255,255,0.36)",
+          fontSize: 10,
+          letterSpacing: "0.14em",
           textTransform: "uppercase",
           margin: 0,
-          marginBottom: 8,
         }}
       >
         {label}
@@ -313,8 +369,10 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
       <strong
         style={{
           color: "#fff",
-          fontSize: 13,
-          lineHeight: 1,
+          fontSize: 15,
+          lineHeight: 1.2,
+          display: "block",
+          marginTop: 8,
         }}
       >
         {value}
