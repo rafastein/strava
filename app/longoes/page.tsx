@@ -139,7 +139,7 @@ function InfoCard({
   return (
     <div className="ba-card longoes-info-card" style={{ padding: "1.2rem 1.4rem", textAlign: "center" }}>
       <p className="ba-label">{title}</p>
-      <h2 className={`card__value ${accent ? valueClass : ""}`} style={{ marginTop: ".4rem", fontSize: "clamp(1.4rem, 2.5vw, 2rem)" }}>{value}</h2>
+      <h2 className={`ba-value ${accent ? valueClass : ""}`} style={{ marginTop: ".4rem", fontSize: "clamp(1.4rem, 2.5vw, 2rem)" }}>{value}</h2>
       {sub && <p className="ba-muted" style={{ marginTop: ".3rem" }}>{sub}</p>}
     </div>
   );
@@ -148,8 +148,8 @@ function InfoCard({
 function MetricPill({ label, value }: { label: string; value: string }) {
   return (
     <div className="ba-card-soft longoes-metric-pill" style={{ padding: ".65rem 1rem" }}>
-      <p className="metric-pill__label">{label}</p>
-      <p className="metric-pill__value" style={{ marginTop: ".25rem" }}>{value}</p>
+      <p className="ba-label">{label}</p>
+      <p style={{ marginTop: ".25rem", fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{value}</p>
     </div>
   );
 }
@@ -234,7 +234,7 @@ export default async function LongoesPage() {
   return (
     <main className="page longoes-page">
       <Navbar />
-      <div className="page__inner pb-24">
+      <div className="ba-page">
         <div className="ba-page-header">
           <div>
             <p className="ba-eyebrow">Treinos</p>
@@ -278,7 +278,7 @@ export default async function LongoesPage() {
 
         <section className="grid gap-8 lg:grid-cols-3 longoes-section longoes-insights-grid" style={{ marginBottom: "3.5rem" }}>
           <div className="card card--accent min-h-[340px] longoes-insight-card" style={{ padding: "2rem" }}>
-            <p className="section-label ba-section">Último longão</p>
+            <p className="ba-eyebrow ba-section">Último longão</p>
             {lastLongRun ? (
               <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", height: "calc(100% - 2rem)" }}>
                 <div>
@@ -307,7 +307,7 @@ export default async function LongoesPage() {
           </div>
 
           <div className="card min-h-[340px] longoes-insight-card" style={{ padding: "2rem" }}>
-            <p className="section-label mb-7">Tendência de eficiência</p>
+            <p className="ba-eyebrow" style={{ marginBottom: "1.25rem" }}>Tendência de eficiência</p>
             <div className="flex items-center gap-4">
               <span className="text-3xl">{efficiencyTrend.emoji}</span>
               <div>
@@ -324,7 +324,7 @@ export default async function LongoesPage() {
           </div>
 
           <div className="card min-h-[340px] longoes-insight-card longoes-pattern-card" style={{ padding: "2rem" }}>
-            <p className="section-label mb-7">Padrões identificados</p>
+            <p className="ba-eyebrow" style={{ marginBottom: "1.25rem" }}>Padrões identificados</p>
             <div className="space-y-5">
               <MetricPill label="Longões com melhora" value={`${progressiveRuns} em relação ao anterior`} />
               <MetricPill label="Longões 25 km+" value={`${longRuns25Plus} treinos`} />
@@ -434,6 +434,7 @@ export default async function LongoesPage() {
           )}
         </section>
       </div>
+      <footer className="site-footer">STRAVA · RAFAEL CABRAL · 2026</footer>
     </main>
   );
 }

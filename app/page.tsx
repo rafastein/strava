@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { formatBRDate } from "./lib/date-utils";
+import Navbar from "./components/Navbar";
 import ActivitiesPanel from "./components/ActivitiesPanel";
 import WeeklyComparisonChart from "./components/WeeklyComparisonChart";
 import NextRaceCard from "./components/NextRaceCard";
@@ -194,122 +195,36 @@ export default async function Home() {
   });
 
   return (
-    <main className="min-h-screen" style={{ background: "#0d0d0d", fontFamily: "'DM Sans', sans-serif" }}>
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
-      <style>{`
-        .nav-link:hover { color: #fff !important; }
-        .explore-card:hover { border-color: rgba(245,166,35,0.3) !important; background: rgba(245,166,35,0.04) !important; }
-        .nav-links-wrap { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
-
-        @media (max-width: 640px) {
-          .nav-links-wrap { display: none !important; }
-
-          .home-hero-actions {
-            flex-direction: column;
-            width: 100%;
-          }
-
-          .home-hero-actions a {
-            justify-content: center;
-            width: 100%;
-          }
-
-          :root {
-            --hero-cols: 1fr;
-            --metrics-cols: repeat(2, 1fr);
-            --longoes-cols: repeat(2, 1fr);
-            --explore-cols: 1fr;
-            --today-cols: 1fr;
-            --alerts-cols: 1fr;
-          }
-        }
-
-        @media (max-width: 420px) {
-          :root {
-            --metrics-cols: 1fr;
-            --longoes-cols: 1fr;
-          }
-        }
-
-        @media (min-width: 641px) and (max-width: 1023px) {
-          :root {
-            --hero-cols: 1fr;
-            --metrics-cols: repeat(2, 1fr);
-            --longoes-cols: repeat(2, 1fr);
-            --explore-cols: repeat(2, 1fr);
-            --today-cols: 1fr;
-            --alerts-cols: repeat(2, 1fr);
-          }
-        }
-
-        @media (min-width: 1024px) {
-          :root {
-            --hero-cols: 1fr 1fr;
-            --metrics-cols: repeat(4, 1fr);
-            --longoes-cols: repeat(3, 1fr) 1.2fr;
-            --explore-cols: repeat(3, 1fr);
-            --today-cols: 1fr 2fr;
-            --alerts-cols: repeat(2, 1fr);
-          }
-        }
-      `}</style>
-
+    <div className="page">
       {/* ── NAV ── */}
-      <nav style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(13,13,13,0.95)", backdropFilter: "blur(12px)", position: "sticky", top: 0, zIndex: 50 }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {athlete?.profile_medium && (
-              <img src={athlete.profile_medium} alt="" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", border: "1.5px solid rgba(255,255,255,0.15)" }} />
-            )}
-            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, letterSpacing: "0.08em", color: "#fff" }}>
-              {athlete?.firstname ?? "ATLETA"}
-            </span>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#f5a623", display: "inline-block", marginLeft: 2 }} />
-          </div>
-          <div className="nav-links-wrap">
-            {NAV_LINKS.map((l) => (
-              <Link key={l.href} href={l.href} className="nav-link" style={{ fontSize: 11, fontWeight: 500, letterSpacing: "0.07em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)", padding: "6px 10px", borderRadius: 6, textDecoration: "none", transition: "color 0.2s" }}
-
-              >
-                {l.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </nav>
+      <Navbar athleteName={athlete?.firstname} athleteAvatar={athlete?.profile_medium ?? undefined} />
 
       {/* ── HERO ── */}
-      <section style={{ position: "relative", overflow: "hidden", padding: "3rem 1.5rem 2.5rem", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        {/* Background glow */}
-        <div style={{ position: "absolute", top: -100, right: -100, width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(245,166,35,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", bottom: -150, left: -50, width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(232,69,74,0.05) 0%, transparent 70%)", pointerEvents: "none" }} />
-
-        <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "var(--hero-cols, 1fr)", gap: "2rem", alignItems: "center" }}>
+      <section className="home-hero">
+        <div className="home-hero__glow-1" />
+        <div className="home-hero__glow-2" />
+        <div className="home-hero__inner">
           <div>
-            <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: "#f5a623", marginBottom: "1rem" }}>
+            <p className="ba-eyebrow" style={{ marginBottom: "1rem" }}>
               Temporada 2026 · Buenos Aires 20/09
             </p>
-            <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(2.8rem, 6vw, 5rem)", lineHeight: 0.9, letterSpacing: "0.02em", color: "#fff", marginBottom: "1rem" }}>
+            <h1 className="home-hero__title">
               {athlete?.firstname ?? "Atleta"}<br />
-              <span style={{ color: "#f5a623" }}>Cabral</span>
+              <span className="home-hero__title-accent">Cabral</span>
             </h1>
-            <p style={{ fontSize: 15, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, maxWidth: 380, marginBottom: "1.25rem" }}>
+            <p className="home-hero__sub">
               Dashboard de treinos, projeções e análise de corrida. Powered by Strava + SisRUN.
             </p>
-            <div className="home-hero-actions" style={{ display: "flex", gap: 12 }}>
-              <Link href="/buenos-aires" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#f5a623", color: "#000", padding: "12px 24px", borderRadius: 10, fontWeight: 600, fontSize: 14, textDecoration: "none", letterSpacing: "0.02em" }}>
-                Modo maratona →
-              </Link>
-              <Link href="/sisrun" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.7)", padding: "12px 24px", borderRadius: 10, fontWeight: 500, fontSize: 14, textDecoration: "none", border: "1px solid rgba(255,255,255,0.1)" }}>
-                SisRUN
-              </Link>
+            <div className="home-hero__actions">
+              <Link href="/buenos-aires" className="ba-cta">Modo maratona →</Link>
+              <Link href="/sisrun" className="ba-cta-ghost">SisRUN</Link>
             </div>
           </div>
 
           {/* Countdown + Stats */}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ background: "rgba(245,166,35,0.07)", border: "1px solid rgba(245,166,35,0.2)", borderRadius: 14, padding: "1rem 1.25rem" }}>
-              <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "#f5a623", marginBottom: "0.75rem" }}>
+            <div className="home-hero__countdown">
+              <p className="ba-eyebrow" style={{ marginBottom: "0.75rem", fontSize: 10 }}>
                 Buenos Aires — 20 set 2026
               </p>
               <RaceCountdown targetDate="2026-09-20T06:00:00-03:00" raceName="Buenos Aires" />
@@ -322,9 +237,9 @@ export default async function Home() {
                 { label: "pace médio", value: pace },
                 { label: "elevação", value: `${(totalElevation / 1000).toFixed(1)}k m` },
               ].map((s) => (
-                <div key={s.label} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "1rem 1.25rem" }}>
-                  <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>{s.label}</p>
-                  <p style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, letterSpacing: "0.04em", color: "#fff", lineHeight: 1 }}>{s.value}</p>
+                <div key={s.label} className="home-stat-card">
+                  <p className="ba-label" style={{ marginBottom: 4 }}>{s.label}</p>
+                  <p className="ba-value" style={{ fontSize: 28 }}>{s.value}</p>
                 </div>
               ))}
             </div>
@@ -332,12 +247,12 @@ export default async function Home() {
         </div>
       </section>
 
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "1.75rem 1.5rem" }}>
+      <div className="home-content">
 
         {/* ── SEMANA ATUAL ── */}
         <section style={{ marginBottom: "1.75rem" }}>
-          <SectionLabel>Esta semana</SectionLabel>
-          <div style={{ display: "grid", gridTemplateColumns: "var(--metrics-cols, repeat(2,1fr))", gap: 10 }}>
+          <p className="ba-label" style={{ marginBottom: "0.75rem" }}>Esta semana</p>
+          <div className="ba-grid-4">
             {[
               { label: "Planejado (SisRUN)", value: sisrunWeek ? `${plannedWeekKm.toFixed(1)} km` : "—", accent: false },
               { label: "Executado (Strava)", value: `${currentWeekKm.toFixed(1)} km`, accent: true },
@@ -345,11 +260,7 @@ export default async function Home() {
               {
                 label: "Longão",
                 value: sisrunWeek
-                  ? `${currentWeekLongestRunKm.toFixed(1)} / ${(sisrunWeek.longRunPlannedKm ?? 0).toFixed(1)} km • ${
-                      plannedWeekKm > 0
-                        ? ((currentWeekLongestRunKm / plannedWeekKm) * 100).toFixed(0)
-                        : 0
-                    }% da semana`
+                  ? `${currentWeekLongestRunKm.toFixed(1)} / ${(sisrunWeek.longRunPlannedKm ?? 0).toFixed(1)} km`
                   : `${currentWeekLongestRunKm.toFixed(1)} km`,
                 accent: false,
               },
@@ -361,8 +272,8 @@ export default async function Home() {
 
         {/* ── HOJE + ALERTAS ── */}
         <section style={{ marginBottom: "1.75rem", display: "grid", gridTemplateColumns: "var(--today-cols, 1fr 2fr)", gap: 12 }}>
-          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "1.5rem" }}>
-            <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: "0.75rem" }}>Hoje</p>
+          <div className="ba-card" style={{ padding: "1.5rem" }}>
+            <p className="ba-label" style={{ marginBottom: "0.75rem" }}>Hoje</p>
             {todaySisrunRow ? (
               <>
                 <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 4 }}>Planejado: {todaySisrunRow.plannedDistanceKm.toFixed(1)} km</p>
@@ -376,9 +287,9 @@ export default async function Home() {
             </span>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "var(--alerts-cols, repeat(2,1fr))", gap: 10 }}>
+          <div className="ba-grid-2">
             {alerts.map((a, i) => (
-              <div key={i} style={{ background: a.ok ? "rgba(16,185,129,0.06)" : "rgba(245,166,35,0.06)", border: `1px solid ${a.ok ? "rgba(16,185,129,0.15)" : "rgba(245,166,35,0.15)"}`, borderRadius: 16, padding: "1.25rem 1.5rem" }}>
+              <div key={i} className="ba-card" style={{ padding: "1.25rem 1.5rem", background: a.ok ? "rgba(16,185,129,0.06)" : "rgba(245,166,35,0.06)", border: `1px solid ${a.ok ? "rgba(16,185,129,0.15)" : "rgba(245,166,35,0.15)"}` }}>
                 <p style={{ fontSize: 13, fontWeight: 600, color: a.ok ? "#10b981" : "#f5a623", marginBottom: 4 }}>{a.title}</p>
                 <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>{a.text}</p>
               </div>
@@ -388,14 +299,14 @@ export default async function Home() {
 
         {/* ── PRÓXIMA PROVA ── */}
         <section style={{ marginBottom: "1.75rem" }}>
-          <SectionLabel>Calendário de provas</SectionLabel>
+          <p className="ba-label" style={{ marginBottom: "0.75rem" }}>Calendário de provas</p>
           <NextRaceCard races={RACES} dark />
         </section>
 
         {/* ── LONGÕES ── */}
         <section style={{ marginBottom: "1.75rem" }}>
-          <SectionLabel>Longões</SectionLabel>
-          <div style={{ display: "grid", gridTemplateColumns: "var(--longoes-cols, repeat(2,1fr))", gap: 10 }}>
+          <p className="ba-label" style={{ marginBottom: "0.75rem" }}>Longões</p>
+          <div className="ba-grid-4">
             {[
               { label: "Total de longões", value: String(longRunSummary.totalLongRuns) },
               { label: "Pace médio", value: formatLongRunPace(longRunSummary.averagePaceSecPerKm) },
@@ -403,16 +314,16 @@ export default async function Home() {
             ].map((c) => (
               <MetricCard key={c.label} label={c.label} value={c.value} accent={false} />
             ))}
-            <Link href="/longoes" style={{ background: "rgba(245,166,35,0.08)", border: "1px solid rgba(245,166,35,0.2)", borderRadius: 16, padding: "1.5rem", textDecoration: "none", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-              <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "#f5a623" }}>Análise completa</p>
-              <p style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, letterSpacing: "0.04em", color: "#fff", marginTop: 8 }}>Ver longões →</p>
+            <Link href="/longoes" className="ba-card" style={{ padding: "1.5rem", textDecoration: "none", display: "flex", flexDirection: "column", justifyContent: "space-between", background: "rgba(245,166,35,0.08)", borderColor: "rgba(245,166,35,0.2)" }}>
+              <p className="ba-eyebrow">Análise completa</p>
+              <p className="ba-value" style={{ fontSize: 22, marginTop: 8 }}>Ver longões →</p>
             </Link>
           </div>
         </section>
 
         {/* ── GRÁFICO SEMANAL ── */}
         <section style={{ marginBottom: "1.75rem" }}>
-          <SectionLabel>Planejado × executado</SectionLabel>
+          <p className="ba-label" style={{ marginBottom: "0.75rem" }}>Planejado × executado</p>
           <WeeklyComparisonChart
             items={weeklyComparison}
             title="Planejado x executado por semana"
@@ -423,7 +334,7 @@ export default async function Home() {
 
         {/* ── NAVEGAÇÃO ── */}
         <section style={{ marginBottom: "1.75rem" }}>
-          <SectionLabel>Explorar</SectionLabel>
+          <p className="ba-label" style={{ marginBottom: "0.75rem" }}>Explorar</p>
           <div style={{ display: "grid", gridTemplateColumns: "var(--explore-cols, 1fr)", gap: 10 }}>
             {[
               { href: "/treinos-qualidade", label: "Treinos de qualidade", desc: "Intervalados, fartleks e progressivos detectados automaticamente.", tag: "Treinos" },
@@ -433,10 +344,8 @@ export default async function Home() {
               { href: "/equipamentos", label: "Equipamentos", desc: "Km, desgaste e eficiência por tênis.", tag: "Strava" },
               { href: "/sisrun", label: "SisRUN", desc: "Atualize o planejamento e acompanhe aderência semanal.", tag: "Planejamento" },
             ].map((c) => (
-              <Link key={c.href} href={c.href} className="explore-card" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "1.1rem 1.25rem", textDecoration: "none", transition: "border-color 0.2s, background 0.2s", display: "block" }}
-
-              >
-                <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#f5a623", marginBottom: "0.6rem" }}>{c.tag}</p>
+              <Link key={c.href} href={c.href} className="ba-card-soft explore-card" style={{ padding: "1.1rem 1.25rem", textDecoration: "none", display: "block" }}>
+                <p className="ba-eyebrow" style={{ marginBottom: "0.6rem", fontSize: 9 }}>{c.tag}</p>
                 <p style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: "0.35rem" }}>{c.label}</p>
                 <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", lineHeight: 1.5 }}>{c.desc}</p>
               </Link>
@@ -446,8 +355,8 @@ export default async function Home() {
 
         {/* ── ATIVIDADES ── */}
         <section style={{ marginBottom: "1.75rem" }}>
-          <SectionLabel>Atividades recentes</SectionLabel>
-          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, overflow: "hidden" }}>
+          <p className="ba-label" style={{ marginBottom: "0.75rem" }}>Atividades recentes</p>
+          <div className="ba-card" style={{ overflow: "hidden", padding: 0 }}>
             <ActivitiesPanel activities={activities} dark />
           </div>
         </section>
@@ -455,28 +364,18 @@ export default async function Home() {
       </div>
 
       {/* ── FOOTER ── */}
-      <footer style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "2rem 1.5rem", textAlign: "center" }}>
-        <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "rgba(255,255,255,0.2)", letterSpacing: "0.08em" }}>
-          STRAVA × SISRUN · {athlete?.firstname ?? "RAFAEL"} CABRAL · 2026
-        </p>
+      <footer className="site-footer">
+        STRAVA × SISRUN · {athlete?.firstname ?? "RAFAEL"} CABRAL · 2026
       </footer>
-    </main>
-  );
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: "0.75rem" }}>
-      {children}
-    </p>
+    </div>
   );
 }
 
 function MetricCard({ label, value, accent }: { label: string; value: string; accent: boolean }) {
   return (
-    <div style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${accent ? "rgba(245,166,35,0.25)" : "rgba(255,255,255,0.07)"}`, borderRadius: 12, padding: "1rem 1.25rem" }}>
-      <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 6 }}>{label}</p>
-      <p style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: "0.04em", color: accent ? "#f5a623" : "#fff", lineHeight: 1 }}>{value}</p>
+    <div className="ba-card" style={{ padding: "1rem 1.25rem", borderColor: accent ? "rgba(245,166,35,0.25)" : undefined }}>
+      <p className="ba-label" style={{ marginBottom: 6 }}>{label}</p>
+      <p className="ba-value" style={{ fontSize: 24, color: accent ? "var(--accent)" : undefined }}>{value}</p>
     </div>
   );
 }

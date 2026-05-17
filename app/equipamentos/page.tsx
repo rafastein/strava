@@ -102,6 +102,26 @@ function extractBrand(name: string) {
   return name.split(" ")[0];
 }
 
+type StravaGear = {
+  id: string;
+  name: string;
+  distance: number; // meters
+};
+
+async function getAthleteGear(): Promise<StravaGear[]> {
+  try {
+    const token = await getValidStravaAccessToken();
+    if (!token) return [];
+    const res = await fetch("https://www.strava.com/api/v3/athlete", {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    const athlete = await res.json();
+    return (athlete.shoes ?? []) as StravaGear[];
+  } catch { return []; }
+}
+
 async function getActivities(): Promise<StravaActivity[]> {
   const token = await getValidStravaAccessToken();
   if (!token) return [];
@@ -315,11 +335,28 @@ function getWorkoutLabel(type: WorkoutType) {
 }
 
 export default async function EquipamentosPage() {
-  const activities = await getActivities();
+  const [activities, athleteGear] = await Promise.all([
+    getActivities(),
+    getAthleteGear(),
+  ]);
+
+  // Merge hardcoded names with dynamic gear from Strava
+  const dynamicGearNames: Record<string, string> = {};
+  athleteGear.forEach((g) => {
+    dynamicGearNames[g.id] = GEAR_NAMES[g.id] ?? g.name;
+  });
+
+  // All known gear IDs (hardcoded + dynamic)
+  const allGearIds = new Set([
+    ...Object.keys(GEAR_NAMES),
+    ...athleteGear.map((g) => g.id),
+  ]);
 
   const runs = activities.filter(
-    (a) => a.type === "Run" && a.gear_id && VALID_GEAR_IDS.has(a.gear_id)
+    (a) => a.type === "Run" && a.gear_id && allGearIds.has(a.gear_id)
   );
+
+  const gearNameLookup = { ...GEAR_NAMES, ...dynamicGearNames };
 
   const grouped = Object.values(
     runs.reduce<Record<string, GearSummary>>((acc, activity) => {
@@ -327,7 +364,7 @@ export default async function EquipamentosPage() {
       const distanceKm = activity.distance / 1000;
 
       if (!acc[gearId]) {
-        const name = GEAR_NAMES[gearId];
+        const name = gearNameLookup[gearId] ?? gearId;
 
         acc[gearId] = {
           gearId,

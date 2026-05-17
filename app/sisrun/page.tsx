@@ -124,7 +124,7 @@ export default async function SisrunPage() {
 
   return (
     <div className="page"><Navbar />
-    <main className="min-h-screen bg-[#0b0b0b] text-white">
+    <main>
       <div className="ba-page">
         <header className="ba-page-header">
           <div>

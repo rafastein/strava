@@ -161,7 +161,7 @@ export default async function CorridasBrasilPage() {
           </Link>
         </div>
 
-        <section className="ba-section grid gap-4 md:grid-cols-4">
+        <section className="ba-section ba-grid-4">
           <InfoCard title="Corridas no Brasil" value={String(stats.totalRaces)} />
           <InfoCard
             title="Estados com corridas"

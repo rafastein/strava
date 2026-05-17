@@ -365,7 +365,7 @@ export default async function CorridasMundoPage() {
           </Link>
         </div>
 
-        <section className="ba-section grid gap-4 md:grid-cols-4">
+        <section className="ba-section ba-grid-4">
           <InfoCard title="Corridas 21k+" value={String(stats.totalRaces)} />
           <InfoCard
             title="Países com corridas"
@@ -477,15 +477,16 @@ export default async function CorridasMundoPage() {
           )}
         </section>
       </main>
+      <footer className="site-footer">STRAVA · RAFAEL CABRAL · 2026</footer>
     </div>
   );
 }
 
 function InfoCard({ title, value }: { title: string; value: string }) {
   return (
-    <div className="ba-card" style={{ padding: "1.5rem" }}>
+    <div className="ba-card" style={{ padding: "1.5rem", textAlign: "center" }}>
       <p className="ba-label">{title}</p>
-      <h2 className="ba-value mt-2" style={{ fontSize: 30 }}>
+      <h2 className="ba-value" style={{ fontSize: 30, marginTop: ".4rem" }}>
         {value}
       </h2>
     </div>
