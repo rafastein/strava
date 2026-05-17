@@ -77,8 +77,8 @@ const PHASES: Phase[] = [
   },
   {
     key: "taper",
-    label: "Polimento / Taper",
-    shortLabel: "Taper",
+    label: "Polimento",
+    shortLabel: "Polimento",
     startWeek: 2,
     endWeek: 0,
     description:
