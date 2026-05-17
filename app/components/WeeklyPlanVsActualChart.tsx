@@ -86,10 +86,10 @@ export default function WeeklyPlanVsActualChart({
 
   const decoratedWeeks = useMemo(
     () =>
-      weeks.map((week) => ({
+      weeks.map((week, index) => ({
         ...week,
         adherence: getAdherence(week),
-        isCurrent: isCurrentWeekLabel(week.label),
+        isCurrent: index === 0 || isCurrentWeekLabel(week.label),
         statusClass: getWeekStatusClass(week),
         message: getWeekMessage(week),
       })),
