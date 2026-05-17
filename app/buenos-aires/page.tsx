@@ -4,7 +4,6 @@ import Navbar from "../components/Navbar";
 import MarathonProjection from "../components/MarathonProjection";
 import WeeklyPlanVsActualChart from "../components/WeeklyPlanVsActualChart";
 import ZonesAggregate from "../components/ZonesAggregate";
-import MetricCard from "../components/MetricCard";
 import TodayWorkoutCard from "../components/TodayWorkoutCard";
 import WeeklyGoalCard from "../components/WeeklyGoalCard";
 
@@ -349,38 +348,6 @@ export default async function BuenosAiresPage() {
           weeklyAdherencePct={weeklyAdherencePct}
         />
 
-        <section className="ba-grid-4" style={{ marginBottom: "1rem" }}>
-          <MetricCard
-            label="Dias até a prova"
-            value={String(daysToRace)}
-            caption={`${weeksToRace} semanas restantes`}
-            accent
-          />
-
-          <MetricCard
-            label="Pace-alvo"
-            value={targetPaceLabel}
-            caption={formatFullDuration(targetPredictionSeconds)}
-          />
-
-          <MetricCard
-            label="Maior longão"
-            value={`${longestRunKm.toFixed(1)} km`}
-            caption={
-              longestRun
-                ? `${formatDate(longestRun.start_date_local)} · ${formatSecondsPerKm(
-                    longestRun.moving_time / (longestRun.distance / 1000),
-                  )}`
-                : "Sem longão identificado"
-            }
-          />
-
-          <MetricCard
-            label="Longões 28 km+"
-            value={String(longRuns28Plus.length)}
-            caption={`Meta-chave: ${marathonGoal.targetLongRunKm} km`}
-          />
-        </section>
 
         <section
           className="ba-grid-2"
