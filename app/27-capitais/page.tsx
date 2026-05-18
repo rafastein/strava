@@ -394,6 +394,10 @@ export default async function CapitaisPage() {
         (b.bestActivity?.moving_time ?? Infinity),
     )[0];
 
+  const capitalRows = [...challenge].sort((a, b) =>
+    a.city.localeCompare(b.city, "pt-BR", { sensitivity: "base" }),
+  );
+
   return (
     <div className="page">
       <Navbar
@@ -542,58 +546,53 @@ export default async function CapitaisPage() {
             <p className="ba-eyebrow">Mapa mental do projeto</p>
             <h2 style={styles.sectionTitle}>As 27 capitais</h2>
 
-            <div style={styles.capitalGrid}>
-              {challenge.map((capital) => {
-                const activity = capital.bestActivity;
+            <div style={{ marginTop: "1rem", overflowX: "auto" }}>
+              <table className="dark-table">
+                <thead>
+                  <tr>
+                    <th>Capital</th>
+                    <th>Região</th>
+                    <th>Tempo</th>
+                    <th>Pace</th>
+                    <th>Distância</th>
+                    <th>Data</th>
+                    <th style={{ textAlign: "right" }}>Status</th>
+                  </tr>
+                </thead>
 
-                return (
-                  <div key={capital.city} style={styles.capitalMiniCard}>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                      <div style={{ minWidth: 0 }}>
-                        <h3
-                          style={{
-                            color: "#fff",
-                            fontSize: 15,
-                            fontWeight: 800,
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
-                        >
-                          {capital.city}{" "}
-                          <span style={{ color: "rgba(255,255,255,0.36)" }}>
-                            {capital.state}
+                <tbody>
+                  {capitalRows.map((capital) => {
+                    const activity = capital.bestActivity;
+
+                    return (
+                      <tr key={capital.city}>
+                        <td>
+                          <strong style={{ color: "#fff", fontWeight: 800 }}>
+                            {capital.city}{" "}
+                            <span style={{ color: "rgba(255,255,255,0.38)" }}>
+                              {capital.state}
+                            </span>
+                          </strong>
+                        </td>
+                        <td>{capital.region}</td>
+                        <td>
+                          <strong style={{ color: "#fff", fontWeight: 800 }}>
+                            {activity ? formatTime(activity.moving_time) : "—"}
+                          </strong>
+                        </td>
+                        <td>{activity ? formatPace(activity.distance, activity.moving_time) : "—"}</td>
+                        <td>{activity ? formatDistance(activity.distance) : "—"}</td>
+                        <td>{activity ? formatDateBR(activity.start_date_local) : "—"}</td>
+                        <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                          <span style={getStatusPillStyle(capital.status)}>
+                            {getStatusLabel(capital.status)}
                           </span>
-                        </h3>
-                        <p className="ba-muted" style={{ fontSize: 12, marginTop: 3 }}>
-                          {capital.region}
-                        </p>
-                      </div>
-
-                      <span style={getStatusPillStyle(capital.status)}>
-                        {getStatusLabel(capital.status)}
-                      </span>
-                    </div>
-
-                    {activity && (
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12 }}>
-                        <div>
-                          <p className="ba-label">Tempo</p>
-                          <p style={{ color: "#fff", fontWeight: 800, fontSize: 13, marginTop: 3 }}>
-                            {formatTime(activity.moving_time)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="ba-label">Pace</p>
-                          <p style={{ color: "#fff", fontWeight: 800, fontSize: 13, marginTop: 3 }}>
-                            {formatPace(activity.distance, activity.moving_time)}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
 
