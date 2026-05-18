@@ -157,58 +157,13 @@ async function getStravaActivities(accessToken: string) {
 }
 
 function getStatusPillStyle(status: CapitalChallengeItem["status"]): CSSProperties {
-  if (status === "completed") {
-    return {
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: "center",
-      height: 22,
-      padding: "0 0.68rem",
-      borderRadius: 999,
-      border: "1px solid rgba(16,185,129,0.25)",
-      background: "rgba(16,185,129,0.12)",
-      color: "#34d399",
-      fontSize: 9,
-      fontWeight: 900,
-      lineHeight: 1,
-      letterSpacing: "0.12em",
-      textTransform: "uppercase",
-      whiteSpace: "nowrap",
-      flexShrink: 0,
-    };
-  }
-
-  if (status === "next") {
-    return {
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: "center",
-      height: 22,
-      padding: "0 0.68rem",
-      borderRadius: 999,
-      border: "1px solid rgba(245,166,35,0.25)",
-      background: "rgba(245,166,35,0.12)",
-      color: "var(--accent)",
-      fontSize: 9,
-      fontWeight: 900,
-      lineHeight: 1,
-      letterSpacing: "0.12em",
-      textTransform: "uppercase",
-      whiteSpace: "nowrap",
-      flexShrink: 0,
-    };
-  }
-
-  return {
+  const base: CSSProperties = {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
     height: 22,
     padding: "0 0.68rem",
     borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.055)",
-    color: "rgba(255,255,255,0.46)",
     fontSize: 9,
     fontWeight: 900,
     lineHeight: 1,
@@ -216,6 +171,31 @@ function getStatusPillStyle(status: CapitalChallengeItem["status"]): CSSProperti
     textTransform: "uppercase",
     whiteSpace: "nowrap",
     flexShrink: 0,
+  };
+
+  if (status === "completed") {
+    return {
+      ...base,
+      border: "1px solid rgba(16,185,129,0.25)",
+      background: "rgba(16,185,129,0.12)",
+      color: "#34d399",
+    };
+  }
+
+  if (status === "next") {
+    return {
+      ...base,
+      border: "1px solid rgba(245,166,35,0.25)",
+      background: "rgba(245,166,35,0.12)",
+      color: "var(--accent)",
+    };
+  }
+
+  return {
+    ...base,
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(255,255,255,0.055)",
+    color: "rgba(255,255,255,0.46)",
   };
 }
 
@@ -301,7 +281,7 @@ const styles: Record<string, CSSProperties> = {
     maxWidth: 1200,
     margin: "0 auto",
     display: "grid",
-    gridTemplateColumns: "minmax(0, 1.05fr) minmax(360px, 0.95fr)",
+    gridTemplateColumns: "minmax(0, 0.9fr) minmax(460px, 1.1fr)",
     gap: "2rem",
     alignItems: "center",
     position: "relative",
@@ -309,7 +289,7 @@ const styles: Record<string, CSSProperties> = {
   },
   heroTitle: {
     fontFamily: "var(--font-display)",
-    fontSize: "clamp(3.4rem, 7vw, 6rem)",
+    fontSize: "clamp(3.2rem, 6.5vw, 5.7rem)",
     lineHeight: 0.9,
     letterSpacing: "0.02em",
     color: "var(--text)",
@@ -322,10 +302,23 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 15,
     lineHeight: 1.7,
   },
+  heroCards: {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1.1fr) minmax(260px, 0.9fr)",
+    gap: "1rem",
+    alignItems: "stretch",
+  },
   heroPanel: {
     borderRadius: 18,
     border: "1px solid rgba(245,166,35,0.18)",
     background: "linear-gradient(180deg, rgba(245,166,35,0.08), rgba(255,255,255,0.03))",
+    padding: "1.25rem",
+    boxShadow: "0 18px 60px rgba(0,0,0,0.22)",
+  },
+  nextPanel: {
+    borderRadius: 18,
+    border: "1px solid rgba(245,166,35,0.22)",
+    background: "linear-gradient(180deg, rgba(245,166,35,0.10), rgba(255,255,255,0.03))",
     padding: "1.25rem",
     boxShadow: "0 18px 60px rgba(0,0,0,0.22)",
   },
@@ -416,21 +409,8 @@ const styles: Record<string, CSSProperties> = {
     gap: 10,
     marginTop: 10,
   },
-  lowerGrid: {
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 1fr) minmax(320px, 390px)",
-    gap: "1rem",
-    alignItems: "start",
-    marginTop: "2rem",
-  },
   paddedCard: {
     padding: "1.25rem",
-  },
-  capitalGrid: {
-    marginTop: "1rem",
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(205px, 1fr))",
-    gap: 10,
   },
   capitalMiniCard: {
     minWidth: 0,
@@ -440,9 +420,12 @@ const styles: Record<string, CSSProperties> = {
     padding: "0.85rem",
     minHeight: 82,
   },
-  sidebarStack: {
-    display: "grid",
-    gap: "1rem",
+  nextMissionCard: {
+    minWidth: 0,
+    borderRadius: 14,
+    border: "1px solid rgba(255,255,255,0.08)",
+    background: "rgba(0,0,0,0.22)",
+    padding: "0.9rem",
   },
   rule: {
     borderRadius: 14,
@@ -515,7 +498,7 @@ export default async function CapitaisPage() {
           <div>
             <p className="ba-eyebrow">Projeto 27 capitais</p>
 
-            <h1 style={styles.heroTitle}>Uma capital por vez.</h1>
+            <h1 style={styles.heroTitle}>Correndo pelas Capitais.</h1>
 
             <p style={styles.heroText}>
               Um projeto para correr uma meia maratona em cada uma das 27 capitais
@@ -524,48 +507,119 @@ export default async function CapitaisPage() {
             </p>
           </div>
 
-          <div style={styles.heroPanel}>
-            <p className="ba-eyebrow" style={{ fontSize: 10, marginBottom: 12 }}>
-              Correndo o Brasil
-            </p>
+          <div style={styles.heroCards}>
+            <div style={styles.heroPanel}>
+              <p className="ba-eyebrow" style={{ fontSize: 10, marginBottom: 12 }}>
+                Correndo o Brasil
+              </p>
 
-            <div style={styles.statGrid}>
-              <div style={styles.statCard}>
-                <p className="ba-label">Capitais concluídas</p>
-                <p className="ba-value" style={{ fontSize: 34, marginTop: 6 }}>
-                  {completed.length}/27
-                </p>
+              <div style={styles.statGrid}>
+                <div style={styles.statCard}>
+                  <p className="ba-label">Capitais concluídas</p>
+                  <p className="ba-value" style={{ fontSize: 34, marginTop: 6 }}>
+                    {completed.length}/27
+                  </p>
+                </div>
+
+                <div style={styles.statCard}>
+                  <p className="ba-label">Progresso</p>
+                  <p className="ba-value ba-value--accent" style={{ fontSize: 34, marginTop: 6 }}>
+                    {progress}%
+                  </p>
+                </div>
+
+                <div style={styles.statCard}>
+                  <p className="ba-label">Próximas missões</p>
+                  <p className="ba-value" style={{ fontSize: 34, marginTop: 6 }}>
+                    {next.length}
+                  </p>
+                </div>
+
+                <div style={styles.statCard}>
+                  <p className="ba-label">Melhor meia</p>
+                  <p className="ba-value" style={{ fontSize: 30, marginTop: 6 }}>
+                    {fastest?.bestActivity
+                      ? formatTime(fastest.bestActivity.moving_time)
+                      : "—"}
+                  </p>
+                  <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
+                    {fastest?.city ?? "Ainda sem dados"}
+                  </p>
+                </div>
               </div>
 
-              <div style={styles.statCard}>
-                <p className="ba-label">Progresso</p>
-                <p className="ba-value ba-value--accent" style={{ fontSize: 34, marginTop: 6 }}>
-                  {progress}%
-                </p>
-              </div>
-
-              <div style={styles.statCard}>
-                <p className="ba-label">Próximas missões</p>
-                <p className="ba-value" style={{ fontSize: 34, marginTop: 6 }}>
-                  {next.length}
-                </p>
-              </div>
-
-              <div style={styles.statCard}>
-                <p className="ba-label">Melhor meia</p>
-                <p className="ba-value" style={{ fontSize: 30, marginTop: 6 }}>
-                  {fastest?.bestActivity
-                    ? formatTime(fastest.bestActivity.moving_time)
-                    : "—"}
-                </p>
-                <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
-                  {fastest?.city ?? "Ainda sem dados"}
-                </p>
+              <div className="ba-progress" style={{ marginTop: 14 }}>
+                <div className="ba-progress-fill" style={{ width: `${progress}%` }} />
               </div>
             </div>
 
-            <div className="ba-progress" style={{ marginTop: 14 }}>
-              <div className="ba-progress-fill" style={{ width: `${progress}%` }} />
+            <div style={styles.nextPanel}>
+              <p className="ba-eyebrow" style={{ fontSize: 10, marginBottom: 12 }}>
+                Próximas missões
+              </p>
+
+              <div style={{ display: "grid", gap: 10 }}>
+                {next.length > 0 ? (
+                  next.map((capital) => {
+                    const raceLabel = getRaceLabel(capital);
+
+                    return (
+                      <div key={capital.city} style={styles.nextMissionCard}>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            gap: "0.75rem",
+                            alignItems: "start",
+                          }}
+                        >
+                          <div style={{ minWidth: 0 }}>
+                            <h3
+                              style={{
+                                color: "#fff",
+                                fontSize: 19,
+                                fontWeight: 900,
+                                lineHeight: 1.05,
+                              }}
+                            >
+                              {capital.city}{" "}
+                              <span style={{ color: "rgba(255,255,255,0.38)" }}>
+                                {capital.state}
+                              </span>
+                            </h3>
+                            <p className="ba-muted" style={{ fontSize: 12, marginTop: 5 }}>
+                              {getDateLabel(capital)}
+                            </p>
+                          </div>
+
+                          <span style={getStatusPillStyle(capital.status)}>
+                            {getStatusLabel(capital.status)}
+                          </span>
+                        </div>
+
+                        <p
+                          className="ba-muted"
+                          title={raceLabel}
+                          style={{
+                            marginTop: 10,
+                            fontSize: 12,
+                            lineHeight: 1.45,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                          }}
+                        >
+                          {raceLabel}
+                        </p>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p style={styles.rule}>Nenhuma próxima missão confirmada no momento.</p>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -636,125 +690,79 @@ export default async function CapitaisPage() {
                       />
                     </div>
                   </div>
-
                 </article>
               );
             })}
           </div>
         </section>
 
-        <section style={styles.lowerGrid}>
-          <div className="ba-card" style={styles.paddedCard}>
-            <p className="ba-eyebrow">Mapa mental do projeto</p>
-            <h2 style={styles.sectionTitle}>As 27 capitais</h2>
+        <section className="ba-card" style={{ ...styles.paddedCard, marginTop: "2rem" }}>
+          <p className="ba-eyebrow">Mapa mental do projeto</p>
+          <h2 style={styles.sectionTitle}>As 27 capitais</h2>
 
-            <div style={{ marginTop: "1rem", overflowX: "auto" }}>
-              <table className="dark-table">
-                <thead>
-                  <tr>
-                    <th>Capital</th>
-                    <th>Principais meias</th>
-                    <th>Região</th>
-                    <th>Tempo</th>
-                    <th>Pace</th>
-                    <th>Distância</th>
-                    <th>Data</th>
-                    <th style={{ textAlign: "right" }}>Status</th>
-                  </tr>
-                </thead>
+          <div style={{ marginTop: "1rem", overflowX: "auto" }}>
+            <table className="dark-table" style={{ width: "100%" }}>
+              <thead>
+                <tr>
+                  <th>Capital</th>
+                  <th>Principais meias</th>
+                  <th>Região</th>
+                  <th>Tempo</th>
+                  <th>Pace</th>
+                  <th>Distância</th>
+                  <th>Data</th>
+                  <th style={{ textAlign: "right" }}>Status</th>
+                </tr>
+              </thead>
 
-                <tbody>
-                  {capitalRows.map((capital) => {
-                    const activity = capital.bestActivity;
-                    const raceLabel = getRaceLabel(capital);
-
-                    return (
-                      <tr key={capital.city}>
-                        <td>
-                          <strong style={{ color: "#fff", fontWeight: 800 }}>
-                            {capital.city}{" "}
-                            <span style={{ color: "rgba(255,255,255,0.38)" }}>
-                              {capital.state}
-                            </span>
-                          </strong>
-                        </td>
-                        <td title={raceLabel}>
-                          <span
-                            style={{
-                              display: "block",
-                              maxWidth: 260,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {raceLabel}
-                          </span>
-                        </td>
-                        <td>{capital.region}</td>
-                        <td>
-                          <strong style={{ color: "#fff", fontWeight: 800 }}>
-                            {activity ? formatTime(activity.moving_time) : "—"}
-                          </strong>
-                        </td>
-                        <td>{activity ? formatPace(activity.distance, activity.moving_time) : "—"}</td>
-                        <td>{activity ? formatDistance(activity.distance) : "—"}</td>
-                        <td>{getDateLabel(capital)}</td>
-                        <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                          <span style={getStatusPillStyle(capital.status)}>
-                            {getStatusLabel(capital.status)}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <aside style={styles.sidebarStack}>
-            <div className="ba-card ba-card--accent" style={styles.paddedCard}>
-              <p className="ba-eyebrow">Próximas missões</p>
-
-              <div style={{ display: "grid", gap: 10, marginTop: "1rem" }}>
-                {next.map((capital) => {
+              <tbody>
+                {capitalRows.map((capital) => {
+                  const activity = capital.bestActivity;
                   const raceLabel = getRaceLabel(capital);
 
                   return (
-                    <div key={capital.city} style={styles.capitalMiniCard}>
-                      <h3 style={{ color: "#fff", fontSize: 20, fontWeight: 900, lineHeight: 1.05 }}>
-                        {capital.city}{" "}
-                        <span style={{ color: "rgba(255,255,255,0.38)" }}>{capital.state}</span>
-                      </h3>
-                      <p className="ba-muted" style={{ fontSize: 12, marginTop: 4 }}>
-                        {getDateLabel(capital)} · {raceLabel}
-                      </p>
-                    </div>
+                    <tr key={capital.city}>
+                      <td>
+                        <strong style={{ color: "#fff", fontWeight: 800 }}>
+                          {capital.city}{" "}
+                          <span style={{ color: "rgba(255,255,255,0.38)" }}>
+                            {capital.state}
+                          </span>
+                        </strong>
+                      </td>
+                      <td title={raceLabel}>
+                        <span
+                          style={{
+                            display: "block",
+                            maxWidth: 440,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {raceLabel}
+                        </span>
+                      </td>
+                      <td>{capital.region}</td>
+                      <td>
+                        <strong style={{ color: "#fff", fontWeight: 800 }}>
+                          {activity ? formatTime(activity.moving_time) : "—"}
+                        </strong>
+                      </td>
+                      <td>{activity ? formatPace(activity.distance, activity.moving_time) : "—"}</td>
+                      <td>{activity ? formatDistance(activity.distance) : "—"}</td>
+                      <td>{getDateLabel(capital)}</td>
+                      <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                        <span style={getStatusPillStyle(capital.status)}>
+                          {getStatusLabel(capital.status)}
+                        </span>
+                      </td>
+                    </tr>
                   );
                 })}
-              </div>
-            </div>
-
-            <div className="ba-card" style={styles.paddedCard}>
-              <p className="ba-eyebrow">Regras do desafio</p>
-
-              <div style={{ display: "grid", gap: 10, marginTop: "1rem" }}>
-                <p style={styles.rule}>
-                  A capital só entra como concluída se houver uma corrida de meia
-                  maratona no Strava próxima à cidade.
-                </p>
-                <p style={styles.rule}>
-                  Se houver mais de uma meia na mesma capital, a página exibe
-                  automaticamente a mais rápida.
-                </p>
-                <p style={styles.rule}>
-                  Na tabela, capitais pendentes mostram apenas o mês das principais
-                  meias mapeadas; a próxima missão mostra a data confirmada.
-                </p>
-              </div>
-            </div>
-          </aside>
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <section className="ba-card" style={{ ...styles.paddedCard, marginTop: "2rem" }}>
@@ -786,6 +794,25 @@ export default async function CapitaisPage() {
                 </div>
               );
             })}
+          </div>
+        </section>
+
+        <section className="ba-card" style={{ ...styles.paddedCard, marginTop: "2rem" }}>
+          <p className="ba-eyebrow">Regras do desafio</p>
+
+          <div style={{ display: "grid", gap: 10, marginTop: "1rem" }}>
+            <p style={styles.rule}>
+              A capital só entra como concluída se houver uma corrida de meia maratona no
+              Strava próxima à cidade.
+            </p>
+            <p style={styles.rule}>
+              Se houver mais de uma meia na mesma capital, a página exibe automaticamente
+              a mais rápida.
+            </p>
+            <p style={styles.rule}>
+              Na tabela, capitais pendentes mostram apenas o mês das principais meias
+              mapeadas; a próxima missão mostra a data confirmada.
+            </p>
           </div>
         </section>
       </main>
