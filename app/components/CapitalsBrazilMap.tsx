@@ -253,10 +253,12 @@ export default function CapitalsBrazilMap({ items }: Props) {
 
             .capitals-brazil-map-photo-image {
               width: 100%;
-              aspect-ratio: 16 / 10;
-              object-fit: cover;
+              height: auto;
+              max-height: min(72vh, 760px);
+              object-fit: contain;
+              object-position: center;
               display: block;
-              background: rgba(255,255,255,0.04);
+              background: rgba(0,0,0,0.72);
             }
 
             .capitals-brazil-map-photo-empty {
@@ -287,7 +289,7 @@ export default function CapitalsBrazilMap({ items }: Props) {
             }
 
             .capitals-brazil-map-photo-modal {
-              width: min(920px, calc(100vw - 2rem));
+              width: min(1040px, calc(100vw - 2rem));
               max-height: calc(100vh - 2rem);
               overflow: auto;
               border-radius: 20px;
@@ -343,6 +345,7 @@ export default function CapitalsBrazilMap({ items }: Props) {
 
               .capitals-brazil-map-photo-image {
                 max-height: 58vh;
+                object-fit: contain;
               }
             }
           `,
