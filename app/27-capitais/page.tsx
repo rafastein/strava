@@ -199,6 +199,25 @@ function getStatusPillStyle(status: CapitalChallengeItem["status"]): CSSProperti
   };
 }
 
+
+function getTableCellToneStyle(status: CapitalChallengeItem["status"]): CSSProperties {
+  if (status === "completed") {
+    return {
+      background: "linear-gradient(180deg, rgba(16,185,129,0.09), rgba(255,255,255,0.025))",
+      borderBottom: "1px solid rgba(16,185,129,0.14)",
+    };
+  }
+
+  if (status === "next") {
+    return {
+      background: "linear-gradient(180deg, rgba(245,166,35,0.10), rgba(255,255,255,0.03))",
+      borderBottom: "1px solid rgba(245,166,35,0.14)",
+    };
+  }
+
+  return {};
+}
+
 function cleanActivityName(name?: string) {
   if (!name) return "Meia maratona identificada";
 
@@ -719,10 +738,11 @@ export default async function CapitaisPage() {
                 {capitalRows.map((capital) => {
                   const activity = capital.bestActivity;
                   const raceLabel = getRaceLabel(capital);
+                  const cellToneStyle = getTableCellToneStyle(capital.status);
 
                   return (
                     <tr key={capital.city}>
-                      <td>
+                      <td style={cellToneStyle}>
                         <strong style={{ color: "#fff", fontWeight: 800 }}>
                           {capital.city}{" "}
                           <span style={{ color: "rgba(255,255,255,0.38)" }}>
@@ -730,7 +750,7 @@ export default async function CapitaisPage() {
                           </span>
                         </strong>
                       </td>
-                      <td title={raceLabel}>
+                      <td title={raceLabel} style={cellToneStyle}>
                         <span
                           style={{
                             display: "block",
@@ -743,16 +763,22 @@ export default async function CapitaisPage() {
                           {raceLabel}
                         </span>
                       </td>
-                      <td>{capital.region}</td>
-                      <td>
+                      <td style={cellToneStyle}>{capital.region}</td>
+                      <td style={cellToneStyle}>
                         <strong style={{ color: "#fff", fontWeight: 800 }}>
                           {activity ? formatTime(activity.moving_time) : "—"}
                         </strong>
                       </td>
-                      <td>{activity ? formatPace(activity.distance, activity.moving_time) : "—"}</td>
-                      <td>{activity ? formatDistance(activity.distance) : "—"}</td>
-                      <td>{getDateLabel(capital)}</td>
-                      <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                      <td style={cellToneStyle}>{activity ? formatPace(activity.distance, activity.moving_time) : "—"}</td>
+                      <td style={cellToneStyle}>{activity ? formatDistance(activity.distance) : "—"}</td>
+                      <td style={cellToneStyle}>{getDateLabel(capital)}</td>
+                      <td
+                        style={{
+                          ...cellToneStyle,
+                          textAlign: "right",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         <span style={getStatusPillStyle(capital.status)}>
                           {getStatusLabel(capital.status)}
                         </span>
