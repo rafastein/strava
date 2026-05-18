@@ -18,6 +18,8 @@ type CapitalMapItem = {
   dateLabel: string;
   time?: string;
   pace?: string;
+  photoUrl?: string | null;
+  activityUrl?: string;
 };
 
 type Props = {
@@ -128,6 +130,7 @@ function getStatusDot(status: CapitalStatus) {
 export default function CapitalsBrazilMap({ items }: Props) {
   const [geographyData, setGeographyData] = useState<any>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<CapitalMapItem | null>(null);
 
   const itemsByKey = useMemo(() => {
     const map = new Map<string, CapitalMapItem>();
@@ -240,6 +243,36 @@ export default function CapitalsBrazilMap({ items }: Props) {
               margin-top: .85rem;
             }
 
+            .capitals-brazil-map-photo {
+              overflow: hidden;
+              border-radius: 18px;
+              border: 1px solid rgba(16,185,129,0.18);
+              background: linear-gradient(180deg, rgba(16,185,129,0.10), rgba(255,255,255,0.03));
+            }
+
+            .capitals-brazil-map-photo-image {
+              width: 100%;
+              aspect-ratio: 16 / 10;
+              object-fit: cover;
+              display: block;
+              background: rgba(255,255,255,0.04);
+            }
+
+            .capitals-brazil-map-photo-empty {
+              display: flex;
+              min-height: 185px;
+              align-items: center;
+              justify-content: center;
+              padding: 1rem;
+              text-align: center;
+              color: var(--text-muted);
+              background: radial-gradient(circle at top, rgba(16,185,129,0.12), transparent 42%), rgba(0,0,0,0.22);
+            }
+
+            .capitals-brazil-map-state-clickable {
+              cursor: pointer;
+            }
+
             @media (max-width: 900px) {
               .capitals-brazil-map-grid {
                 grid-template-columns: 1fr;
@@ -287,7 +320,7 @@ export default function CapitalsBrazilMap({ items }: Props) {
             Capitais por status
           </h2>
           <p className="ba-muted" style={{ marginTop: ".45rem" }}>
-            Estados pintados conforme o avanço do projeto 27 capitais.
+            Clique em uma capital concluída no mapa para ver a foto da prova.
           </p>
         </div>
       </div>
@@ -338,6 +371,21 @@ export default function CapitalsBrazilMap({ items }: Props) {
                         fill={getFill(item?.status)}
                         stroke={MAP_STROKE}
                         strokeWidth={0.8}
+                        className={item?.status === "completed" ? "capitals-brazil-map-state-clickable" : undefined}
+                        onClick={() => {
+                          if (item?.status === "completed") setSelectedItem(item);
+                        }}
+                        onKeyDown={(event) => {
+                          if (
+                            item?.status === "completed" &&
+                            (event.key === "Enter" || event.key === " ")
+                          ) {
+                            event.preventDefault();
+                            setSelectedItem(item);
+                          }
+                        }}
+                        role={item?.status === "completed" ? "button" : undefined}
+                        tabIndex={item?.status === "completed" ? 0 : undefined}
                         style={{
                           default: {
                             outline: "none",
@@ -378,6 +426,17 @@ export default function CapitalsBrazilMap({ items }: Props) {
           <MapStat label="Próximas" value={totals.next} status="next" />
           <MapStat label="Pendentes" value={totals.locked} status="locked" />
 
+          {selectedItem ? (
+            <SelectedPhotoPanel item={selectedItem} />
+          ) : (
+            <div className="capitals-brazil-map-stat">
+              <p className="ba-label">Foto da prova</p>
+              <p className="ba-muted" style={{ marginTop: 8, fontSize: 13, lineHeight: 1.5 }}>
+                Clique em um estado concluído para abrir a foto vinculada à atividade no Strava.
+              </p>
+            </div>
+          )}
+
           <div className="capitals-brazil-map-stat">
             <p className="ba-label">Legenda</p>
             <div className="capitals-brazil-map-legend">
@@ -388,6 +447,140 @@ export default function CapitalsBrazilMap({ items }: Props) {
           </div>
         </aside>
       </div>
+    </div>
+  );
+}
+
+
+function SelectedPhotoPanel({ item }: { item: CapitalMapItem }) {
+  return (
+    <div className="capitals-brazil-map-photo">
+      {item.photoUrl ? (
+        <img
+          src={item.photoUrl}
+          alt={`Foto da prova em ${item.city}`}
+          className="capitals-brazil-map-photo-image"
+          loading="lazy"
+        />
+      ) : (
+        <div className="capitals-brazil-map-photo-empty">
+          Nenhuma foto vinculada a esta atividade foi encontrada no Strava.
+        </div>
+      )}
+
+      <div style={{ padding: "0.95rem" }}>
+        <div className="flex items-start justify-between gap-3">
+          <div style={{ minWidth: 0 }}>
+            <p className="ba-label">Capital selecionada</p>
+            <h3
+              style={{
+                marginTop: 5,
+                color: "#fff",
+                fontSize: 20,
+                fontWeight: 900,
+                lineHeight: 1.05,
+              }}
+            >
+              {item.city} <span style={{ color: "rgba(255,255,255,0.38)" }}>{item.state}</span>
+            </h3>
+          </div>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: 22,
+              padding: "0 .68rem",
+              borderRadius: 999,
+              border: "1px solid rgba(16,185,129,0.25)",
+              background: "rgba(16,185,129,0.12)",
+              color: "#34d399",
+              fontSize: 9,
+              fontWeight: 900,
+              lineHeight: 1,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+          >
+            Concluída
+          </span>
+        </div>
+
+        <p
+          className="ba-muted"
+          title={item.raceLabel}
+          style={{
+            marginTop: 10,
+            fontSize: 12,
+            lineHeight: 1.45,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}
+        >
+          {item.raceLabel}
+        </p>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+            gap: 8,
+            marginTop: 12,
+          }}
+        >
+          <MiniMetric label="Data" value={item.dateLabel} />
+          <MiniMetric label="Tempo" value={item.time ?? "—"} />
+          <MiniMetric label="Pace" value={item.pace ?? "—"} />
+        </div>
+
+        {item.activityUrl && (
+          <a
+            href={item.activityUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="ba-button ba-button--ghost"
+            style={{ marginTop: 12, width: "100%", justifyContent: "center" }}
+          >
+            Abrir no Strava
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MiniMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      style={{
+        minWidth: 0,
+        borderRadius: 12,
+        border: "1px solid rgba(255,255,255,0.075)",
+        background: "rgba(0,0,0,0.20)",
+        padding: ".65rem .7rem",
+      }}
+    >
+      <p className="ba-label" style={{ fontSize: 9, whiteSpace: "nowrap" }}>
+        {label}
+      </p>
+      <p
+        style={{
+          marginTop: 5,
+          color: "#fff",
+          fontSize: 12,
+          fontWeight: 900,
+          lineHeight: 1.05,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {value}
+      </p>
     </div>
   );
 }

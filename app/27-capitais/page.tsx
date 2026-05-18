@@ -21,6 +21,8 @@ type Athlete = {
   profile_medium?: string | null;
 };
 
+type StravaPhotoMap = Record<number, string>;
+
 type CapitalRaceCalendarItem = {
   races: string;
   dateLabel: string;
@@ -198,6 +200,99 @@ async function getStravaActivities(accessToken: string) {
   }
 
   return allActivities;
+}
+
+function extractBestPhotoUrl(value: unknown): string | null {
+  if (!value) return null;
+
+  if (typeof value === "string") {
+    return value.startsWith("http") ? value : null;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const url = extractBestPhotoUrl(item);
+      if (url) return url;
+    }
+    return null;
+  }
+
+  if (typeof value !== "object") return null;
+
+  const data = value as Record<string, unknown>;
+
+  const directUrl = extractBestPhotoUrl(data.url) ?? extractBestPhotoUrl(data.src) ?? extractBestPhotoUrl(data.href);
+  if (directUrl) return directUrl;
+
+  const urls = data.urls;
+  if (urls && typeof urls === "object" && !Array.isArray(urls)) {
+    const entries = Object.entries(urls as Record<string, unknown>)
+      .filter(([, url]) => typeof url === "string" && String(url).startsWith("http"))
+      .sort(([a], [b]) => Number(b) - Number(a));
+
+    if (entries[0]?.[1]) return String(entries[0][1]);
+  }
+
+  const nestedCandidates = [
+    data.primary,
+    data.default_photo,
+    data.media,
+    data.photo,
+    data.photos,
+    data.sizes,
+  ];
+
+  for (const candidate of nestedCandidates) {
+    const url = extractBestPhotoUrl(candidate);
+    if (url) return url;
+  }
+
+  return null;
+}
+
+async function getActivityCoverPhotos(accessToken: string, activityIds: number[]): Promise<StravaPhotoMap> {
+  const uniqueIds = Array.from(new Set(activityIds));
+  const photoEntries = await Promise.all(
+    uniqueIds.map(async (activityId) => {
+      try {
+        const photosResponse = await fetch(
+          `https://www.strava.com/api/v3/activities/${activityId}/photos?size=1000`,
+          {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            cache: "no-store",
+          },
+        );
+
+        if (photosResponse.ok) {
+          const photosPayload = await photosResponse.json();
+          const photoUrl = extractBestPhotoUrl(photosPayload);
+          if (photoUrl) return [activityId, photoUrl] as const;
+        }
+
+        const activityResponse = await fetch(
+          `https://www.strava.com/api/v3/activities/${activityId}?include_all_efforts=false`,
+          {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            cache: "no-store",
+          },
+        );
+
+        if (!activityResponse.ok) return null;
+
+        const activityPayload = await activityResponse.json();
+        const fallbackUrl = extractBestPhotoUrl((activityPayload as Record<string, unknown>).photos);
+
+        return fallbackUrl ? ([activityId, fallbackUrl] as const) : null;
+      } catch {
+        return null;
+      }
+    }),
+  );
+
+  return photoEntries.reduce<StravaPhotoMap>((acc, entry) => {
+    if (entry) acc[entry[0]] = entry[1];
+    return acc;
+  }, {});
 }
 
 function getStatusPillStyle(status: CapitalChallengeItem["status"]): CSSProperties {
@@ -534,6 +629,12 @@ export default async function CapitaisPage() {
     .filter((c) => c.bestActivity)
     .sort((a, b) => (a.bestActivity?.moving_time ?? Infinity) - (b.bestActivity?.moving_time ?? Infinity));
 
+  const completedActivityIds = completed
+    .map((capital) => capital.bestActivity?.id)
+    .filter((id): id is number => typeof id === "number");
+
+  const activityPhotosById = await getActivityCoverPhotos(accessToken, completedActivityIds);
+
   const mapItems = challenge.map((capital) => ({
     state: capital.state,
     city: capital.city,
@@ -543,6 +644,10 @@ export default async function CapitaisPage() {
     time: capital.bestActivity ? formatTime(capital.bestActivity.moving_time) : undefined,
     pace: capital.bestActivity
       ? formatPace(capital.bestActivity.distance, capital.bestActivity.moving_time)
+      : undefined,
+    photoUrl: capital.bestActivity ? activityPhotosById[capital.bestActivity.id] : undefined,
+    activityUrl: capital.bestActivity
+      ? `https://www.strava.com/activities/${capital.bestActivity.id}`
       : undefined,
   }));
 
