@@ -1,14 +1,3 @@
-Sim, chefe. O erro é só import/export da navbar.
-
-Substitua TODO o arquivo `app/27-capitais/page.tsx` por este. A diferença principal é:
-
-```tsx
-import Navbar from "../components/Navbar";
-```
-
-em vez de `{ Navbar }`.
-
-```tsx
 export const dynamic = "force-dynamic";
 
 import Navbar from "../components/Navbar";
