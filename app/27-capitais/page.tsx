@@ -226,69 +226,6 @@ function cleanActivityName(name?: string) {
     .replace(/^race:\s*/i, "")
     .trim();
 }
-
-function MetricBox({
-  label,
-  value,
-  tone = "neutral",
-  compact = false,
-}: {
-  label: string;
-  value: string;
-  tone?: "neutral" | "accent" | "danger";
-  compact?: boolean;
-}) {
-  const palette = {
-    neutral: {
-      border: "rgba(255,255,255,0.075)",
-      background: "rgba(255,255,255,0.035)",
-      value: "#fff",
-    },
-    accent: {
-      border: "rgba(245,166,35,0.23)",
-      background: "rgba(245,166,35,0.10)",
-      value: "var(--accent)",
-    },
-    danger: {
-      border: "rgba(239,68,68,0.22)",
-      background: "rgba(239,68,68,0.10)",
-      value: "#ff5d5d",
-    },
-  }[tone];
-
-  return (
-    <div
-      style={{
-        minWidth: 0,
-        borderRadius: 14,
-        border: `1px solid ${palette.border}`,
-        background: palette.background,
-        padding: compact ? "0.68rem 0.75rem" : "0.85rem 0.9rem",
-      }}
-    >
-      <p className="ba-label" style={{ whiteSpace: "nowrap" }}>
-        {label}
-      </p>
-
-      <strong
-        style={{
-          display: "block",
-          marginTop: compact ? 5 : 7,
-          color: palette.value,
-          fontSize: compact ? 14 : 16,
-          lineHeight: 1.05,
-          fontWeight: 900,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}
-      >
-        {value}
-      </strong>
-    </div>
-  );
-}
-
 const styles: Record<string, CSSProperties> = {
   hero: {
     position: "relative",
@@ -373,61 +310,7 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 900,
     letterSpacing: "-0.04em",
   },
-  completedGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(330px, 1fr))",
-    gap: "1rem",
-  },
-  episodeCard: {
-    minWidth: 0,
-    borderRadius: 22,
-    border: "1px solid rgba(16,185,129,0.22)",
-    background: "linear-gradient(180deg, rgba(16,185,129,0.09), rgba(255,255,255,0.025))",
-    boxShadow: "0 18px 55px rgba(0,0,0,0.18)",
-    padding: "1.1rem",
-  },
-  episodeHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "1rem",
-    alignItems: "start",
-  },
-  episodeCity: {
-    marginTop: "0.65rem",
-    color: "#fff",
-    fontSize: 25,
-    lineHeight: 1.04,
-    fontWeight: 900,
-    letterSpacing: "-0.045em",
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-  },
-  raceName: {
-    marginTop: "0.45rem",
-    color: "rgba(255,255,255,0.50)",
-    fontSize: 13,
-    lineHeight: 1.35,
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-  },
-  metricSection: {
-    marginTop: "1rem",
-    paddingTop: "1rem",
-    borderTop: "1px solid rgba(255,255,255,0.08)",
-  },
-  metricGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-    gap: 10,
-  },
-  secondaryMetricGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-    gap: 10,
-    marginTop: 10,
-  },
+
   paddedCard: {
     padding: "1.25rem",
   },
@@ -691,81 +574,6 @@ export default async function CapitaisPage() {
       </section>
 
       <main style={styles.content}>
-        <section>
-          <div style={styles.sectionHeader}>
-            <div>
-              <p className="ba-eyebrow">Capitais concluídas</p>
-              <h2 style={styles.sectionTitle}>Episódios já registrados</h2>
-            </div>
-          </div>
-
-          <div style={styles.completedGrid}>
-            {completed.map((capital, index) => {
-              const activity = capital.bestActivity;
-              const raceName = cleanActivityName(activity?.name);
-
-              return (
-                <article key={capital.city} style={styles.episodeCard}>
-                  <div style={styles.episodeHeader}>
-                    <div style={{ minWidth: 0 }}>
-                      <p className="ba-eyebrow" style={{ fontSize: 10 }}>
-                        EP {String(index + 1).padStart(2, "0")}
-                      </p>
-
-                      <h3 style={styles.episodeCity}>
-                        {capital.city}{" "}
-                        <span style={{ color: "rgba(255,255,255,0.38)" }}>
-                          {capital.state}
-                        </span>
-                      </h3>
-
-                      <p style={styles.raceName} title={raceName}>
-                        {raceName}
-                      </p>
-                    </div>
-
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
-                      <span className="badge badge--success">Concluída</span>
-                      {capital.otherHalfMarathons.length > 0 && (
-                        <span className="badge badge--muted">
-                          +{capital.otherHalfMarathons.length} meia{capital.otherHalfMarathons.length > 1 ? "s" : ""}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div style={styles.metricSection}>
-                    <div style={styles.metricGrid}>
-                      <MetricBox label="Tempo" value={formatTime(activity?.moving_time)} />
-                      <MetricBox
-                        label="Pace"
-                        value={formatPace(activity?.distance, activity?.moving_time)}
-                      />
-                      <MetricBox label="Data" value={formatDateBR(activity?.start_date_local)} />
-                    </div>
-
-                    <div style={styles.secondaryMetricGrid}>
-                      <MetricBox label="Distância" value={formatDistance(activity?.distance)} compact />
-                      <MetricBox
-                        label="Altimetria"
-                        value={`${activity?.total_elevation_gain?.toFixed(0) ?? "—"} m`}
-                        tone="accent"
-                        compact
-                      />
-                      <MetricBox
-                        label="FC Média"
-                        value={`${activity?.average_heartrate?.toFixed(0) ?? "—"} bpm`}
-                        tone="danger"
-                        compact
-                      />
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-
         {rankedCompleted.length > 0 && (
           <section className="ba-card" style={{ ...styles.paddedCard, marginTop: "2rem" }}>
             <p className="ba-eyebrow">Performance</p>
