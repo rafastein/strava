@@ -30,6 +30,10 @@ const confirmedNextRace: Record<string, CapitalRaceCalendarItem> = {
     races: "Meia Maratona de Goiânia",
     dateLabel: "18/10/2026",
   },
+  MG: {
+    races: "Maratona & Meia Internacional de BH",
+    dateLabel: "28/06/2026",
+  },
 };
 
 const pendingRaceCalendar: Record<string, CapitalRaceCalendarItem> = {
@@ -115,6 +119,45 @@ function getRaceLabel(capital: CapitalChallengeItem) {
 function getDateLabel(capital: CapitalChallengeItem) {
   if (capital.bestActivity) return formatDateBR(capital.bestActivity.start_date_local);
   return getCalendarInfo(capital.state)?.dateLabel ?? "—";
+}
+
+function getDateSortValue(capital: CapitalChallengeItem) {
+  const label = getDateLabel(capital);
+  const fullDateMatch = label.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+
+  if (fullDateMatch) {
+    const [, day, month, year] = fullDateMatch;
+    return new Date(Number(year), Number(month) - 1, Number(day)).getTime();
+  }
+
+  const monthOrder: Record<string, number> = {
+    janeiro: 1,
+    fevereiro: 2,
+    março: 3,
+    marco: 3,
+    abril: 4,
+    maio: 5,
+    junho: 6,
+    julho: 7,
+    agosto: 8,
+    setembro: 9,
+    outubro: 10,
+    novembro: 11,
+    dezembro: 12,
+  };
+
+  const firstMonth = label
+    .split(/[\/,-]/)[0]
+    ?.trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  if (firstMonth && monthOrder[firstMonth]) {
+    return new Date(new Date().getFullYear(), monthOrder[firstMonth] - 1, 1).getTime();
+  }
+
+  return Number.POSITIVE_INFINITY;
 }
 
 async function getAthlete(accessToken: string): Promise<Athlete | null> {
@@ -440,6 +483,11 @@ export default async function CapitaisPage() {
 
   const completed = challenge.filter((capital) => capital.status === "completed");
   const next = challenge.filter((capital) => capital.status === "next");
+  const nextByDate = [...next].sort(
+    (a, b) =>
+      getDateSortValue(a) - getDateSortValue(b) ||
+      a.city.localeCompare(b.city, "pt-BR", { sensitivity: "base" }),
+  );
   const progress = Math.round((completed.length / capitals.length) * 100);
   const regions = ["Centro-Oeste", "Sudeste", "Sul", "Nordeste", "Norte"];
 
@@ -694,7 +742,7 @@ export default async function CapitaisPage() {
 
               <div style={{ display: "grid", gap: 10 }}>
                 {next.length > 0 ? (
-                  next.map((capital) => {
+                  nextByDate.map((capital) => {
                     const raceLabel = getRaceLabel(capital);
 
                     return (
