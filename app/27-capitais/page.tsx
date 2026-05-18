@@ -502,6 +502,36 @@ export default async function CapitaisPage() {
     a.city.localeCompare(b.city, "pt-BR", { sensitivity: "base" }),
   );
 
+  const slowest = [...completed]
+    .filter((c) => c.bestActivity)
+    .sort((a, b) => (b.bestActivity?.moving_time ?? 0) - (a.bestActivity?.moving_time ?? 0))[0];
+
+  const totalKm = completed.reduce((acc, c) => acc + (c.bestActivity?.distance ?? 0) / 1000, 0);
+
+  const avgPaceSeconds = completed.length > 0
+    ? completed.reduce((acc, c) => {
+        if (!c.bestActivity) return acc;
+        return acc + c.bestActivity.moving_time / (c.bestActivity.distance / 1000);
+      }, 0) / completed.length
+    : null;
+
+  function formatAvgPace(secPerKm: number | null) {
+    if (!secPerKm) return "—";
+    const min = Math.floor(secPerKm / 60);
+    const sec = Math.round(secPerKm % 60);
+    return `${min}:${String(sec).padStart(2, "0")}/km`;
+  }
+
+  const remaining = capitals.length - completed.length;
+  const capitalsPerYear = 6;
+  const yearsLeft = remaining / capitalsPerYear;
+  const currentYear = new Date().getFullYear();
+  const estimatedYear = Math.ceil(currentYear + yearsLeft);
+
+  const rankedCompleted = [...completed]
+    .filter((c) => c.bestActivity)
+    .sort((a, b) => (a.bestActivity?.moving_time ?? Infinity) - (b.bestActivity?.moving_time ?? Infinity));
+
   return (
     <div className="page">
       <Navbar
@@ -532,37 +562,53 @@ export default async function CapitaisPage() {
                 Correndo o Brasil
               </p>
 
-              <div style={styles.statGrid}>
+              <div style={{ ...styles.statGrid, gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
                 <div style={styles.statCard}>
-                  <p className="ba-label">Capitais concluídas</p>
-                  <p className="ba-value" style={{ fontSize: 34, marginTop: 6 }}>
+                  <p className="ba-label">Concluídas</p>
+                  <p className="ba-value" style={{ fontSize: 30, marginTop: 6 }}>
                     {completed.length}/27
                   </p>
                 </div>
 
                 <div style={styles.statCard}>
                   <p className="ba-label">Progresso</p>
-                  <p className="ba-value ba-value--accent" style={{ fontSize: 34, marginTop: 6 }}>
+                  <p className="ba-value ba-value--accent" style={{ fontSize: 30, marginTop: 6 }}>
                     {progress}%
                   </p>
                 </div>
 
                 <div style={styles.statCard}>
-                  <p className="ba-label">Próximas missões</p>
-                  <p className="ba-value" style={{ fontSize: 34, marginTop: 6 }}>
-                    {next.length}
+                  <p className="ba-label">Km acumulado</p>
+                  <p className="ba-value" style={{ fontSize: 30, marginTop: 6 }}>
+                    {totalKm.toFixed(0)} km
                   </p>
                 </div>
 
                 <div style={styles.statCard}>
                   <p className="ba-label">Melhor meia</p>
-                  <p className="ba-value" style={{ fontSize: 30, marginTop: 6 }}>
-                    {fastest?.bestActivity
-                      ? formatTime(fastest.bestActivity.moving_time)
-                      : "—"}
+                  <p className="ba-value" style={{ fontSize: 26, marginTop: 6 }}>
+                    {fastest?.bestActivity ? formatTime(fastest.bestActivity.moving_time) : "—"}
                   </p>
                   <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
-                    {fastest?.city ?? "Ainda sem dados"}
+                    {fastest?.city ?? "—"}
+                  </p>
+                </div>
+
+                <div style={styles.statCard}>
+                  <p className="ba-label">Pace médio</p>
+                  <p className="ba-value" style={{ fontSize: 26, marginTop: 6 }}>
+                    {formatAvgPace(avgPaceSeconds)}
+                  </p>
+                  <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>melhor por capital</p>
+                </div>
+
+                <div style={styles.statCard}>
+                  <p className="ba-label">Conclusão estimada</p>
+                  <p className="ba-value ba-value--accent" style={{ fontSize: 26, marginTop: 6 }}>
+                    {remaining > 0 ? estimatedYear : "Concluído!"}
+                  </p>
+                  <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
+                    {remaining > 0 ? `${remaining} restantes · 6/ano` : "🎉"}
                   </p>
                 </div>
               </div>
@@ -678,9 +724,14 @@ export default async function CapitaisPage() {
                       </p>
                     </div>
 
-                    <span className="badge badge--success" style={{ flexShrink: 0 }}>
-                      Concluída
-                    </span>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
+                      <span className="badge badge--success">Concluída</span>
+                      {capital.otherHalfMarathons.length > 0 && (
+                        <span className="badge badge--muted">
+                          +{capital.otherHalfMarathons.length} meia{capital.otherHalfMarathons.length > 1 ? "s" : ""}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div style={styles.metricSection}>
@@ -714,6 +765,72 @@ export default async function CapitaisPage() {
             })}
           </div>
         </section>
+
+        {rankedCompleted.length > 0 && (
+          <section className="ba-card" style={{ ...styles.paddedCard, marginTop: "2rem" }}>
+            <p className="ba-eyebrow">Performance</p>
+            <h2 style={styles.sectionTitle}>Ranking das capitais</h2>
+            <p className="ba-muted" style={{ marginTop: ".4rem", marginBottom: "1.25rem" }}>
+              Melhor resultado em cada capital, do mais rápido ao mais lento.
+            </p>
+
+            <div style={{ overflowX: "auto" }}>
+              <table className="dark-table" style={{ width: "100%" }}>
+                <thead>
+                  <tr>
+                    <th style={{ width: 36 }}>#</th>
+                    <th>Capital</th>
+                    <th>Prova</th>
+                    <th>Tempo</th>
+                    <th>Pace</th>
+                    <th>FC média</th>
+                    <th style={{ textAlign: "right" }}>Data</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rankedCompleted.map((capital, idx) => {
+                    const act = capital.bestActivity!;
+                    const isFastest = idx === 0;
+                    const isSlowest = capital.city === slowest?.city;
+                    return (
+                      <tr key={capital.city}>
+                        <td>
+                          <strong style={{ color: isFastest ? "var(--accent)" : "rgba(255,255,255,0.35)", fontWeight: 800 }}>
+                            {idx + 1}
+                          </strong>
+                        </td>
+                        <td>
+                          <strong style={{ color: "#fff", fontWeight: 800 }}>
+                            {capital.city}{" "}
+                            <span style={{ color: "rgba(255,255,255,0.38)" }}>{capital.state}</span>
+                          </strong>
+                          {capital.otherHalfMarathons.length > 0 && (
+                            <span className="badge badge--muted" style={{ marginLeft: 6 }}>
+                              +{capital.otherHalfMarathons.length}
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ color: "rgba(255,255,255,0.55)", fontSize: 13 }}>
+                          {cleanActivityName(act.name)}
+                        </td>
+                        <td>
+                          <strong style={{ color: isFastest ? "var(--accent)" : isSlowest ? "rgba(239,68,68,0.85)" : "#fff", fontWeight: 800 }}>
+                            {formatTime(act.moving_time)}
+                          </strong>
+                        </td>
+                        <td>{formatPace(act.distance, act.moving_time)}</td>
+                        <td>{act.average_heartrate ? `${act.average_heartrate.toFixed(0)} bpm` : "—"}</td>
+                        <td style={{ textAlign: "right", color: "rgba(255,255,255,0.45)", fontSize: 13 }}>
+                          {formatDateBR(act.start_date_local)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
 
         <section className="ba-card" style={{ ...styles.paddedCard, marginTop: "2rem" }}>
           <p className="ba-eyebrow">Mapa mental do projeto</p>
@@ -749,6 +866,11 @@ export default async function CapitaisPage() {
                             {capital.state}
                           </span>
                         </strong>
+                        {capital.otherHalfMarathons.length > 0 && (
+                          <span className="badge badge--muted" style={{ marginLeft: 6 }}>
+                            +{capital.otherHalfMarathons.length}
+                          </span>
+                        )}
                       </td>
                       <td title={raceLabel} style={cellToneStyle}>
                         <span
