@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import type { CSSProperties } from "react";
 import Navbar from "../components/Navbar";
+import CapitalsBrazilMap from "../components/CapitalsBrazilMap";
 import { getValidStravaAccessToken } from "../lib/strava-auth";
 import {
   buildCapitalChallenge,
@@ -533,6 +534,18 @@ export default async function CapitaisPage() {
     .filter((c) => c.bestActivity)
     .sort((a, b) => (a.bestActivity?.moving_time ?? Infinity) - (b.bestActivity?.moving_time ?? Infinity));
 
+  const mapItems = challenge.map((capital) => ({
+    state: capital.state,
+    city: capital.city,
+    status: capital.status,
+    raceLabel: getRaceLabel(capital),
+    dateLabel: getDateLabel(capital),
+    time: capital.bestActivity ? formatTime(capital.bestActivity.moving_time) : undefined,
+    pace: capital.bestActivity
+      ? formatPace(capital.bestActivity.distance, capital.bestActivity.moving_time)
+      : undefined,
+  }));
+
   return (
     <div className="page capitals-page">
       <style
@@ -808,6 +821,10 @@ export default async function CapitaisPage() {
       </section>
 
       <main className="capitals-content" style={styles.content}>
+        <section style={{ marginTop: "2rem" }}>
+          <CapitalsBrazilMap items={mapItems} />
+        </section>
+
         {rankedCompleted.length > 0 && (
           <section className="ba-card" style={{ ...styles.paddedCard, marginTop: "2rem" }}>
             <p className="ba-eyebrow">Performance</p>
