@@ -319,9 +319,18 @@ const styles: Record<string, CSSProperties> = {
 export default async function CapitaisPage() {
   const accessToken = await getValidStravaAccessToken();
 
-  const [athlete, activities] = accessToken
-    ? await Promise.all([getAthlete(accessToken), getStravaActivities(accessToken)])
-    : ([null, []] as const);
+  let athlete: Athlete | null = null;
+  let activities: StravaActivity[] = [];
+
+  if (accessToken) {
+    const [fetchedAthlete, fetchedActivities] = await Promise.all([
+      getAthlete(accessToken),
+      getStravaActivities(accessToken),
+    ]);
+
+    athlete = fetchedAthlete;
+    activities = fetchedActivities;
+  }
 
   const challenge = buildCapitalChallenge(activities);
   const completed = challenge.filter((capital) => capital.status === "completed");
