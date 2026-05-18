@@ -1,7 +1,17 @@
+Sim, chefe. O erro é só import/export da navbar.
+
+Substitua TODO o arquivo `app/27-capitais/page.tsx` por este. A diferença principal é:
+
+```tsx
+import Navbar from "../components/Navbar";
+```
+
+em vez de `{ Navbar }`.
+
+```tsx
 export const dynamic = "force-dynamic";
 
-import Link from "next/link";
-import { Navbar } from "../components/Navbar";
+import Navbar from "../components/Navbar";
 import { getValidStravaAccessToken } from "../lib/strava-auth";
 import {
   buildCapitalChallenge,
@@ -42,26 +52,14 @@ async function getStravaActivities() {
 }
 
 function getStatusClasses(status: CapitalChallengeItem["status"]) {
-  if (status === "completed") {
-    return "border-emerald-400/30 bg-emerald-400/10";
-  }
-
-  if (status === "next") {
-    return "border-orange-400/40 bg-orange-500/10";
-  }
-
+  if (status === "completed") return "border-emerald-400/30 bg-emerald-400/10";
+  if (status === "next") return "border-orange-400/40 bg-orange-500/10";
   return "border-white/10 bg-white/[0.03]";
 }
 
 function getStatusPillClasses(status: CapitalChallengeItem["status"]) {
-  if (status === "completed") {
-    return "bg-emerald-400/20 text-emerald-200";
-  }
-
-  if (status === "next") {
-    return "bg-orange-400/20 text-orange-200";
-  }
-
+  if (status === "completed") return "bg-emerald-400/20 text-emerald-200";
+  if (status === "next") return "bg-orange-400/20 text-orange-200";
   return "bg-white/10 text-white/40";
 }
 
@@ -77,12 +75,11 @@ export default async function CapitaisPage() {
 
   const fastest = [...completed]
     .filter((capital) => capital.bestActivity)
-    .sort((a, b) => {
-      return (
+    .sort(
+      (a, b) =>
         (a.bestActivity?.moving_time ?? Infinity) -
-        (b.bestActivity?.moving_time ?? Infinity)
-      );
-    })[0];
+        (b.bestActivity?.moving_time ?? Infinity),
+    )[0];
 
   return (
     <main className="ba-page">
@@ -99,18 +96,14 @@ export default async function CapitaisPage() {
               </h1>
 
               <p className="mt-5 max-w-3xl text-lg leading-relaxed text-white/65">
-                Um projeto para correr uma meia maratona em cada uma das 27
-                capitais brasileiras. Os dados são puxados automaticamente do
-                Strava e, quando há mais de uma meia na mesma capital, a página
-                exibe a mais rápida.
+                Um projeto para correr uma meia maratona em cada uma das 27 capitais
+                brasileiras. Os dados são puxados automaticamente do Strava e, quando
+                há mais de uma meia na mesma capital, a página exibe a mais rápida.
               </p>
 
               <div className="mt-8 grid gap-4 md:grid-cols-4">
                 <div className="rounded-3xl border border-white/10 bg-black/25 p-5">
-                  <p className="text-sm text-white/45">
-                    Capitais concluídas
-                  </p>
-
+                  <p className="text-sm text-white/45">Capitais concluídas</p>
                   <strong className="mt-2 block text-5xl font-black text-white">
                     {completed.length}/27
                   </strong>
@@ -118,17 +111,13 @@ export default async function CapitaisPage() {
 
                 <div className="rounded-3xl border border-white/10 bg-black/25 p-5">
                   <p className="text-sm text-white/45">Progresso</p>
-
                   <strong className="mt-2 block text-5xl font-black text-white">
                     {progress}%
                   </strong>
                 </div>
 
                 <div className="rounded-3xl border border-white/10 bg-black/25 p-5">
-                  <p className="text-sm text-white/45">
-                    Próximas missões
-                  </p>
-
+                  <p className="text-sm text-white/45">Próximas missões</p>
                   <strong className="mt-2 block text-5xl font-black text-white">
                     {next.length}
                   </strong>
@@ -136,13 +125,11 @@ export default async function CapitaisPage() {
 
                 <div className="rounded-3xl border border-white/10 bg-black/25 p-5">
                   <p className="text-sm text-white/45">Melhor meia</p>
-
                   <strong className="mt-2 block text-3xl font-black text-white">
                     {fastest?.bestActivity
                       ? formatTime(fastest.bestActivity.moving_time)
                       : "—"}
                   </strong>
-
                   <p className="mt-2 text-sm text-white/40">
                     {fastest?.city ?? "Ainda sem dados"}
                   </p>
@@ -152,9 +139,7 @@ export default async function CapitaisPage() {
               <div className="mt-8 h-3 overflow-hidden rounded-full bg-white/10">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-orange-400"
-                  style={{
-                    width: `${progress}%`,
-                  }}
+                  style={{ width: `${progress}%` }}
                 />
               </div>
             </div>
@@ -164,10 +149,7 @@ export default async function CapitaisPage() {
         <section className="mt-10">
           <div className="mb-6">
             <p className="ba-eyebrow">Capitais concluídas</p>
-
-            <h2 className="ba-title mt-2">
-              Episódios já registrados
-            </h2>
+            <h2 className="ba-title mt-2">Episódios já registrados</h2>
           </div>
 
           <div className="grid gap-5 xl:grid-cols-3">
@@ -187,14 +169,11 @@ export default async function CapitaisPage() {
 
                       <h3 className="mt-3 text-[2rem] font-black leading-none text-white">
                         {capital.city}{" "}
-                        <span className="text-white/40">
-                          {capital.state}
-                        </span>
+                        <span className="text-white/40">{capital.state}</span>
                       </h3>
 
                       <p className="mt-4 truncate text-base text-white/60">
-                        {activity?.name ??
-                          "Meia maratona identificada"}
+                        {activity?.name ?? "Meia maratona identificada"}
                       </p>
                     </div>
 
@@ -209,7 +188,6 @@ export default async function CapitaisPage() {
                         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/40">
                           Tempo
                         </p>
-
                         <strong className="mt-3 block text-2xl font-black tracking-tight text-white">
                           {formatTime(activity?.moving_time)}
                         </strong>
@@ -219,12 +197,8 @@ export default async function CapitaisPage() {
                         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/40">
                           Pace
                         </p>
-
                         <strong className="mt-3 block text-2xl font-black tracking-tight text-white">
-                          {formatPace(
-                            activity?.distance,
-                            activity?.moving_time,
-                          )}
+                          {formatPace(activity?.distance, activity?.moving_time)}
                         </strong>
                       </div>
 
@@ -232,11 +206,8 @@ export default async function CapitaisPage() {
                         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/40">
                           Data
                         </p>
-
                         <strong className="mt-3 block text-2xl font-black tracking-tight text-white">
-                          {formatDateBR(
-                            activity?.start_date_local,
-                          )}
+                          {formatDateBR(activity?.start_date_local)}
                         </strong>
                       </div>
                     </div>
@@ -246,7 +217,6 @@ export default async function CapitaisPage() {
                         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/40">
                           Distância
                         </p>
-
                         <div className="mt-3 inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white/70">
                           {formatDistance(activity?.distance)}
                         </div>
@@ -256,12 +226,8 @@ export default async function CapitaisPage() {
                         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-200/70">
                           Altimetria
                         </p>
-
                         <div className="mt-3 inline-flex rounded-full border border-amber-400/20 bg-amber-500/10 px-4 py-2 text-sm font-bold text-amber-300">
-                          {activity?.total_elevation_gain?.toFixed(
-                            0,
-                          ) ?? "—"}{" "}
-                          m
+                          {activity?.total_elevation_gain?.toFixed(0) ?? "—"} m
                         </div>
                       </div>
 
@@ -269,12 +235,8 @@ export default async function CapitaisPage() {
                         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-red-200/70">
                           FC Média
                         </p>
-
                         <div className="mt-3 inline-flex rounded-full border border-red-400/20 bg-red-500/10 px-4 py-2 text-sm font-bold text-red-300">
-                          {activity?.average_heartrate?.toFixed(
-                            0,
-                          ) ?? "—"}{" "}
-                          bpm
+                          {activity?.average_heartrate?.toFixed(0) ?? "—"} bpm
                         </div>
                       </div>
                     </div>
@@ -298,10 +260,7 @@ export default async function CapitaisPage() {
         <section className="mt-10 grid gap-6 lg:grid-cols-[1fr_420px]">
           <div className="ba-card">
             <p className="ba-eyebrow">Mapa mental do projeto</p>
-
-            <h2 className="ba-title mt-2">
-              As 27 capitais
-            </h2>
+            <h2 className="ba-title mt-2">As 27 capitais</h2>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {challenge.map((capital) => {
@@ -319,11 +278,8 @@ export default async function CapitaisPage() {
                       <div>
                         <h3 className="font-bold text-white">
                           {capital.city}{" "}
-                          <span className="text-white/40">
-                            {capital.state}
-                          </span>
+                          <span className="text-white/40">{capital.state}</span>
                         </h3>
-
                         <p className="mt-1 text-xs text-white/40">
                           {capital.region}
                         </p>
@@ -342,25 +298,16 @@ export default async function CapitaisPage() {
                     {activity && (
                       <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-white/60">
                         <div>
-                          <p className="text-white/35">
-                            Tempo
-                          </p>
-
+                          <p className="text-white/35">Tempo</p>
                           <strong className="text-white/80">
                             {formatTime(activity.moving_time)}
                           </strong>
                         </div>
 
                         <div>
-                          <p className="text-white/35">
-                            Pace
-                          </p>
-
+                          <p className="text-white/35">Pace</p>
                           <strong className="text-white/80">
-                            {formatPace(
-                              activity.distance,
-                              activity.moving_time,
-                            )}
+                            {formatPace(activity.distance, activity.moving_time)}
                           </strong>
                         </div>
                       </div>
@@ -373,9 +320,7 @@ export default async function CapitaisPage() {
 
           <aside className="space-y-6">
             <div className="ba-card border-orange-400/20 bg-orange-500/10">
-              <p className="ba-eyebrow">
-                Próximas missões
-              </p>
+              <p className="ba-eyebrow">Próximas missões</p>
 
               <div className="mt-5 space-y-3">
                 {next.map((capital) => (
@@ -385,11 +330,8 @@ export default async function CapitaisPage() {
                   >
                     <h3 className="text-xl font-black text-white">
                       {capital.city}{" "}
-                      <span className="text-white/40">
-                        {capital.state}
-                      </span>
+                      <span className="text-white/40">{capital.state}</span>
                     </h3>
-
                     <p className="mt-1 text-sm text-white/50">
                       {capital.region}
                     </p>
@@ -399,25 +341,21 @@ export default async function CapitaisPage() {
             </div>
 
             <div className="ba-card">
-              <p className="ba-eyebrow">
-                Regras do desafio
-              </p>
+              <p className="ba-eyebrow">Regras do desafio</p>
 
               <div className="mt-5 space-y-3 text-sm text-white/65">
                 <p className="rounded-2xl bg-black/20 p-4">
-                  A capital só entra como concluída se houver
-                  uma corrida de meia maratona no Strava
-                  próxima à cidade.
+                  A capital só entra como concluída se houver uma corrida de meia
+                  maratona no Strava próxima à cidade.
                 </p>
 
                 <p className="rounded-2xl bg-black/20 p-4">
-                  Se houver mais de uma meia na mesma capital,
-                  a página exibe automaticamente a mais rápida.
+                  Se houver mais de uma meia na mesma capital, a página exibe
+                  automaticamente a mais rápida.
                 </p>
 
                 <p className="rounded-2xl bg-black/20 p-4">
-                  Distância considerada: entre 20,5 km e 22,7
-                  km.
+                  Distância considerada: entre 20,5 km e 22,7 km.
                 </p>
               </div>
             </div>
@@ -426,9 +364,7 @@ export default async function CapitaisPage() {
 
         <section className="mt-10">
           <div className="ba-card">
-            <p className="ba-eyebrow">
-              Progresso por região
-            </p>
+            <p className="ba-eyebrow">Progresso por região</p>
 
             <div className="mt-6 grid gap-4 md:grid-cols-5">
               {regions.map((region) => {
@@ -437,36 +373,25 @@ export default async function CapitaisPage() {
                 );
 
                 const regionCompleted = regionCapitals.filter(
-                  (capital) =>
-                    capital.status === "completed",
+                  (capital) => capital.status === "completed",
                 );
 
                 const regionProgress = Math.round(
-                  (regionCompleted.length /
-                    regionCapitals.length) *
-                    100,
+                  (regionCompleted.length / regionCapitals.length) * 100,
                 );
 
                 return (
-                  <div
-                    key={region}
-                    className="rounded-2xl bg-black/20 p-4"
-                  >
-                    <p className="text-sm text-white/50">
-                      {region}
-                    </p>
+                  <div key={region} className="rounded-2xl bg-black/20 p-4">
+                    <p className="text-sm text-white/50">{region}</p>
 
                     <strong className="mt-2 block text-3xl font-black text-white">
-                      {regionCompleted.length}/
-                      {regionCapitals.length}
+                      {regionCompleted.length}/{regionCapitals.length}
                     </strong>
 
                     <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
                       <div
                         className="h-full rounded-full bg-emerald-400"
-                        style={{
-                          width: `${regionProgress}%`,
-                        }}
+                        style={{ width: `${regionProgress}%` }}
                       />
                     </div>
                   </div>
