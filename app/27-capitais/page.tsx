@@ -20,6 +20,103 @@ type Athlete = {
   profile_medium?: string | null;
 };
 
+type CapitalRaceCalendarItem = {
+  races: string;
+  dateLabel: string;
+};
+
+const confirmedNextRace: Record<string, CapitalRaceCalendarItem> = {
+  GO: {
+    races: "Meia Maratona de Goiânia",
+    dateLabel: "18/10/2026",
+  },
+};
+
+const pendingRaceCalendar: Record<string, CapitalRaceCalendarItem> = {
+  AC: { races: "8ª Meia Maratona Acre Running", dateLabel: "Abril" },
+  AL: {
+    races: "Maratona Internacional de Maceió / Meia Maratona Coop",
+    dateLabel: "Agosto / Setembro",
+  },
+  AP: {
+    races: "Maratona de Macapá / 3ª Meia Maratona de Macapá",
+    dateLabel: "Março / Julho",
+  },
+  AM: {
+    races: "Maratona Internacional de Manaus / Meia Maratona Foco Run",
+    dateLabel: "Abril / Maio",
+  },
+  BA: { races: "21K Salvador / Maratona Salvador", dateLabel: "Abril / Setembro" },
+  CE: {
+    races: "Maratona Internacional de Fortaleza / 21K Terra da Luz",
+    dateLabel: "Abril / Maio",
+  },
+  DF: { races: "Maratona Monumental de Brasília", dateLabel: "Novembro" },
+  ES: { races: "Maratona de Vitória", dateLabel: "Agosto" },
+  MA: { races: "Maratona Internacional de São Luís", dateLabel: "Julho" },
+  MT: {
+    races: "4ª Meia Maratona de Cuiabá / Maratona & Meia Maratona de Cuiabá",
+    dateLabel: "Maio / Dezembro",
+  },
+  MS: {
+    races: "Meia Cidade Morena / Maratona de Campo Grande",
+    dateLabel: "Abril / Julho",
+  },
+  MG: {
+    races: "Maratona Oficial de BH / Maratona & Meia Internacional de BH",
+    dateLabel: "Maio / Junho",
+  },
+  PA: { races: "Corrida da Amazônia / Meia Maratona da Amazônia", dateLabel: "Setembro" },
+  PB: {
+    races: "Jampa 21K / Maratona de João Pessoa / Meia Maratona de João Pessoa",
+    dateLabel: "Abril / Novembro",
+  },
+  PR: { races: "Maratona de Curitiba", dateLabel: "Novembro" },
+  PE: {
+    races: "Meia Maratona do Recife / Meia Maratona Eu Amo Recife",
+    dateLabel: "Março / Setembro",
+  },
+  PI: { races: "Meia Maratona de Teresina", dateLabel: "Setembro" },
+  RJ: {
+    races: "Maratona do Rio / Rio 21K / Meia Maratona do Rio",
+    dateLabel: "Junho / Agosto",
+  },
+  RN: { races: "Meia Maratona do Sol", dateLabel: "Setembro" },
+  RS: { races: "Maratona de Porto Alegre", dateLabel: "Maio" },
+  RO: { races: "Meia Maratona Internacional de Porto Velho", dateLabel: "Agosto" },
+  RR: { races: "Meia Maratona de Roraima", dateLabel: "Outubro" },
+  SC: {
+    races: "Meia Maratona Internacional de Florianópolis / Maratona de Floripa / SC21K",
+    dateLabel: "Maio / Agosto / Novembro",
+  },
+  SP: {
+    races: "Meia Maratona Internacional de São Paulo / Maratona de São Paulo",
+    dateLabel: "Janeiro / Abril",
+  },
+  SE: {
+    races: "Meia Maratona do Parque / Maratona de Aracaju / Meia da Conceição",
+    dateLabel: "Julho / Outubro / Dezembro",
+  },
+  TO: {
+    races: "Meia Maratona das Praias / Meia Maratona do Tocantins",
+    dateLabel: "Junho / Dezembro",
+  },
+};
+
+function getCalendarInfo(state: string) {
+  return confirmedNextRace[state] ?? pendingRaceCalendar[state];
+}
+
+function getRaceLabel(capital: CapitalChallengeItem) {
+  if (capital.bestActivity) return cleanActivityName(capital.bestActivity.name);
+  return getCalendarInfo(capital.state)?.races ?? "—";
+}
+
+function getDateLabel(capital: CapitalChallengeItem) {
+  if (capital.bestActivity) return formatDateBR(capital.bestActivity.start_date_local);
+  return getCalendarInfo(capital.state)?.dateLabel ?? "—";
+}
+
 async function getAthlete(accessToken: string): Promise<Athlete | null> {
   try {
     const response = await fetch("https://www.strava.com/api/v3/athlete", {
@@ -380,7 +477,12 @@ export default async function CapitaisPage() {
     activities = fetchedActivities;
   }
 
-  const challenge = buildCapitalChallenge(activities);
+  const rawChallenge = buildCapitalChallenge(activities);
+  const challenge: CapitalChallengeItem[] = rawChallenge.map((capital) => ({
+    ...capital,
+    status: capital.bestActivity ? "completed" : confirmedNextRace[capital.state] ? "next" : "locked",
+  }));
+
   const completed = challenge.filter((capital) => capital.status === "completed");
   const next = challenge.filter((capital) => capital.status === "next");
   const progress = Math.round((completed.length / capitals.length) * 100);
@@ -417,8 +519,8 @@ export default async function CapitaisPage() {
 
             <p style={styles.heroText}>
               Um projeto para correr uma meia maratona em cada uma das 27 capitais
-              brasileiras. Os dados são puxados automaticamente do Strava e, quando
-              há mais de uma meia na mesma capital, a página exibe a mais rápida.
+              brasileiras. Os dados concluídos vêm do Strava; as capitais pendentes
+              mostram o mês das principais meias mapeadas.
             </p>
           </div>
 
@@ -551,6 +653,7 @@ export default async function CapitaisPage() {
                 <thead>
                   <tr>
                     <th>Capital</th>
+                    <th>Principais meias</th>
                     <th>Região</th>
                     <th>Tempo</th>
                     <th>Pace</th>
@@ -563,6 +666,7 @@ export default async function CapitaisPage() {
                 <tbody>
                   {capitalRows.map((capital) => {
                     const activity = capital.bestActivity;
+                    const raceLabel = getRaceLabel(capital);
 
                     return (
                       <tr key={capital.city}>
@@ -574,6 +678,19 @@ export default async function CapitaisPage() {
                             </span>
                           </strong>
                         </td>
+                        <td title={raceLabel}>
+                          <span
+                            style={{
+                              display: "block",
+                              maxWidth: 260,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {raceLabel}
+                          </span>
+                        </td>
                         <td>{capital.region}</td>
                         <td>
                           <strong style={{ color: "#fff", fontWeight: 800 }}>
@@ -582,7 +699,7 @@ export default async function CapitaisPage() {
                         </td>
                         <td>{activity ? formatPace(activity.distance, activity.moving_time) : "—"}</td>
                         <td>{activity ? formatDistance(activity.distance) : "—"}</td>
-                        <td>{activity ? formatDateBR(activity.start_date_local) : "—"}</td>
+                        <td>{getDateLabel(capital)}</td>
                         <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
                           <span style={getStatusPillStyle(capital.status)}>
                             {getStatusLabel(capital.status)}
@@ -601,17 +718,21 @@ export default async function CapitaisPage() {
               <p className="ba-eyebrow">Próximas missões</p>
 
               <div style={{ display: "grid", gap: 10, marginTop: "1rem" }}>
-                {next.map((capital) => (
-                  <div key={capital.city} style={styles.capitalMiniCard}>
-                    <h3 style={{ color: "#fff", fontSize: 20, fontWeight: 900, lineHeight: 1.05 }}>
-                      {capital.city}{" "}
-                      <span style={{ color: "rgba(255,255,255,0.38)" }}>{capital.state}</span>
-                    </h3>
-                    <p className="ba-muted" style={{ fontSize: 12, marginTop: 4 }}>
-                      {capital.region}
-                    </p>
-                  </div>
-                ))}
+                {next.map((capital) => {
+                  const raceLabel = getRaceLabel(capital);
+
+                  return (
+                    <div key={capital.city} style={styles.capitalMiniCard}>
+                      <h3 style={{ color: "#fff", fontSize: 20, fontWeight: 900, lineHeight: 1.05 }}>
+                        {capital.city}{" "}
+                        <span style={{ color: "rgba(255,255,255,0.38)" }}>{capital.state}</span>
+                      </h3>
+                      <p className="ba-muted" style={{ fontSize: 12, marginTop: 4 }}>
+                        {getDateLabel(capital)} · {raceLabel}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -628,7 +749,8 @@ export default async function CapitaisPage() {
                   automaticamente a mais rápida.
                 </p>
                 <p style={styles.rule}>
-                  Distância considerada: entre 20,5 km e 22,7 km.
+                  Na tabela, capitais pendentes mostram apenas o mês das principais
+                  meias mapeadas; a próxima missão mostra a data confirmada.
                 </p>
               </div>
             </div>
