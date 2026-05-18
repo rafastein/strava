@@ -78,10 +78,12 @@ function MetricBox({
   label,
   value,
   tone = "neutral",
+  compact = false,
 }: {
   label: string;
   value: string;
   tone?: "neutral" | "accent" | "danger";
+  compact?: boolean;
 }) {
   const palette = {
     neutral: {
@@ -108,7 +110,7 @@ function MetricBox({
         borderRadius: 14,
         border: `1px solid ${palette.border}`,
         background: palette.background,
-        padding: "0.85rem 0.9rem",
+        padding: compact ? "0.68rem 0.75rem" : "0.85rem 0.9rem",
       }}
     >
       <p className="ba-label" style={{ whiteSpace: "nowrap" }}>
@@ -118,9 +120,9 @@ function MetricBox({
       <strong
         style={{
           display: "block",
-          marginTop: 7,
+          marginTop: compact ? 5 : 7,
           color: palette.value,
-          fontSize: 16,
+          fontSize: compact ? 14 : 16,
           lineHeight: 1.05,
           fontWeight: 900,
           whiteSpace: "nowrap",
@@ -258,18 +260,7 @@ const styles: Record<string, CSSProperties> = {
     display: "grid",
     gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
     gap: 10,
-    marginTop: 14,
-  },
-  footerNote: {
-    marginTop: "1rem",
-    paddingTop: "0.9rem",
-    borderTop: "1px solid rgba(255,255,255,0.08)",
-    color: "rgba(255,255,255,0.42)",
-    fontSize: 12,
-    lineHeight: 1.45,
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
+    marginTop: 10,
   },
   lowerGrid: {
     display: "grid",
@@ -467,25 +458,22 @@ export default async function CapitaisPage() {
                     </div>
 
                     <div style={styles.secondaryMetricGrid}>
-                      <MetricBox label="Distância" value={formatDistance(activity?.distance)} />
+                      <MetricBox label="Distância" value={formatDistance(activity?.distance)} compact />
                       <MetricBox
                         label="Altimetria"
                         value={`${activity?.total_elevation_gain?.toFixed(0) ?? "—"} m`}
                         tone="accent"
+                        compact
                       />
                       <MetricBox
                         label="FC Média"
                         value={`${activity?.average_heartrate?.toFixed(0) ?? "—"} bpm`}
                         tone="danger"
+                        compact
                       />
                     </div>
                   </div>
 
-                  <p style={styles.footerNote}>
-                    {capital.otherHalfMarathons.length > 0
-                      ? `${capital.otherHalfMarathons.length + 1} meias nessa capital · exibindo a mais rápida`
-                      : "Melhor meia identificada pelo Strava"}
-                  </p>
                 </article>
               );
             })}
