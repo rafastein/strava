@@ -130,10 +130,10 @@ function InfoCard({
   accent?: "accent" | "blue" | "success" | "danger";
 }) {
   const valueClass = {
-    accent: "card__value--accent",
-    blue: "card__value--blue",
-    success: "card__value--success",
-    danger: "card__value--danger",
+    accent: "ba-value--accent",
+    blue: "ba-value--blue",
+    success: "ba-value--success",
+    danger: "ba-value--danger",
   }[accent ?? "accent"];
 
   return (
@@ -170,7 +170,7 @@ function PaceBar({
   );
 
   return (
-    <div className="progress-bar mt-3">
+    <div className="ba-progress mt-3">
       <div className="ba-progress-fill" style={{ width: `${pct}%` }} />
     </div>
   );
@@ -277,7 +277,7 @@ export default async function LongoesPage() {
         </section>
 
         <section className="grid gap-8 lg:grid-cols-3 longoes-section longoes-insights-grid" style={{ marginBottom: "3.5rem" }}>
-          <div className="card card--accent min-h-[340px] longoes-insight-card" style={{ padding: "2rem" }}>
+          <div className="ba-card ba-card--accent min-h-[340px] longoes-insight-card" style={{ padding: "2rem" }}>
             <p className="ba-eyebrow ba-section">Último longão</p>
             {lastLongRun ? (
               <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", height: "calc(100% - 2rem)" }}>
@@ -306,7 +306,7 @@ export default async function LongoesPage() {
             )}
           </div>
 
-          <div className="card min-h-[340px] longoes-insight-card" style={{ padding: "2rem" }}>
+          <div className="ba-card min-h-[340px] longoes-insight-card" style={{ padding: "2rem" }}>
             <p className="ba-eyebrow" style={{ marginBottom: "1.25rem" }}>Tendência de eficiência</p>
             <div className="flex items-center gap-4">
               <span className="text-3xl">{efficiencyTrend.emoji}</span>
@@ -323,7 +323,7 @@ export default async function LongoesPage() {
             </div>
           </div>
 
-          <div className="card min-h-[340px] longoes-insight-card longoes-pattern-card" style={{ padding: "2rem" }}>
+          <div className="ba-card min-h-[340px] longoes-insight-card longoes-pattern-card" style={{ padding: "2rem" }}>
             <p className="ba-eyebrow" style={{ marginBottom: "1.25rem" }}>Padrões identificados</p>
             <div className="space-y-5">
               <MetricPill label="Longões com melhora" value={`${progressiveRuns} em relação ao anterior`} />
@@ -364,7 +364,7 @@ export default async function LongoesPage() {
                 const isBest = run.efficiency === bestEffValue;
 
                 return (
-                  <div key={run.id} className={`list-item longoes-run-card ${isBest ? "list-item--accent" : ""}`} style={{ padding: "2rem 2rem 3rem" }}>
+                  <div key={run.id} className={`ba-card longoes-run-card ${isBest ? "ba-card--accent" : ""}`} style={{ padding: "2rem 2rem 3rem" }}>
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                       <div className="flex items-start gap-3">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-sm font-bold text-white/35">
@@ -438,4 +438,3 @@ export default async function LongoesPage() {
     </main>
   );
 }
-  
