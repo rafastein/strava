@@ -59,10 +59,67 @@ async function getStravaActivities(accessToken: string) {
   return allActivities;
 }
 
-function getStatusClasses(status: CapitalChallengeItem["status"]) {
-  if (status === "completed") return "badge badge--success";
-  if (status === "next") return "badge badge--accent";
-  return "badge badge--muted";
+function getStatusPillStyle(status: CapitalChallengeItem["status"]): CSSProperties {
+  if (status === "completed") {
+    return {
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      height: 22,
+      padding: "0 0.68rem",
+      borderRadius: 999,
+      border: "1px solid rgba(16,185,129,0.25)",
+      background: "rgba(16,185,129,0.12)",
+      color: "#34d399",
+      fontSize: 9,
+      fontWeight: 900,
+      lineHeight: 1,
+      letterSpacing: "0.12em",
+      textTransform: "uppercase",
+      whiteSpace: "nowrap",
+      flexShrink: 0,
+    };
+  }
+
+  if (status === "next") {
+    return {
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      height: 22,
+      padding: "0 0.68rem",
+      borderRadius: 999,
+      border: "1px solid rgba(245,166,35,0.25)",
+      background: "rgba(245,166,35,0.12)",
+      color: "var(--accent)",
+      fontSize: 9,
+      fontWeight: 900,
+      lineHeight: 1,
+      letterSpacing: "0.12em",
+      textTransform: "uppercase",
+      whiteSpace: "nowrap",
+      flexShrink: 0,
+    };
+  }
+
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    height: 22,
+    padding: "0 0.68rem",
+    borderRadius: 999,
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(255,255,255,0.055)",
+    color: "rgba(255,255,255,0.46)",
+    fontSize: 9,
+    fontWeight: 900,
+    lineHeight: 1,
+    letterSpacing: "0.12em",
+    textTransform: "uppercase",
+    whiteSpace: "nowrap",
+    flexShrink: 0,
+  };
 }
 
 function cleanActivityName(name?: string) {
@@ -513,7 +570,7 @@ export default async function CapitaisPage() {
                         </p>
                       </div>
 
-                      <span className={getStatusClasses(capital.status)} style={{ flexShrink: 0 }}>
+                      <span style={getStatusPillStyle(capital.status)}>
                         {getStatusLabel(capital.status)}
                       </span>
                     </div>
