@@ -406,7 +406,7 @@ export default async function CapitaisPage() {
   }
 
   const remaining = capitals.length - completed.length;
-  const capitalsPerYear = 6;
+  const capitalsPerYear = 4;
   const yearsLeft = remaining / capitalsPerYear;
   const currentYear = new Date().getFullYear();
   const estimatedYear = Math.ceil(currentYear + yearsLeft);
@@ -491,7 +491,7 @@ export default async function CapitaisPage() {
                     {remaining > 0 ? estimatedYear : "Concluído!"}
                   </p>
                   <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
-                    {remaining > 0 ? `${remaining} restantes · 6/ano` : "🎉"}
+                    {remaining > 0 ? `${remaining} restantes · 4/ano` : "🎉"}
                   </p>
                 </div>
               </div>
