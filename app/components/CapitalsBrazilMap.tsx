@@ -275,31 +275,31 @@ export default function CapitalsBrazilMap({ items }: Props) {
             }
 
             .capitals-brazil-map-photo-overlay {
-              position: absolute;
+              position: fixed;
               inset: 0;
-              z-index: 20;
+              z-index: 9999;
               display: flex;
               align-items: center;
               justify-content: center;
-              padding: 1rem;
-              background: rgba(0,0,0,0.58);
-              backdrop-filter: blur(7px);
+              padding: clamp(.75rem, 2vw, 1.5rem);
+              background: rgba(0,0,0,0.72);
+              backdrop-filter: blur(9px);
             }
 
             .capitals-brazil-map-photo-modal {
-              width: min(520px, 100%);
-              max-height: calc(100% - 1rem);
+              width: min(920px, calc(100vw - 2rem));
+              max-height: calc(100vh - 2rem);
               overflow: auto;
               border-radius: 20px;
               border: 1px solid rgba(16,185,129,0.28);
-              background: linear-gradient(180deg, rgba(16,185,129,0.12), rgba(14,14,14,0.96));
-              box-shadow: 0 28px 90px rgba(0,0,0,0.55);
+              background: linear-gradient(180deg, rgba(16,185,129,0.12), rgba(14,14,14,0.98));
+              box-shadow: 0 28px 90px rgba(0,0,0,0.70);
             }
 
             .capitals-brazil-map-close {
-              position: absolute;
-              top: .85rem;
-              right: .85rem;
+              position: fixed;
+              top: clamp(.75rem, 2vw, 1.25rem);
+              right: clamp(.75rem, 2vw, 1.25rem);
               z-index: 24;
               display: inline-flex;
               width: 34px;
@@ -339,6 +339,10 @@ export default function CapitalsBrazilMap({ items }: Props) {
 
               .capitals-brazil-map-frame {
                 min-height: 270px;
+              }
+
+              .capitals-brazil-map-photo-image {
+                max-height: 58vh;
               }
             }
           `,
