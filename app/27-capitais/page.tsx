@@ -633,7 +633,10 @@ export default async function CapitaisPage() {
     .map((capital) => capital.bestActivity?.id)
     .filter((id): id is number => typeof id === "number");
 
-  const activityPhotosById = await getActivityCoverPhotos(accessToken, completedActivityIds);
+  const activityPhotosById: StravaPhotoMap =
+    accessToken && completedActivityIds.length > 0
+      ? await getActivityCoverPhotos(accessToken, completedActivityIds)
+      : {};
 
   const mapItems = challenge.map((capital) => ({
     state: capital.state,
