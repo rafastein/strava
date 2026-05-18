@@ -334,7 +334,7 @@ export default async function LongoesPage() {
           </div>
         </section>
 
-        <section className="longoes-section longoes-evolution-section" style={{ marginBottom: "3.5rem" }}>
+        <section className="ba-card longoes-section longoes-evolution-section" style={{ marginBottom: "3.5rem", padding: "1.5rem 2rem" }}>
           <p className="ba-eyebrow" style={{ marginBottom: "1.25rem" }}>Evolução</p>
           <LongRunCharts longRuns={chartData} />
         </section>
@@ -356,7 +356,7 @@ export default async function LongoesPage() {
           {longRuns.length === 0 ? (
             <p className="text-sm text-white/50">Nenhuma atividade com nome “Longão” foi encontrada.</p>
           ) : (
-            <div className="space-y-12 longoes-history-list">
+            <div className="longoes-history-list" style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
               {longRuns.map((run, index) => {
                 const previous = longRuns[index + 1];
                 const trend = getEfficiencyTrend(run.efficiency, previous?.efficiency);
@@ -364,7 +364,7 @@ export default async function LongoesPage() {
                 const isBest = run.efficiency === bestEffValue;
 
                 return (
-                  <div key={run.id} className={`ba-card longoes-run-card ${isBest ? "ba-card--accent" : ""}`} style={{ padding: "2rem 2rem 3rem" }}>
+                  <div key={run.id} className={`ba-card longoes-run-card ${isBest ? "ba-card--accent" : ""}`} style={{ padding: "1.25rem 1.5rem 1.5rem" }}>
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                       <div className="flex items-start gap-3">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-sm font-bold text-white/35">
@@ -401,11 +401,19 @@ export default async function LongoesPage() {
 
                     <div
                       className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 longoes-efficiency-row"
-                      style={{ marginTop: "1.75rem", paddingTop: "1.5rem" }}
+                      style={{ marginTop: "1rem", paddingTop: "1rem" }}
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-white/35">Eficiência:</span>
-                        <span className="text-sm font-bold text-white/90">{formatEfficiency(run.efficiency)}</span>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-white/35">Eficiência:</span>
+                          <span className="text-sm font-bold text-white/90">{formatEfficiency(run.efficiency)}</span>
+                        </div>
+                        <ActivitySplitsChart
+                          activityId={Number(run.id)}
+                          activityName={run.name}
+                          targetPaceSecPerKm={run.paceSecPerKm ?? undefined}
+                          goalPaceSecPerKm={BUENOS_AIRES_GOAL_PACE_SEC_PER_KM}
+                        />
                       </div>
                       <div className="flex items-center gap-2 text-right">
                         <span className="text-sm">{trend.emoji}</span>
@@ -414,18 +422,8 @@ export default async function LongoesPage() {
                       </div>
                     </div>
 
-                    <div className="longoes-pace-block" style={{ marginTop: "1rem", marginBottom: "1.75rem" }}>
+                    <div className="longoes-pace-block" style={{ marginTop: ".5rem", marginBottom: ".25rem" }}>
                       <PaceBar paceSecPerKm={run.paceSecPerKm} best={bestPace} worst={worstPace} />
-                      <p className="mt-2 text-right text-xs text-white/20">posição de ritmo no histórico</p>
-                    </div>
-
-                    <div className="border-t border-white/10 longoes-splits-block" style={{ paddingTop: "1.5rem" }}>
-                      <ActivitySplitsChart
-                        activityId={Number(run.id)}
-                        activityName={run.name}
-                        targetPaceSecPerKm={run.paceSecPerKm ?? undefined}
-                        goalPaceSecPerKm={BUENOS_AIRES_GOAL_PACE_SEC_PER_KM}
-                      />
                     </div>
                   </div>
                 );
