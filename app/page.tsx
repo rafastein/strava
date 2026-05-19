@@ -6,6 +6,7 @@ import Navbar from "./components/Navbar";
 import ActivitiesPanel from "./components/ActivitiesPanel";
 import WeeklyComparisonChart from "./components/WeeklyComparisonChart";
 import NextRaceCard from "./components/NextRaceCard";
+import SeasonCalendar from "./SeasonCalendar";
 import RaceCountdown from "./components/RaceCountdown";
 import {
   buildWeeklyComparison,
@@ -18,6 +19,7 @@ import {
   type SisrunWeek,
 } from "./lib/sisrun-utils";
 import { getValidStravaAccessToken } from "./lib/strava-auth";
+import { getDynamicAthleteProfile } from "./lib/strava-prs";
 import {
   formatEfficiency,
   formatLongRunPace,
@@ -159,10 +161,12 @@ const NAV_LINKS = [
 ];
 
 export default async function Home() {
-  const [athlete, activities, sisrunData] = await Promise.all([
+  const accessToken = await getValidStravaAccessToken();
+  const [athlete, activities, sisrunData, athleteProfile] = await Promise.all([
     getAthlete(),
     getActivities(),
     getSisrunData(),
+    accessToken ? getDynamicAthleteProfile(accessToken) : Promise.resolve(null),
   ]);
 
   const sisrunWeek = getCurrentWeek(sisrunData) as SisrunWeek | null;
@@ -248,6 +252,8 @@ export default async function Home() {
       </section>
 
       <div className="home-content">
+
+        <SeasonCalendar activities={activities} prs={athleteProfile?.prs ?? null} />
 
         {/* ── SEMANA ATUAL ── */}
         <section style={{ marginBottom: "1.75rem" }}>
