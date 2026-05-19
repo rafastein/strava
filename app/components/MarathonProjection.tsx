@@ -40,7 +40,6 @@ type RacePoint = {
 
 type Props = {
   longRuns: LongRunPoint[];
-  weeksToRace: number;
   races?: RacePoint[];
 };
 
@@ -116,15 +115,16 @@ function formatDeltaLabel(seconds: number, ok: boolean) {
   return ok ? `${normalized}s de sobra` : `faltam ~${normalized}s`;
 }
 
+const RACE_DATE = new Date("2026-09-20T06:00:00-03:00");
+
 export default function MarathonProjection({
   longRuns,
-  weeksToRace,
   races = [],
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const chartRef = useRef<Chart | null>(null);
 
-  const [weeks, setWeeks] = useState(weeksToRace);
+  const weeks = Math.max(1, Math.ceil((RACE_DATE.getTime() - Date.now()) / (7 * 86400000)));
   const [pacingFactor, setPacingFactor] = useState(1.09);
 
   const data = useMemo(() => {
@@ -421,15 +421,9 @@ export default function MarathonProjection({
       </div>
 
       <div className="marathon-projection-controls">
-        <SliderRow
-          label="Semanas até a prova"
-          valueLabel={`${weeks} semanas`}
-          min={1}
-          max={32}
-          step={1}
-          value={weeks}
-          onChange={setWeeks}
-        />
+        <p style={{ margin: "0 0 0.5rem", color: "rgba(255,255,255,0.42)", fontSize: 12 }}>
+          <strong style={{ color: "rgba(255,255,255,0.7)" }}>{weeks} semanas</strong> até Buenos Aires
+        </p>
         <SliderRow
           label="Fator treino → prova"
           valueLabel={`${Math.round(pacingFactor * 100)}%`}

@@ -339,7 +339,7 @@ export default async function BuenosAiresPage() {
         <CyclePhaseSection
           raceDate={marathonGoal.date}
           daysToRace={daysToRace}
-          weeksToRace={weeksToRace}
+          
           currentWeekKm={currentWeekKm}
           plannedWeekKm={plannedWeekKm}
           currentWeekLongestRunKm={currentWeekLongestRunKm}
@@ -428,7 +428,7 @@ export default async function BuenosAiresPage() {
           <section style={{ marginBottom: "1rem" }}>
             <MarathonProjection
               longRuns={projectionLongRuns}
-              weeksToRace={weeksToRace}
+              
               races={racePointsForProjection}
             />
           </section>
