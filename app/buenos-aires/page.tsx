@@ -129,7 +129,7 @@ export default function MarathonProjection({
   const [pacingFactor, setPacingFactor] = useState(0.92);
 
   const data = useMemo(() => {
-    if (longRuns.length === 0) return null;
+    if (!longRuns || longRuns.length === 0) return null;
 
     const t0 = new Date(longRuns[0].date).getTime();
     const days = longRuns.map(
@@ -194,7 +194,7 @@ export default function MarathonProjection({
   }, [longRuns, weeks, pacingFactor, nLongRuns]);
 
   useEffect(() => {
-    if (!canvasRef.current || longRuns.length === 0 || !data) return;
+    if (!canvasRef.current || !longRuns || longRuns.length === 0 || !data) return;
 
     if (chartRef.current) chartRef.current.destroy();
 
@@ -368,7 +368,7 @@ export default function MarathonProjection({
     };
   }, [longRuns, races, data]);
 
-  if (longRuns.length === 0 || !data) return null;
+  if (!longRuns || longRuns.length === 0 || !data) return null;
 
   return (
     <section
@@ -436,7 +436,7 @@ export default function MarathonProjection({
           label="Longões para média"
           valueLabel={`últimos ${nLongRuns}`}
           min={1}
-          max={Math.min(10, longRuns.length)}
+          max={Math.min(10, longRuns?.length ?? 10)}
           step={1}
           value={nLongRuns}
           onChange={setNLongRuns}
@@ -646,7 +646,7 @@ function SliderRow({
         step={step}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        style={{ width: "100%", accentColor: "#0ea5e1" }}
+        style={{ width: "100%", accentColor: "#0ea5e9" }}
       />
     </label>
   );
