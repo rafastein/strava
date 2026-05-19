@@ -467,6 +467,132 @@ export default function SeasonCalendar({
           border-radius: 999px;
           padding: 0.15rem 0.4rem;
         }
+
+
+        @media (max-width: 760px) {
+          .season-clean-card {
+            padding: 1.05rem;
+            margin-bottom: 1.25rem;
+            overflow: hidden;
+          }
+
+          .season-clean-header {
+            margin-bottom: 1rem;
+          }
+
+          .season-timeline {
+            display: grid;
+            gap: 0.62rem;
+            overflow-x: visible;
+            padding: 0 0 0 0.9rem;
+          }
+
+          .season-timeline::before {
+            left: 0.26rem;
+            right: auto;
+            top: 0.2rem;
+            bottom: 0.2rem;
+            width: 1px;
+            height: auto;
+            background: linear-gradient(
+              180deg,
+              rgba(52,211,153,0.35),
+              rgba(245,166,35,0.35),
+              rgba(96,165,250,0.30)
+            );
+          }
+
+          .season-semester-divider {
+            margin: 1rem 0 1.05rem;
+          }
+
+          .season-event {
+            width: 100%;
+            min-width: 0;
+            display: grid;
+            grid-template-columns: 2.8rem 0.8rem minmax(0, 1fr);
+            align-items: center;
+            column-gap: 0.55rem;
+            padding: 0.42rem 0;
+          }
+
+          .season-event--month-start::before {
+            display: none;
+          }
+
+          .season-event__month {
+            height: auto;
+            min-height: 1rem;
+            line-height: 1;
+            font-size: 0.62rem;
+            color: var(--accent);
+            text-align: right;
+          }
+
+          .season-event__node {
+            margin: 0;
+            justify-self: center;
+          }
+
+          .season-event__label {
+            width: 100%;
+            text-align: left;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            column-gap: 0.65rem;
+            padding: 0.62rem 0.72rem;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            background: rgba(255,255,255,0.035);
+          }
+
+          .season-event__name {
+            height: auto;
+            margin: 0;
+            font-size: 0.78rem;
+            font-weight: 800;
+            line-height: 1.15;
+            -webkit-line-clamp: 1;
+          }
+
+          .season-event__date {
+            grid-column: 2;
+            grid-row: 1;
+            font-size: 0.66rem;
+            color: rgba(255,255,255,0.42);
+            white-space: nowrap;
+          }
+
+          .season-event__result,
+          .season-event__badge,
+          .season-event__note {
+            grid-column: 1 / -1;
+            width: fit-content;
+            margin-top: 0.35rem;
+            margin-left: 0;
+          }
+        }
+
+        @media (max-width: 420px) {
+          .season-clean-card {
+            padding: 0.95rem;
+          }
+
+          .season-event {
+            grid-template-columns: 2.45rem 0.75rem minmax(0, 1fr);
+            column-gap: 0.45rem;
+          }
+
+          .season-event__label {
+            padding: 0.58rem 0.62rem;
+          }
+
+          .season-event__name {
+            font-size: 0.74rem;
+          }
+        }
+
       `}</style>
 
       <div className="season-clean-header">
