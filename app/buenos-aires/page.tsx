@@ -646,7 +646,7 @@ function SliderRow({
         step={step}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        style={{ width: "100%", accentColor: "#0ea5e9" }}
+        style={{ width: "100%", accentColor: "#0ea5e1" }}
       />
     </label>
   );
