@@ -339,7 +339,7 @@ export default async function BuenosAiresPage() {
         <CyclePhaseSection
           raceDate={marathonGoal.date}
           daysToRace={daysToRace}
-          
+          weeksToRace={weeksToRace}
           currentWeekKm={currentWeekKm}
           plannedWeekKm={plannedWeekKm}
           currentWeekLongestRunKm={currentWeekLongestRunKm}
