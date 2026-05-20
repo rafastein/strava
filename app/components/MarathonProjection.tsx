@@ -125,10 +125,11 @@ export default function MarathonProjection({
   const chartRef = useRef<Chart | null>(null);
 
   const weeks = Math.max(1, Math.ceil((RACE_DATE.getTime() - Date.now()) / (7 * 86400000)));
-  const [pacingFactor, setPacingFactor] = useState(1.09);
+  const [nLongRuns, setNLongRuns] = useState(5);
+  const [pacingFactor, setPacingFactor] = useState(0.92);
 
   const data = useMemo(() => {
-    if (longRuns.length === 0) return null;
+    if (!longRuns || longRuns.length === 0) return null;
 
     const t0 = new Date(longRuns[0].date).getTime();
     const days = longRuns.map(
@@ -155,8 +156,15 @@ export default function MarathonProjection({
     const PACE_FLOOR_SEC = 295;
     const futureDays = today + weeks * 7;
     const projPaceRaw = paceReg.slope * futureDays + paceReg.intercept;
-    const projPace = Math.max(projPaceRaw, PACE_FLOOR_SEC);
+    const projPaceRegression = Math.max(projPaceRaw, PACE_FLOOR_SEC);
     const projEff = effReg ? effReg.slope * futureDays + effReg.intercept : null;
+
+    // Pace médio dos últimos N longões
+    const lastN = longRuns.slice(-nLongRuns);
+    const avgPaceLastN = lastN.reduce((acc, r) => acc + r.paceSeconds, 0) / lastN.length;
+    const projPace = Math.max(avgPaceLastN, PACE_FLOOR_SEC);
+
+    // Pace de prova = pace treino * fator (< 1 = mais rápido em prova)
     const racePace = projPace * pacingFactor;
     const totalSec = racePace * DIST_MARATHON;
     const pacePerMonth = paceReg.slope * 30;
@@ -183,10 +191,10 @@ export default function MarathonProjection({
       biggestLongRun,
       avgFc,
     };
-  }, [longRuns, weeks, pacingFactor]);
+  }, [longRuns, weeks, pacingFactor, nLongRuns]);
 
   useEffect(() => {
-    if (!canvasRef.current || longRuns.length === 0 || !data) return;
+    if (!canvasRef.current || !longRuns || longRuns.length === 0 || !data) return;
 
     if (chartRef.current) chartRef.current.destroy();
 
@@ -360,7 +368,7 @@ export default function MarathonProjection({
     };
   }, [longRuns, races, data]);
 
-  if (longRuns.length === 0 || !data) return null;
+  if (!longRuns || longRuns.length === 0 || !data) return null;
 
   return (
     <section
@@ -425,10 +433,19 @@ export default function MarathonProjection({
           <strong style={{ color: "rgba(255,255,255,0.7)" }}>{weeks} semanas</strong> até Buenos Aires
         </p>
         <SliderRow
+          label="Longões para média"
+          valueLabel={`últimos ${nLongRuns}`}
+          min={1}
+          max={Math.min(10, longRuns?.length ?? 10)}
+          step={1}
+          value={nLongRuns}
+          onChange={setNLongRuns}
+        />
+        <SliderRow
           label="Fator treino → prova"
           valueLabel={`${Math.round(pacingFactor * 100)}%`}
-          min={1.07}
-          max={1.12}
+          min={0.88}
+          max={0.97}
           step={0.01}
           value={pacingFactor}
           onChange={setPacingFactor}
@@ -441,8 +458,7 @@ export default function MarathonProjection({
             lineHeight: 1.45,
           }}
         >
-          +7–12% é o delta típico entre pace de longão de treino e pace real em
-          maratona completa.
+          92–95% é o fator típico: em prova você corre 5–8% mais rápido que o pace médio dos longões.
         </p>
       </div>
 

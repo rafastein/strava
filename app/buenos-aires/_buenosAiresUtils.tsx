@@ -136,7 +136,7 @@ export function formatSecondsPerKm(secondsPerKm: number) {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 export const DIST_MARATHON = 42.195;
-export const PROJECTION_LONG_RUN_MIN_KM = 18; // mínimo para entrar na calculadora
+export const PROJECTION_LONG_RUN_MIN_KM = 14; // mínimo para entrar na calculadora
 
 // ─── Business logic ───────────────────────────────────────────────────────────
 
