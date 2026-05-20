@@ -39,10 +39,8 @@ export default function ManualPredictionForm({ initialValue }: Props) {
   }
 
   return (
-    <div className="manual-prediction-form">
-      <label className="manual-prediction-label" htmlFor="manual-strava-prediction">
-        Previsão manual do Strava
-      </label>
+    <div className="manual-prediction-compact">
+      <label htmlFor="manual-strava-prediction">Previsão manual do Strava</label>
 
       <div className="manual-prediction-row">
         <input
@@ -50,15 +48,14 @@ export default function ManualPredictionForm({ initialValue }: Props) {
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder="Ex: 03:49:00"
-          className="manual-prediction-input"
         />
 
-        <button onClick={handleSave} className="manual-prediction-button">
+        <button type="button" onClick={handleSave}>
           Salvar
         </button>
       </div>
 
-      {status && <p className="manual-prediction-status">{status}</p>}
+      {status && <p>{status}</p>}
     </div>
   );
 }

@@ -31,6 +31,7 @@ import CyclePhaseSection, {
 } from "./_components/CyclePhaseSection";
 import PerformanceSection from "./_components/PerformanceSection";
 import ProjectionSection from "./_components/ProjectionSection";
+import RecentLongRunsSection from "./_components/RecentLongRunsSection";
 import ReadinessSection from "./_components/ReadinessSection";
 import StrategicSummarySection from "./_components/StrategicSummarySection";
 import {
@@ -379,52 +380,55 @@ export default async function BuenosAiresPage() {
           />
         </section>
 
-        {vdot && trainingPaces && (
-          <PerformanceSection
-            vdot={vdot}
-            vo2max={vo2max}
-            marathonPaceLabel={
-              marathonPaces
-                ? `${formatSecondsPerKm(marathonPaces.min)}–${formatSecondsPerKm(
-                    marathonPaces.max,
-                  )}`
-                : targetPaceLabel
-            }
-            trainingPaces={trainingPaceItems}
-          />
-        )}
+        <section className="ba-performance-projection-grid ba-section">
+          {vdot && trainingPaces && (
+            <PerformanceSection
+              vdot={vdot}
+              vo2max={vo2max}
+              marathonPaceLabel={
+                marathonPaces
+                  ? `${formatSecondsPerKm(marathonPaces.min)}–${formatSecondsPerKm(
+                      marathonPaces.max,
+                    )}`
+                  : targetPaceLabel
+              }
+              trainingPaces={trainingPaceItems}
+            />
+          )}
 
-        <ProjectionSection
-          targetPredictionLabel={formatFullDuration(targetPredictionSeconds)}
-          targetPaceLabel={targetPaceLabel}
-          bestHalfPredictionLabel={
-            predictedFromHalf ? formatFullDuration(predictedFromHalf) : "—"
-          }
-          bestHalfCaption={
-            bestHalf
-              ? `${formatDate(bestHalf.start_date_local)} · ${(
-                  bestHalf.distance / 1000
-                ).toFixed(1)} km`
-              : "Sem meia identificada"
-          }
-          longRunPredictionLabel={
-            predictedFromLongRun ? formatFullDuration(predictedFromLongRun) : "—"
-          }
-          longRunCaption={
-            longestRun
-              ? `${longestRunKm.toFixed(1)} km · ${formatSecondsPerKm(
-                  longestRun.moving_time / longestRunKm,
-                )}`
-              : "Sem longão identificado"
-          }
-          sitePredictionLabel={
-            predictedBySite ? formatFullDuration(predictedBySite) : "—"
-          }
-          manualPredictionInitialValue={
-            manualPredictions.stravaMarathonPrediction
-          }
-          recentLongRuns={recentLongRunItems}
-        />
+          <ProjectionSection
+            targetPredictionLabel={formatFullDuration(targetPredictionSeconds)}
+            targetPaceLabel={targetPaceLabel}
+            bestHalfPredictionLabel={
+              predictedFromHalf ? formatFullDuration(predictedFromHalf) : "—"
+            }
+            bestHalfCaption={
+              bestHalf
+                ? `${formatDate(bestHalf.start_date_local)} · ${(
+                    bestHalf.distance / 1000
+                  ).toFixed(1)} km`
+                : "Sem meia identificada"
+            }
+            longRunPredictionLabel={
+              predictedFromLongRun ? formatFullDuration(predictedFromLongRun) : "—"
+            }
+            longRunCaption={
+              longestRun
+                ? `${longestRunKm.toFixed(1)} km · ${formatSecondsPerKm(
+                    longestRun.moving_time / longestRunKm,
+                  )}`
+                : "Sem longão identificado"
+            }
+            sitePredictionLabel={
+              predictedBySite ? formatFullDuration(predictedBySite) : "—"
+            }
+            manualPredictionInitialValue={
+              manualPredictions.stravaMarathonPrediction
+            }
+          />
+        </section>
+
+        <RecentLongRunsSection recentLongRuns={recentLongRunItems} />
 
         {projectionLongRuns.length >= 1 && (
           <section style={{ marginBottom: "1rem" }}>

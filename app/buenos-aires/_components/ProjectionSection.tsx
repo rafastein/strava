@@ -1,15 +1,4 @@
 import ManualPredictionForm from "../../components/ManualPredictionForm";
-import { ProjectionCard } from "../_buenosAiresUtils";
-
-type RecentLongRunItem = {
-  id: number;
-  name: string;
-  dateLabel: string;
-  distanceLabel: string;
-  paceLabel: string;
-  heartRateLabel?: string;
-  elevationLabel?: string;
-};
 
 type ProjectionSectionProps = {
   targetPredictionLabel: string;
@@ -20,7 +9,6 @@ type ProjectionSectionProps = {
   longRunCaption: string;
   sitePredictionLabel: string;
   manualPredictionInitialValue: string;
-  recentLongRuns: RecentLongRunItem[];
 };
 
 export default function ProjectionSection({
@@ -32,62 +20,52 @@ export default function ProjectionSection({
   longRunCaption,
   sitePredictionLabel,
   manualPredictionInitialValue,
-  recentLongRuns,
 }: ProjectionSectionProps) {
   return (
-    <section className="ba-two" style={{ marginBottom: "1rem" }}>
-      <div className="ba-card" style={{ padding: "1.15rem" }}>
-        <p className="ba-label">Projeções</p>
-        <h2 style={{ color: "#fff", fontSize: 18, fontWeight: 650, marginTop: 8 }}>
-          Maratona
-        </h2>
-        <div className="ba-grid-2" style={{ marginTop: ".9rem", gap: ".75rem" }}>
-          <ProjectionCard title="Pace-alvo" value={targetPredictionLabel} caption={targetPaceLabel} />
-          <ProjectionCard title="Melhor meia" value={bestHalfPredictionLabel} caption={bestHalfCaption} />
-          <ProjectionCard title="Longão forte" value={longRunPredictionLabel} caption={longRunCaption} />
-          <ProjectionCard title="Modelo do site" value={sitePredictionLabel} caption="Meia + longão + volume" highlight />
-        </div>
-        <div className="ba-manual-prediction">
-          <ManualPredictionForm initialValue={manualPredictionInitialValue} />
+    <section className="ba-card ba-projection-compact ba-section">
+      <div className="ba-compact-head">
+        <div>
+          <p className="ba-label">Projeções</p>
+          <h2 className="ba-compact-title">Maratona</h2>
+          <p className="ba-muted ba-compact-subtitle">
+            Modelos de tempo para Buenos Aires, com destaque para o cenário composto.
+          </p>
         </div>
       </div>
 
-      <div className="ba-card" style={{ padding: "1.2rem" }}>
-        <p className="ba-label">Longões recentes</p>
-        <h2 style={{ color: "#fff", fontSize: 20, fontWeight: 700, marginTop: 8 }}>
-          Especificidade
-        </h2>
-        <div style={{ display: "grid", gap: ".65rem", marginTop: ".95rem" }}>
-          {recentLongRuns.length > 0 ? (
-            recentLongRuns.map((run) => (
-              <div key={run.id} className="ba-recent-longrun">
-                <div className="ba-card-head" style={{ gap: ".75rem" }}>
-                  <div>
-                    <p style={{ color: "#fff", fontWeight: 650, fontSize: 14 }}>{run.name}</p>
-                    <p className="ba-muted" style={{ fontSize: 12, marginTop: 3 }}>
-                      {run.dateLabel}
-                    </p>
-                  </div>
-                  <p style={{ color: "#f5a623", fontWeight: 750, fontSize: 13 }}>
-                    {run.distanceLabel}
-                  </p>
-                </div>
-                <div className="ba-chip-row">
-                  <span className="ba-pill ba-pill-dark">{run.paceLabel}</span>
-                  {run.heartRateLabel && (
-                    <span className="ba-pill ba-pill-dark">{run.heartRateLabel}</span>
-                  )}
-                  {run.elevationLabel && (
-                    <span className="ba-pill ba-pill-dark">{run.elevationLabel}</span>
-                  )}
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="ba-muted">Nenhum longão identificado ainda.</p>
-          )}
+      <div className="ba-projection-main">
+        <p>Modelo do site</p>
+        <strong>{sitePredictionLabel}</strong>
+        <span>meia + longão + volume</span>
+      </div>
+
+      <div className="ba-projection-list">
+        <div className="ba-projection-row">
+          <div>
+            <p>Pace-alvo</p>
+            <span>{targetPaceLabel}</span>
+          </div>
+          <strong>{targetPredictionLabel}</strong>
+        </div>
+
+        <div className="ba-projection-row">
+          <div>
+            <p>Melhor meia</p>
+            <span>{bestHalfCaption}</span>
+          </div>
+          <strong>{bestHalfPredictionLabel}</strong>
+        </div>
+
+        <div className="ba-projection-row">
+          <div>
+            <p>Longão forte</p>
+            <span>{longRunCaption}</span>
+          </div>
+          <strong>{longRunPredictionLabel}</strong>
         </div>
       </div>
+
+      <ManualPredictionForm initialValue={manualPredictionInitialValue} />
     </section>
   );
 }
