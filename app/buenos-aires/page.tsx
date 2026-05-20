@@ -352,14 +352,21 @@ export default async function BuenosAiresPage() {
         />
 
 
-        <section
-          className="ba-grid-2"
-          style={{ marginBottom: "1rem", alignItems: "stretch" }}
-        >
-          <TodayWorkoutCard
-            todaySisrunRow={todaySisrunRow}
-            todayStravaKm={todayStravaKm}
-          />
+        <section className="ba-grid-2 ba-week-overview">
+          <div className="ba-today-readiness-stack">
+            <TodayWorkoutCard
+              todaySisrunRow={todaySisrunRow}
+              todayStravaKm={todayStravaKm}
+            />
+
+            <ReadinessSection
+              dotClassName={readiness.dot}
+              label={readiness.label}
+              title={readiness.title}
+              description={readiness.description}
+              cycleDescription={marathonCycle.phase.description}
+            />
+          </div>
 
           <WeeklyGoalCard
             currentKm={currentWeekKm}
@@ -371,14 +378,6 @@ export default async function BuenosAiresPage() {
             subtitle="Volume planejado contra execução real da semana."
           />
         </section>
-
-        <ReadinessSection
-          dotClassName={readiness.dot}
-          label={readiness.label}
-          title={readiness.title}
-          description={readiness.description}
-          cycleDescription={marathonCycle.phase.description}
-        />
 
         {vdot && trainingPaces && (
           <PerformanceSection
