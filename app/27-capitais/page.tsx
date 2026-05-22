@@ -37,6 +37,10 @@ const confirmedNextRace: Record<string, CapitalRaceCalendarItem> = {
     races: "Maratona & Meia Internacional de BH",
     dateLabel: "28/06/2026",
   },
+  PR: {
+    races: "Meia de Curitiba",
+    dateLabel: "15/11/2026",
+  },
 };
 
 const pendingRaceCalendar: Record<string, CapitalRaceCalendarItem> = {

@@ -79,7 +79,7 @@ const ALL_RACES: SeasonMonth[] = [
       { number: "08", name: "Meia do Rio", badge: "27 Capitais",       date: "06/06", location: "Rio de Janeiro",distanceKm: 21.1, featured: true },
       { number: "09", name: "Praia Grande 10K",  date: "20/06", location: "Praia Grande",  distanceKm: 10,   featured: false },
       { number: "10", name: "Praia Grande 5K",   date: "21/06", location: "Praia Grande",  distanceKm: 5,    featured: false },
-      { number: "11", name: "Meia de BH",        date: "28/06", location: "Belo Horizonte",distanceKm: 21.1, featured: true },
+      { number: "11", name: "Meia de BH", badge: "27 Capitais", date: "28/06", location: "Belo Horizonte",distanceKm: 21.1, featured: true },
     ],
   },
   {
