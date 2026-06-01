@@ -2283,3 +2283,93 @@ body {
     height: auto;
   }
 }
+
+/* Longões — ciclo Buenos Aires */
+.longoes-cycle-section .longoes-info-card {
+  height: 100%;
+}
+
+.longoes-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.longoes-plan-card {
+  padding: 1.1rem;
+  min-height: 210px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.longoes-plan-card--upcoming {
+  background: rgba(245, 166, 35, 0.045);
+  border-color: rgba(245, 166, 35, 0.18);
+}
+
+.longoes-plan-card--key {
+  box-shadow: inset 0 0 0 1px rgba(245, 166, 35, 0.08);
+}
+
+.longoes-plan-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+
+.longoes-plan-metric {
+  min-width: 0;
+  border-radius: 14px;
+  padding: 0.65rem 0.7rem;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.longoes-plan-metric p:last-of-type {
+  margin-top: 0.22rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.longoes-plan-metric span {
+  display: block;
+  margin-top: 0.15rem;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 11px;
+}
+
+@media (max-width: 900px) {
+  .longoes-plan-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .longoes-cycle-hero,
+  .longoes-plan-card-wrapper,
+  .longoes-history-card,
+  .longoes-evolution-section,
+  .longoes-insight-card {
+    padding: 1.1rem !important;
+  }
+
+  .longoes-plan-card {
+    min-height: auto;
+  }
+
+  .longoes-plan-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .longoes-plan-metric {
+    padding: 0.55rem 0.5rem;
+  }
+
+  .longoes-plan-metric p:last-of-type {
+    font-size: 12px;
+  }
+}
