@@ -59,7 +59,7 @@ export const capitals: CapitalBase[] = [
   { city: "Palmas", state: "TO", region: "Norte", lat: -10.184, lng: -48.334 },
 ];
 
-export const nextTargetStates = ["SC", "PR", "RS"];
+export const nextTargetStates = ["GO", "MG", "PR"];
 
 const RACE_KEYWORDS = [
   "meia",
