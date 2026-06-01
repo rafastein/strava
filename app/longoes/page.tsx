@@ -41,6 +41,28 @@ const MARATHON_CYCLE_START_DATE = new Date("2026-05-18T12:00:00");
 const MARATHON_CYCLE_END_DATE = new Date("2026-09-20T12:00:00");
 const MAX_REASONABLE_LONG_RUN_KM = 45;
 
+type MarathonCycleRace = {
+  dateKey: string;
+  name: string;
+  location: string;
+  distanceKm: number;
+  isGoal?: boolean;
+};
+
+const MARATHON_CYCLE_RACES: MarathonCycleRace[] = [
+  { dateKey: "2026-05-24", name: "Meia de Lima", location: "Lima", distanceKm: 21.1 },
+  { dateKey: "2026-06-06", name: "Meia do Rio", location: "Rio de Janeiro", distanceKm: 21.1 },
+  { dateKey: "2026-06-20", name: "Praia Grande 10K", location: "Praia Grande", distanceKm: 10 },
+  { dateKey: "2026-06-21", name: "Praia Grande 5K", location: "Praia Grande", distanceKm: 5 },
+  { dateKey: "2026-06-28", name: "Meia de BH", location: "Belo Horizonte", distanceKm: 21.1 },
+  { dateKey: "2026-07-26", name: "Asics Run Challenge", location: "Brasil", distanceKm: 15 },
+  { dateKey: "2026-08-01", name: "Meia da Chapada", location: "Chapada", distanceKm: 21.1 },
+  { dateKey: "2026-08-09", name: "Meia da PF", location: "Brasília", distanceKm: 21.1 },
+  { dateKey: "2026-08-16", name: "Track & Field 15K", location: "Brasília", distanceKm: 15 },
+  { dateKey: "2026-08-30", name: "Run The Bridge", location: "Brasil", distanceKm: 30 },
+  { dateKey: "2026-09-20", name: "Buenos Aires", location: "Argentina", distanceKm: 42, isGoal: true },
+];
+
 async function getActivities(): Promise<StravaActivity[]> {
   try {
     const accessToken = await getValidStravaAccessToken();
@@ -223,6 +245,9 @@ type MarathonLongRunPlanItem = {
   matchedActivity: StravaActivity | null;
   isKeyWorkout: boolean;
   isRaceGoal: boolean;
+  isRace: boolean;
+  raceName?: string;
+  raceLocation?: string;
   needsReview: boolean;
 };
 
@@ -298,6 +323,24 @@ function formatKm(value: number | null | undefined, digits = 1) {
   return `${value.toFixed(digits).replace(".", ",")} km`;
 }
 
+function findRaceForPlanDate(date: Date, plannedKm: number) {
+  const plannedDateKey = getDateKeyFromDate(date);
+  const exactRace = MARATHON_CYCLE_RACES.find((race) => race.dateKey === plannedDateKey);
+  if (exactRace) return exactRace;
+
+  if (!Number.isFinite(plannedKm) || plannedKm <= 0) return null;
+
+  return MARATHON_CYCLE_RACES.find((race) => {
+    const raceDate = parseDateKey(race.dateKey);
+    if (!raceDate) return false;
+
+    const sameWeekend = Math.abs(daysBetween(date, raceDate)) <= 1;
+    const compatibleDistance = plannedKm >= race.distanceKm * 0.7 && plannedKm <= race.distanceKm * 1.35;
+
+    return sameWeekend && compatibleDistance;
+  }) ?? null;
+}
+
 function getPlanStatusMeta(status: PlanStatus) {
   if (status === "done") return { label: "Cumprido", badge: "badge badge--success" };
   if (status === "partial") return { label: "Parcial", badge: "badge badge--orange" };
@@ -309,24 +352,28 @@ function getPlanStatusMeta(status: PlanStatus) {
 
 function getLongRunTypeLabel(plannedKm: number, isRaceGoal: boolean, isRace: boolean) {
   if (isRaceGoal) return "Prova-alvo";
+  if (isRace) return "Longão em prova";
   if (plannedKm >= 30) return "Longão-chave";
   if (plannedKm >= 25) return "Longão específico";
-  if (plannedKm >= 21 || isRace) return "Meia / longão";
+  if (plannedKm >= 21) return "Longão controlado";
   return "Controle de ciclo";
 }
 
 function getLongRunTitle(item: {
   plannedKm: number;
   isRaceGoal: boolean;
+  isRace: boolean;
+  raceName?: string;
   needsReview: boolean;
   date: Date;
   workoutType?: string;
 }) {
   if (item.needsReview) return "Revisar distância planejada";
   if (item.isRaceGoal) return "Maratona de Buenos Aires";
+  if (item.isRace) return item.raceName ?? "Longão em prova";
   if (item.plannedKm >= 30) return "Simulação de maratona";
   if (item.plannedKm >= 25) return "Construção específica";
-  if (item.plannedKm >= 21) return "Longão de meia";
+  if (item.plannedKm >= 21) return "Longão controlado";
 
   const normalizedType = normalizeText(item.workoutType ?? "");
   if (normalizedType.includes("longo")) return "Longão controlado";
@@ -340,6 +387,11 @@ function getLongRunNote(item: MarathonLongRunPlanItem) {
 
   if (item.isRaceGoal) {
     return "Chegada do ciclo: executar estratégia, hidratação e controle emocional.";
+  }
+
+  if (item.isRace) {
+    const raceLabel = item.raceName ? `${item.raceName}${item.raceLocation ? ` · ${item.raceLocation}` : ""}` : "prova do calendário";
+    return `Longão em prova: usar ${raceLabel} como estímulo do ciclo, sem perder o controle da estratégia.`;
   }
 
   if (item.plannedKm >= 30) {
@@ -457,13 +509,15 @@ function buildMarathonLongRunPlan(
       if (seenDates.has(dateKey)) return null;
       seenDates.add(dateKey);
 
-      const isRaceGoal = Math.abs(daysBetween(date, BUENOS_AIRES_RACE_DATE)) <= 1 && plannedKm >= 40;
+      const race = findRaceForPlanDate(date, plannedKm);
+      const isRaceGoal = Boolean(race?.isGoal) || (Math.abs(daysBetween(date, BUENOS_AIRES_RACE_DATE)) <= 1 && plannedKm >= 40);
+      const isRace = Boolean(workout.isRace || race) && !isRaceGoal;
       const needsReview = plannedKm > MAX_REASONABLE_LONG_RUN_KM && !isRaceGoal;
       const matchedActivity = findMatchingRun(date, plannedKm, activities);
       const actualKm = matchedActivity ? matchedActivity.distance / 1000 : null;
       const diffKm = actualKm !== null ? actualKm - plannedKm : null;
       const status = getPlanStatus({ date, plannedKm, actualKm, needsReview });
-      const typeLabel = getLongRunTypeLabel(plannedKm, isRaceGoal, Boolean(workout.isRace));
+      const typeLabel = getLongRunTypeLabel(plannedKm, isRaceGoal, isRace);
 
       const planItem: MarathonLongRunPlanItem = {
         key: dateKey,
@@ -479,6 +533,8 @@ function buildMarathonLongRunPlan(
         title: getLongRunTitle({
           plannedKm,
           isRaceGoal,
+          isRace,
+          raceName: race?.name,
           needsReview,
           date,
           workoutType: workout.workoutType,
@@ -486,8 +542,11 @@ function buildMarathonLongRunPlan(
         typeLabel,
         note: "",
         matchedActivity,
-        isKeyWorkout: plannedKm >= 30 || isRaceGoal,
+        isKeyWorkout: plannedKm >= 30 || isRaceGoal || isRace,
         isRaceGoal,
+        isRace,
+        raceName: race?.name,
+        raceLocation: race?.location,
         needsReview,
       };
 
@@ -717,7 +776,7 @@ export default async function LongoesPage() {
 
                       <div className="mt-4">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className={`badge ${item.isRaceGoal ? "badge--accent" : item.isKeyWorkout ? "badge--orange" : "badge--muted"}`}>
+                          <span className={`badge ${item.isRaceGoal || item.isRace ? "badge--accent" : item.isKeyWorkout ? "badge--orange" : "badge--muted"}`}>
                             {item.typeLabel}
                           </span>
                           {item.matchedActivity && <span className="badge badge--blue">Strava encontrado</span>}
