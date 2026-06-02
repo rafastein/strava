@@ -935,11 +935,11 @@ export default async function CapitaisPage() {
 
       <main className="capitals-content" style={styles.content}>
         <section style={{ marginTop: "2rem" }}>
-          <CapitalMedalGrid items={challenge} />
+          <CapitalsBrazilMap items={mapItems} />
         </section>
 
         <section style={{ marginTop: "2rem" }}>
-          <CapitalsBrazilMap items={mapItems} />
+          <CapitalMedalGrid items={challenge} />
         </section>
 
         {rankedCompleted.length > 0 && (
