@@ -112,14 +112,12 @@ export default function BuenosAiresHero({
               tempo-alvo
             </p>
           </div>
-          <div className="ba-card-soft" style={{ padding: ".95rem" }}>
+          <div className="ba-card-soft ba-cycle-phase-mini-card">
             <p className="ba-label">Fase</p>
-            <p className="ba-value" style={{ fontSize: 28, marginTop: 10 }}>
+            <p className="ba-value ba-cycle-phase-mini-value">
               {cyclePhaseName}
             </p>
-            <p className="ba-muted" style={{ fontSize: 12 }}>
-              do ciclo
-            </p>
+            <p className="ba-muted ba-cycle-phase-mini-caption">do ciclo</p>
           </div>
         </div>
       </div>
