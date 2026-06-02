@@ -353,7 +353,7 @@ export default function CapitalMedalGrid({ items }: { items: CapitalChallengeIte
           marginTop: "0.35rem",
         }}
       >
-        Medalha modular 27 Capitais
+        Capitais conquistadas
       </h2>
       <p className="ba-muted" style={{ marginTop: ".5rem", maxWidth: 760, lineHeight: 1.65 }}>
         Cada capital concluída adiciona um novo módulo simbólico ao desafio.

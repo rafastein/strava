@@ -580,10 +580,9 @@ export default function CapitalMedalGrid({ items }: { items: CapitalChallengeIte
                 marginTop: "0.35rem",
               }}
             >
-              Medalha modular 27 Capitais
+              Capitais conquistadas
             </h2>
             <p className="ba-muted" style={{ marginTop: ".48rem", maxWidth: 740, lineHeight: 1.55, fontSize: 13 }}>
-              Nesta versão, cada medalha usa um monumento ou uma arquitetura marcante da capital.
               As concluídas entram douradas, as próximas ficam iluminadas e as pendentes seguem bloqueadas.
             </p>
           </div>
