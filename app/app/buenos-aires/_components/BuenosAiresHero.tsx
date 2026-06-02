@@ -12,6 +12,9 @@ export default function BuenosAiresHero({
   targetPredictionLabel,
   cyclePhaseName,
 }: BuenosAiresHeroProps) {
+  const cyclePhaseCompactName =
+    cyclePhaseName.length > 12 ? "Desenv." : cyclePhaseName;
+
   return (
     <section className="ba-hero" style={{ marginBottom: "2.2rem" }}>
       <div
@@ -112,10 +115,14 @@ export default function BuenosAiresHero({
               tempo-alvo
             </p>
           </div>
-          <div className="ba-card-soft ba-cycle-phase-mini-card">
+          <div
+            className="ba-card-soft ba-cycle-phase-mini-card"
+            title={`Fase: ${cyclePhaseName}`}
+            aria-label={`Fase do ciclo: ${cyclePhaseName}`}
+          >
             <p className="ba-label">Fase</p>
             <p className="ba-value ba-cycle-phase-mini-value">
-              {cyclePhaseName}
+              {cyclePhaseCompactName}
             </p>
             <p className="ba-muted ba-cycle-phase-mini-caption">do ciclo</p>
           </div>

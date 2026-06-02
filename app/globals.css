@@ -2384,13 +2384,17 @@ body {
 }
 
 .ba-cycle-phase-mini-value {
+  display: block;
   max-width: 100%;
   margin-top: 0.55rem;
-  font-size: clamp(1.05rem, 2.1vw, 1.55rem) !important;
-  line-height: 0.98;
-  letter-spacing: 0.01em;
-  overflow-wrap: anywhere;
-  word-break: normal;
+  font-size: clamp(1.35rem, 2.25vw, 1.75rem) !important;
+  line-height: 1;
+  letter-spacing: -0.025em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: normal;
+  word-break: keep-all;
 }
 
 .ba-cycle-phase-mini-caption {
@@ -2418,8 +2422,8 @@ body {
 
 @media (max-width: 520px) {
   .ba-cycle-phase-mini-value {
-    font-size: clamp(0.98rem, 6.2vw, 1.26rem) !important;
-    letter-spacing: 0;
+    font-size: clamp(1.22rem, 6vw, 1.52rem) !important;
+    letter-spacing: -0.03em;
   }
 
   .ba-performance-kpi-amber strong {
