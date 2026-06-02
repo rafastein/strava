@@ -8,6 +8,7 @@ type ProjectionSectionProps = {
   longRunPredictionLabel: string;
   longRunCaption: string;
   sitePredictionLabel: string;
+  sitePredictionCaption: string;
   manualPredictionInitialValue: string;
 };
 
@@ -19,6 +20,7 @@ export default function ProjectionSection({
   longRunPredictionLabel,
   longRunCaption,
   sitePredictionLabel,
+  sitePredictionCaption,
   manualPredictionInitialValue,
 }: ProjectionSectionProps) {
   return (
@@ -34,9 +36,9 @@ export default function ProjectionSection({
       </div>
 
       <div className="ba-projection-main">
-        <p>Modelo do site</p>
+        <p>Modelo realista atual</p>
         <strong>{sitePredictionLabel}</strong>
-        <span>meia + longão + volume</span>
+        <span>{sitePredictionCaption}</span>
       </div>
 
       <div className="ba-projection-list">
@@ -50,7 +52,7 @@ export default function ProjectionSection({
 
         <div className="ba-projection-row">
           <div>
-            <p>Melhor meia</p>
+            <p>Potencial pela meia</p>
             <span>{bestHalfCaption}</span>
           </div>
           <strong>{bestHalfPredictionLabel}</strong>

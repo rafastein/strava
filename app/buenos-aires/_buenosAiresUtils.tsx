@@ -240,31 +240,126 @@ export function predictFromLongRun(longestRun: StravaActivity | null) {
   return marathonTimeFromPace(adjusted);
 }
 
-export function predictBySiteModel(params: {
+export type SitePredictionModel = {
+  seconds: number | null;
+  confidenceLabel: "Alta" | "Média" | "Baixa";
+  caption: string;
+  avgWeeklyKm: number;
+  longRunKm: number;
+  longRunPenaltySeconds: number;
+  volumePenaltySeconds: number;
+  totalPenaltySeconds: number;
+};
+
+export function getLongRunPenaltySeconds(longestRun: StravaActivity | null) {
+  const km = longestRun ? longestRun.distance / 1000 : 0;
+
+  if (km >= 32) return 0;
+  if (km >= 30) return 3 * 60;
+  if (km >= 28) return 6 * 60;
+  if (km >= 26) return 10 * 60;
+  if (km >= 24) return 14 * 60;
+  if (km >= 21) return 20 * 60;
+
+  return 25 * 60;
+}
+
+export function getVolumePenaltySeconds(avgWeeklyKm: number) {
+  if (avgWeeklyKm >= 65) return -3 * 60;
+  if (avgWeeklyKm >= 55) return 0;
+  if (avgWeeklyKm >= 45) return 5 * 60;
+  if (avgWeeklyKm >= 35) return 10 * 60;
+  if (avgWeeklyKm >= 25) return 16 * 60;
+
+  return 22 * 60;
+}
+
+export function getProjectionConfidenceLabel(longRunKm: number, avgWeeklyKm: number) {
+  if (longRunKm >= 30 && avgWeeklyKm >= 50) return "Alta" as const;
+  if (longRunKm >= 26 && avgWeeklyKm >= 40) return "Média" as const;
+  return "Baixa" as const;
+}
+
+function formatPenaltyMinutes(seconds: number) {
+  const minutes = Math.round(Math.abs(seconds) / 60);
+  if (seconds < 0) return `-${minutes} min`;
+  if (seconds > 0) return `+${minutes} min`;
+  return "0 min";
+}
+
+export function predictBySiteModelDetails(params: {
   bestHalf: StravaActivity | null;
   longestRun: StravaActivity | null;
   weeklyData: { label: string; distanceKm: number }[];
-}) {
+}): SitePredictionModel {
   const halfP = predictFromHalf(params.bestHalf);
   const longRunP = predictFromLongRun(params.longestRun);
   const avgWeekly = params.weeklyData.length
     ? params.weeklyData.reduce((s, x) => s + x.distanceKm, 0) /
       params.weeklyData.length
     : 0;
-  if (halfP && longRunP) {
-    let base = Math.round((halfP + longRunP) / 2);
-    if (avgWeekly >= 60) base -= 120;
-    else if (avgWeekly < 40) base += 180;
-    return base;
-  }
+  const longRunKm = params.longestRun ? params.longestRun.distance / 1000 : 0;
+  const longRunPenaltySeconds = getLongRunPenaltySeconds(params.longestRun);
+  const volumePenaltySeconds = getVolumePenaltySeconds(avgWeekly);
+  const confidenceLabel = getProjectionConfidenceLabel(longRunKm, avgWeekly);
+
+  const rawPenaltySeconds = longRunPenaltySeconds + volumePenaltySeconds;
+  const totalPenaltySeconds = Math.min(
+    Math.max(rawPenaltySeconds, -3 * 60),
+    28 * 60,
+  );
+
+  const longRunStatus =
+    longRunKm >= 24
+      ? `longão ${longRunKm.toFixed(1)} km`
+      : "sem longão acima de 24 km";
+  const caption = `confiança ${confidenceLabel.toLowerCase()} · ${longRunStatus} · ajuste ${formatPenaltyMinutes(totalPenaltySeconds)}`;
+
   if (halfP) {
-    let base = halfP;
-    if (avgWeekly >= 60) base -= 90;
-    else if (avgWeekly < 40) base += 180;
-    return base;
+    return {
+      seconds: halfP + totalPenaltySeconds,
+      confidenceLabel,
+      caption,
+      avgWeeklyKm: avgWeekly,
+      longRunKm,
+      longRunPenaltySeconds,
+      volumePenaltySeconds,
+      totalPenaltySeconds,
+    };
   }
-  if (longRunP) return longRunP;
-  return null;
+
+  if (longRunP) {
+    const volumeOnlyPenalty = Math.min(Math.max(volumePenaltySeconds, 0), 12 * 60);
+    return {
+      seconds: longRunP + volumeOnlyPenalty,
+      confidenceLabel,
+      caption: `confiança ${confidenceLabel.toLowerCase()} · sem meia recente · ajuste ${formatPenaltyMinutes(volumeOnlyPenalty)}`,
+      avgWeeklyKm: avgWeekly,
+      longRunKm,
+      longRunPenaltySeconds,
+      volumePenaltySeconds,
+      totalPenaltySeconds: volumeOnlyPenalty,
+    };
+  }
+
+  return {
+    seconds: null,
+    confidenceLabel,
+    caption: "aguardando meia ou longão válido",
+    avgWeeklyKm: avgWeekly,
+    longRunKm,
+    longRunPenaltySeconds,
+    volumePenaltySeconds,
+    totalPenaltySeconds,
+  };
+}
+
+export function predictBySiteModel(params: {
+  bestHalf: StravaActivity | null;
+  longestRun: StravaActivity | null;
+  weeklyData: { label: string; distanceKm: number }[];
+}) {
+  return predictBySiteModelDetails(params).seconds;
 }
 
 export function getHrZoneForBpm(bpm: number, zones: HrZone[]): HrZone | null {

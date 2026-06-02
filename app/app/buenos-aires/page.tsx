@@ -49,7 +49,7 @@ import {
   getManualPredictions,
   getReadinessStatus,
   marathonTimeFromPace,
-  predictBySiteModel,
+  predictBySiteModelDetails,
   predictFromHalf,
   predictFromLongRun,
 } from "./_buenosAiresUtils";
@@ -182,7 +182,7 @@ export default async function BuenosAiresPage() {
 
   const predictedFromHalf = predictFromHalf(bestHalf);
   const predictedFromLongRun = predictFromLongRun(longestRun);
-  const predictedBySite = predictBySiteModel({
+  const sitePrediction = predictBySiteModelDetails({
     bestHalf,
     longestRun,
     weeklyData,
@@ -420,8 +420,9 @@ export default async function BuenosAiresPage() {
                 : "Sem longão identificado"
             }
             sitePredictionLabel={
-              predictedBySite ? formatFullDuration(predictedBySite) : "—"
+              sitePrediction.seconds ? formatFullDuration(sitePrediction.seconds) : "—"
             }
+            sitePredictionCaption={sitePrediction.caption}
             manualPredictionInitialValue={
               manualPredictions.stravaMarathonPrediction
             }
