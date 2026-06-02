@@ -782,18 +782,6 @@ export default async function CapitaisPage() {
         athleteAvatar={athlete?.profile_medium ?? undefined}
       />
 
-      <section
-        style={{
-          maxWidth: 1200,
-          margin: "0 auto",
-          padding: "1.25rem 1.5rem 0",
-          position: "relative",
-          zIndex: 2,
-        }}
-      >
-        <CapitalMedalGrid items={challenge} />
-      </section>
-
       <section className="capitals-hero" style={styles.hero}>
         <div className="home-hero__glow-1" />
         <div className="home-hero__glow-2" />
@@ -946,6 +934,10 @@ export default async function CapitaisPage() {
       </section>
 
       <main className="capitals-content" style={styles.content}>
+        <section style={{ marginTop: "2rem" }}>
+          <CapitalMedalGrid items={challenge} />
+        </section>
+
         <section style={{ marginTop: "2rem" }}>
           <CapitalsBrazilMap items={mapItems} />
         </section>
