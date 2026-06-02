@@ -480,7 +480,7 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
         )}
       </div>
 
-      <div style={{ textAlign: "center", minHeight: 36, maxWidth: 100 }}>
+      <div style={{ textAlign: "center", minHeight: 26, maxWidth: 100 }}>
         <div
           style={{
             color: "#fff",
@@ -493,20 +493,6 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
           }}
         >
           {item.city}
-        </div>
-        <div
-          style={{
-            color: palette.motifColor,
-            fontSize: 10,
-            lineHeight: 1.15,
-            marginTop: 3,
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-          }}
-        >
-          {meta.motif}
         </div>
         <div
           style={{
