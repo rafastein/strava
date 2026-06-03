@@ -728,8 +728,16 @@ body {
 /* ── RESPONSIVE ── */
 .home-hero__stats-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
+}
+
+.home-stat-card__value {
+  font-size: clamp(1.35rem, 2vw, 1.75rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .home-today-section {
@@ -2432,3 +2440,21 @@ body {
   }
 }
 
+
+
+/* Home hero stats: 6-card responsive grid */
+@media (max-width: 720px) {
+  .home-hero__stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-stat-card__value {
+    font-size: clamp(1.15rem, 6vw, 1.45rem);
+  }
+}
+
+@media (max-width: 420px) {
+  .home-hero__stats-grid {
+    grid-template-columns: 1fr;
+  }
+}

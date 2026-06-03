@@ -176,6 +176,18 @@ export default async function Home() {
   const totalTime = runs.reduce((acc, a) => acc + a.moving_time, 0);
   const totalElevation = runs.reduce((acc, a) => acc + a.total_elevation_gain, 0);
   const pace = formatPace(totalKm * 1000, totalTime);
+  const avgDistanceKm = runs.length > 0 ? totalKm / runs.length : 0;
+  const heartRateRuns = runs.filter(
+    (a) => typeof a.average_heartrate === "number" && a.average_heartrate > 0
+  );
+  const heartRateWeightedTime = heartRateRuns.reduce((acc, a) => acc + a.moving_time, 0);
+  const avgHeartRate =
+    heartRateWeightedTime > 0
+      ? heartRateRuns.reduce(
+          (acc, a) => acc + (a.average_heartrate ?? 0) * a.moving_time,
+          0
+        ) / heartRateWeightedTime
+      : null;
   const longest = runs.length > 0 ? runs.reduce((max, a) => (a.distance > max.distance ? a : max)) : null;
   const currentWeekKm = getCurrentWeekStravaKm(activities);
   const currentWeekLongestRunKm = getCurrentWeekLongestRunKm(activities);
@@ -238,12 +250,14 @@ export default async function Home() {
               {[
                 { label: "km em 2026", value: totalKm.toFixed(0) },
                 { label: "corridas", value: String(runs.length) },
+                { label: "distância média", value: `${avgDistanceKm.toFixed(1)} km` },
                 { label: "pace médio", value: pace },
-                { label: "elevação", value: `${(totalElevation / 1000).toFixed(1)}k m` },
+                { label: "fc média", value: avgHeartRate ? `${avgHeartRate.toFixed(0)} bpm` : "—" },
+                { label: "elevação", value: `${totalElevation.toFixed(0)} Metros` },
               ].map((s) => (
                 <div key={s.label} className="home-stat-card">
                   <p className="ba-label" style={{ marginBottom: 4 }}>{s.label}</p>
-                  <p className="ba-value" style={{ fontSize: 28 }}>{s.value}</p>
+                  <p className="ba-value home-stat-card__value">{s.value}</p>
                 </div>
               ))}
             </div>
