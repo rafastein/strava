@@ -169,7 +169,7 @@ export default async function CorridasBrasilPage() {
             separado em meias, 10k e 5k.
           </p>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: ".9rem", marginTop: "1.25rem" }}>
+          <div className="br-top-distance-grid">
             <TopDistanceCard title="Top 3 Meias" races={topHalf} />
             <TopDistanceCard title="Top 3 10k" races={top10k} />
             <TopDistanceCard title="Top 3 5k" races={top5k} />
@@ -189,27 +189,27 @@ export default async function CorridasBrasilPage() {
               Nenhuma corrida foi identificada com a regra atual.
             </p>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: ".9rem" }}>
+            <div className="br-state-grid">
               {grouped.map((item) => (
                 <div
                   key={item.state}
-                  className="ba-card-soft" style={{ padding: "1rem" }}
+                  className="ba-card-soft br-state-card"
                 >
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: "1rem" }}>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text)" }}>{item.stateName}</p>
+                  <div className="br-state-card__header">
+                    <p className="br-state-card__title">{item.stateName}</p>
                     <span className="badge badge--accent">{item.count} {item.count === 1 ? "corrida" : "corridas"}</span>
                   </div>
 
-                  <div style={{ display: "flex", flexDirection: "column", gap: ".5rem" }}>
+                  <div className="br-race-list">
                     {item.races.map((race, index) => {
                       const previous = item.races[index + 1];
 
                       return (
-                        <div key={race.id} style={{ background: "rgba(0,0,0,.18)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "10px 12px", display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "center" }}>
+                        <div key={race.id} className="br-race-card">
                           <div style={{ minWidth: 0 }}>
-                            <p style={{ fontWeight: 600, color: "rgba(255,255,255,.88)", fontSize: 13, marginBottom: 4 }}>{race.name}</p>
-                            <p style={{ fontSize: 11, color: "rgba(255,255,255,.38)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{race.city || "Não identificado"}{race.state ? `, ${race.state}` : ""} · {formatBRDate(race.date)} · {race.distanceKm.toFixed(2)} km · {race.time} · {formatPaceFromRace(race)}</p>
-                            <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: "rgba(255,255,255,.28)", marginTop: 3 }}>FC {race.averageHeartrate ? `${race.averageHeartrate.toFixed(0)} bpm` : "-"} · Alt {race.elevationGain ?? 0} m · Ef {formatRaceEfficiency(race.efficiency ?? null)} · {getTrend(race.efficiency, previous?.efficiency)}</p>
+                            <p className="br-race-card__name">{race.name}</p>
+                            <p className="br-race-card__details">{race.city || "Não identificado"}{race.state ? `, ${race.state}` : ""} · {formatBRDate(race.date)} · {race.distanceKm.toFixed(2)} km · {race.time} · {formatPaceFromRace(race)}</p>
+                            <p className="br-race-card__stats">FC {race.averageHeartrate ? `${race.averageHeartrate.toFixed(0)} bpm` : "-"} · Alt {race.elevationGain ?? 0} m · Ef {formatRaceEfficiency(race.efficiency ?? null)} · {getTrend(race.efficiency, previous?.efficiency)}</p>
                           </div>
                           <ActivitySplitsChart
                             activityId={Number(String(race.id).replace("strava-", ""))}
@@ -240,7 +240,7 @@ function TopDistanceCard({
   races: Array<Race & { paceSeconds: number }>;
 }) {
   return (
-    <div className="ba-card-soft" style={{ padding: "1rem" }}>
+    <div className="ba-card-soft br-top-distance-card">
       <p className="ba-eyebrow" style={{ marginBottom: 8 }}>{title}</p>
 
       {races.length === 0 ? (
@@ -248,7 +248,7 @@ function TopDistanceCard({
           Nenhuma prova encontrada nessa categoria.
         </p>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: ".5rem", marginTop: 12 }}>
+        <div className="br-top-distance-list">
           {races.map((race, index) => {
             const medal = getMedalMeta(index);
             const isTopOne = index === 0;
@@ -256,10 +256,10 @@ function TopDistanceCard({
             return (
               <div
                 key={race.id}
-  style={{ background: "rgba(0,0,0,.18)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "10px 12px" }}
+                className="br-top-race-card"
               >
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
-                  <p style={{ fontWeight: 600, color: "var(--text)", fontSize: 12 }}>{race.name}</p>
+                <div className="br-top-race-card__head">
+                  <p className="br-top-race-card__name">{race.name}</p>
 
                   <span className={`badge ${medal.badgeClass ?? "badge--muted"}`}>{medal.icon} {medal.label}</span>
                 </div>
