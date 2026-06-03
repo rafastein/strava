@@ -398,15 +398,15 @@ export default async function CorridasMundoPage() {
               Nenhuma corrida acima de 21 km foi identificada com a regra atual.
             </p>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: ".9rem" }}>
+            <div className="world-country-grid">
               {grouped.map((item) => {
                 const displayCountry = normalizeCountryDisplay(item.country);
 
                 return (
-                  <div key={item.country} className="ba-card-soft" style={{ padding: "1.1rem" }}>
+                  <div key={item.country} className="ba-card-soft world-country-card">
                     {/* País header */}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: "1rem" }}>
-                      <p style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 600, color: "var(--text)" }}>
+                    <div className="world-country-card__header">
+                      <p className="world-country-card__title">
                         <CountryFlag country={item.country} />
                         <span>{displayCountry}</span>
                       </p>
@@ -416,34 +416,34 @@ export default async function CorridasMundoPage() {
                     </div>
 
                     {/* Corridas */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: ".5rem" }}>
+                    <div className="world-race-list">
                       {item.races.map((race: Race, index) => {
                         const medal    = topRaceMedals.get(race.id);
                         const previous = item.races[index + 1];
 
                         return (
-                          <div key={race.id} style={{ background: "rgba(0,0,0,.18)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "10px 12px", display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "center" }}>
+                          <div key={race.id} className="world-race-card">
                             <div style={{ minWidth: 0 }}>
                               {/* Nome */}
-                              <p style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,.88)", marginBottom: 4 }}>
+                              <p className="world-race-card__name">
                                 {medal && (
                                   <span style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, flexShrink: 0 }}>
                                     {medal}
                                   </span>
                                 )}
-                                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                <span className="world-race-card__name-text">
                                   {formatRaceName(race.name)}
                                 </span>
                               </p>
 
                               {/* Detalhes */}
-                              <p style={{ fontSize: 11, color: "rgba(255,255,255,.38)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              <p className="world-race-card__details">
                                 {race.city || "Não identificado"}
                                 {race.state ? `, ${race.state}` : ""} · {formatBRDate(race.date)} · {race.distanceKm.toFixed(2)} km · {race.time} · {formatPaceFromRace(race)}
                               </p>
 
                               {/* Stats */}
-                              <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: "rgba(255,255,255,.28)", marginTop: 3 }}>
+                              <p className="world-race-card__stats">
                                 FC {race.averageHeartrate ? `${race.averageHeartrate.toFixed(0)} bpm` : "-"} · Alt {race.elevationGain ?? 0} m · Ef {formatRaceEfficiency(race.efficiency ?? null)} · {getTrend(race.efficiency, previous?.efficiency)}
                               </p>
                             </div>
