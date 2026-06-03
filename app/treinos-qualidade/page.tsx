@@ -104,7 +104,7 @@ function classifyBySplits(
   nameHint: string
 ): { label: string; confidence: number } {
   const name = nameHint.toLowerCase();
-  if (name.includes("interval")) return { label: "Intervalado", confidence: 0.99 };
+  if (name.includes("interval") || name.includes("tiro")) return { label: "Intervalado", confidence: 0.99 };
   if (name.includes("fartlek"))  return { label: "Fartlek", confidence: 0.99 };
   if (name.includes("regener") || name.includes("desaquec"))
     return { label: "Regenerativo", confidence: 0.99 };
@@ -136,7 +136,7 @@ function classifyBySplits(
   if (fastCount >= 2 && pctFast > 0.15 && std > 0.6)
     return { label: "Fartlek", confidence: 0.75 };
   if (fastCount >= 1 && max > 14.5)
-    return { label: "Tiro", confidence: 0.78 };
+    return { label: "Intervalado", confidence: 0.78 };
   if (isProgressive && std < 1.2)
     return { label: "Progressivo", confidence: 0.72 };
   if (avg > 11.5 && std < 0.6 && pctFast > 0.2)
@@ -154,7 +154,7 @@ function classifyByLaps(
   if (!laps || laps.length < 2) return null;
 
   const name = nameHint.toLowerCase();
-  if (name.includes("interval")) return { label: "Intervalado", confidence: 0.99 };
+  if (name.includes("interval") || name.includes("tiro")) return { label: "Intervalado", confidence: 0.99 };
   if (name.includes("fartlek"))  return { label: "Fartlek", confidence: 0.99 };
 
   // Detect fast laps (< 5:00/km = > 12 km/h)
@@ -190,7 +190,7 @@ function classifyByLaps(
 }
 
 const QUALITY_TYPES = new Set([
-  "Intervalado", "Fartlek", "Tiro", "Progressivo", "Tempo Run", "Rodagem",
+  "Intervalado", "Fartlek", "Progressivo", "Tempo Run", "Rodagem",
 ]);
 
 function formatBRDate(iso: string): string {

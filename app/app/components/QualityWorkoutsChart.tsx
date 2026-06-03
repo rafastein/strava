@@ -34,7 +34,6 @@ type Props = {
 const TYPE_COLORS: Record<string, string> = {
   Intervalado: "#ef4444",
   Fartlek:     "#f97316",
-  Tiro:        "#8b5cf6",
   Progressivo: "#10b981",
   "Tempo Run": "#3b82f6",
   Rodagem:     "#6b7280",
@@ -43,11 +42,14 @@ const TYPE_COLORS: Record<string, string> = {
 const TYPE_LABELS: Record<string, string> = {
   Intervalado: "Intervalado",
   Fartlek:     "Fartlek",
-  Tiro:        "Tiro",
   Progressivo: "Progressivo",
   "Tempo Run": "Tempo Run",
   Rodagem:     "Rodagem",
 };
+
+function normalizeQualityType(label: string): string {
+  return label === "Tiro" ? "Intervalado" : label;
+}
 
 function formatPace(v: number): string {
   const m = Math.floor(v);
@@ -352,13 +354,18 @@ export default function QualityWorkoutsChart({ workouts }: Props) {
   const [filter, setFilter] = useState("Todos");
   const [expanded, setExpanded] = useState<string | null>(null);
 
+  const normalizedWorkouts = workouts.map((workout) => ({
+    ...workout,
+    label: normalizeQualityType(workout.label),
+  }));
+
   const filtered = filter === "Todos"
-    ? workouts
-    : workouts.filter((w) => w.label === filter);
+    ? normalizedWorkouts
+    : normalizedWorkouts.filter((w) => w.label === filter);
 
   const sorted = [...filtered].sort((a, b) => b.date.localeCompare(a.date));
 
-  const counts = workouts.reduce<Record<string, number>>((acc, w) => {
+  const counts = normalizedWorkouts.reduce<Record<string, number>>((acc, w) => {
     acc[w.label] = (acc[w.label] || 0) + 1;
     return acc;
   }, {});
@@ -369,7 +376,7 @@ export default function QualityWorkoutsChart({ workouts }: Props) {
     avgFc: number | null;
     avgPace: number | null;
   }>>((acc, tipo) => {
-    const group = workouts.filter((w) => w.label === tipo);
+    const group = normalizedWorkouts.filter((w) => w.label === tipo);
     if (group.length === 0) {
       acc[tipo] = { avgDist: null, avgFc: null, avgPace: null };
       return acc;
@@ -426,13 +433,13 @@ export default function QualityWorkoutsChart({ workouts }: Props) {
         <div className="ba-card" style={{ padding: "1.2rem" }}>
           <p style={{ marginBottom: 12, fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Treinos por mês e tipo</p>
           <div className="relative h-48">
-            <VolumeChart workouts={workouts} />
+            <VolumeChart workouts={normalizedWorkouts} />
           </div>
         </div>
         <div className="ba-card" style={{ padding: "1.2rem" }}>
           <p style={{ marginBottom: 12, fontSize: 13, fontWeight: 600, color: "var(--text)" }}>FC máxima por treino</p>
           <div className="relative h-48">
-            <FcTrendChart workouts={workouts} />
+            <FcTrendChart workouts={normalizedWorkouts} />
           </div>
         </div>
       </div>
