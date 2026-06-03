@@ -184,8 +184,8 @@ export default async function SisrunPage() {
         </section>
 
         {/* ── AGENDA ── */}
-        <section className="ba-card" style={{ padding: "1.5rem" }}>
-          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: "1.25rem" }}>
+        <section className="ba-card sisrun-agenda-card">
+          <div className="sisrun-agenda-head">
             <div>
               <p className="ba-eyebrow">Agenda</p>
               <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.6rem", color: "#fff", marginTop: 4 }}>
@@ -205,44 +205,44 @@ export default async function SisrunPage() {
               <p className="ba-muted">Sem dados para exibir.</p>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: ".6rem" }}>
+            <div className="sisrun-week-list">
               {weekRows.map((row, index) => {
                 const hasWorkout  = row.plannedDistanceKm > 0;
                 const completedKm = getCompletedKm(row, stravaKmByDate);
                 const done        = completedKm >= row.plannedDistanceKm && hasWorkout;
 
                 return (
-                  <div key={`${row.date}-${index}`} className="ba-card-soft" style={{ padding: "1rem 1.25rem" }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "1rem", alignItems: "center" }}>
+                  <div key={`${row.date}-${index}`} className="ba-card-soft sisrun-day-card">
+                    <div className="sisrun-day-card__inner">
                       {/* Day badge */}
-                      <div style={{
-                        width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700, letterSpacing: ".1em",
-                        background: hasWorkout ? "rgba(245,166,35,.1)" : "rgba(255,255,255,.04)",
-                        border: `1px solid ${hasWorkout ? "rgba(245,166,35,.25)" : "rgba(255,255,255,.07)"}`,
-                        color: hasWorkout ? "#f5a623" : "rgba(255,255,255,.3)",
-                      }}>
+                      <div
+                        className="sisrun-day-badge"
+                        style={{
+                          background: hasWorkout ? "rgba(245,166,35,.1)" : "rgba(255,255,255,.04)",
+                          border: `1px solid ${hasWorkout ? "rgba(245,166,35,.25)" : "rgba(255,255,255,.07)"}`,
+                          color: hasWorkout ? "#f5a623" : "rgba(255,255,255,.3)",
+                        }}
+                      >
                         {getDayLabel(row.date)}
                       </div>
 
                       {/* Content */}
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "1rem", alignItems: "center" }}>
-                        <div>
+                      <div className="sisrun-day-content">
+                        <div className="sisrun-day-summary">
                           <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "rgba(255,255,255,.3)", marginBottom: 4 }}>{row.date}</p>
                           <p style={{ fontSize: 14, fontWeight: 600, color: hasWorkout ? "var(--text)" : "rgba(255,255,255,.4)" }}>
                             {hasWorkout ? `${formatKm(row.plannedDistanceKm)} planejados` : "Descanso / sem volume planejado"}
                           </p>
                         </div>
 
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: ".5rem", textAlign: "center" }}>
+                        <div className="sisrun-day-metrics">
                           {[
                             { label: "Planejado", value: formatKm(row.plannedDistanceKm) },
                             { label: "Feito",     value: formatKm(completedKm),           accent: done },
                             { label: "Tempo mín.", value: row.minPlannedTime ?? "-" },
                             { label: "Tempo máx.", value: row.maxPlannedTime ?? "-" },
                           ].map((m) => (
-                            <div key={m.label} style={{ minWidth: 70 }}>
+                            <div key={m.label} className="sisrun-day-metric">
                               <p className="ba-label">{m.label}</p>
                               <p style={{ marginTop: ".3rem", fontSize: 12, fontWeight: 600, color: m.accent ? "var(--success)" : "var(--text)" }}>{m.value}</p>
                             </div>
