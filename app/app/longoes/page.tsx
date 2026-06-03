@@ -344,7 +344,7 @@ function findRaceForPlanDate(date: Date, plannedKm: number) {
 function getPlanStatusMeta(status: PlanStatus) {
   if (status === "done") return { label: "Cumprido", badge: "badge badge--success" };
   if (status === "partial") return { label: "Parcial", badge: "badge badge--orange" };
-  if (status === "missed") return { label: "Pendente", badge: "badge badge--danger" };
+  if (status === "missed") return { label: "Perdido", badge: "badge badge--danger" };
   if (status === "today") return { label: "Hoje", badge: "badge badge--accent" };
   if (status === "review") return { label: "Revisar SisRUN", badge: "badge badge--purple" };
   return { label: "Futuro", badge: "badge badge--blue" };
