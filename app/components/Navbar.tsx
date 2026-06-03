@@ -14,6 +14,7 @@ const NAV_LINKS = [
   { href: "/corridas-mundo", label: "Mundo" },
   { href: "/equipamentos", label: "Tênis" },
   { href: "/sisrun", label: "SisRUN" },
+  { href: "/carga", label: "Carga" },
 ];
 
 type Props = {
