@@ -39,9 +39,9 @@ export default function PerformanceSection({
           </div>
 
           <div className="ba-performance-kpi ba-performance-kpi-amber">
-            <p className="ba-label">Pace maratona</p>
+            <p className="ba-label">Potencial estimado pelo VDOT</p>
             <strong>{marathonPaceLabel}</strong>
-            <span>pelo VDOT</span>
+            <span>pace de maratona</span>
           </div>
         </div>
 
