@@ -113,39 +113,19 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
           maxWidth: 98,
           aspectRatio: "0.866 / 1",
           clipPath: REGULAR_HEX,
-          background: palette.shellBackground,
+          background: photoSrc
+            ? `${isLocked
+                ? "linear-gradient(rgba(0,0,0,0.55),rgba(0,0,0,0.55))"
+                : item.status === "completed"
+                ? "linear-gradient(180deg,rgba(200,130,0,0.25) 0%,rgba(0,0,0,0.35) 100%)"
+                : "linear-gradient(180deg,rgba(0,0,0,0.05) 0%,rgba(0,0,0,0.35) 100%)"
+              }, url(${photoSrc}) center 20% / cover no-repeat`
+            : palette.shellBackground,
           boxShadow: palette.shellShadow,
           isolation: "isolate",
           overflow: "hidden",
         }}
       >
-        {/* Foto do monumento */}
-        {photoSrc && (
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              backgroundImage: `url(${photoSrc})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center 20%",
-              opacity: isLocked ? 0.75 : 1,
-            }}
-          />
-        )}
-
-        {/* Overlay de cor por status */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: isLocked
-              ? "rgba(0,0,0,0.20)"
-              : item.status === "completed"
-              ? "linear-gradient(180deg, rgba(200,130,0,0.18) 0%, rgba(0,0,0,0.30) 100%)"
-              : "linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.30) 100%)",
-            zIndex: 1,
-          }}
-        />
 
         {/* Borda interna hex dourada */}
         <div
