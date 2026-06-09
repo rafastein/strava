@@ -128,7 +128,7 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
               backgroundImage: `url(${photoSrc})`,
               backgroundSize: "cover",
               backgroundPosition: "center 20%",
-              opacity: isLocked ? 0.55 : 1,
+              opacity: isLocked ? 0.75 : 1,
             }}
           />
         )}
@@ -139,10 +139,10 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
             position: "absolute",
             inset: 0,
             background: isLocked
-              ? "rgba(0,0,0,0.45)"
+              ? "rgba(0,0,0,0.20)"
               : item.status === "completed"
-              ? "linear-gradient(180deg, rgba(200,130,0,0.22) 0%, rgba(0,0,0,0.38) 100%)"
-              : "linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.42) 100%)",
+              ? "linear-gradient(180deg, rgba(200,130,0,0.18) 0%, rgba(0,0,0,0.30) 100%)"
+              : "linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.30) 100%)",
             zIndex: 1,
           }}
         />
