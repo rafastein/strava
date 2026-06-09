@@ -118,6 +118,7 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
           backgroundPosition: "center 20%",
           backgroundColor: photoSrc ? "#1a1a1a" : undefined,
           background: photoSrc ? undefined : palette.shellBackground,
+          filter: isLocked ? "grayscale(100%) brightness(0.55)" : "none",
           boxShadow: palette.shellShadow,
           isolation: "isolate",
           overflow: "hidden",
@@ -192,33 +193,7 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
           />
         )}
 
-        {/* Código IATA na base */}
-        <div
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            bottom: 0,
-            padding: "12px 6px 8px",
-            background: "linear-gradient(0deg, rgba(0,0,0,0.72) 0%, transparent 100%)",
-            display: "flex",
-            justifyContent: "center",
-            zIndex: 4,
-          }}
-        >
-          <span
-            style={{
-              color: item.status === "completed" ? "#ffd97a" : item.status === "next" ? "#ffe8a0" : "rgba(255,255,255,0.45)",
-              fontWeight: 950,
-              fontSize: 10.5,
-              lineHeight: 1,
-              letterSpacing: "0.1em",
-              textShadow: "0 1px 3px rgba(0,0,0,0.8)",
-            }}
-          >
-            {meta.code}
-          </span>
-        </div>
+
       </div>
 
       {/* Nome e status abaixo */}
