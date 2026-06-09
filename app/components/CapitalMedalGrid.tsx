@@ -116,13 +116,27 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
           backgroundImage: photoSrc ? `url(${photoSrc})` : undefined,
           backgroundSize: "cover",
           backgroundPosition: "center 20%",
-          backgroundColor: photoSrc ? "transparent" : undefined,
+          backgroundColor: photoSrc ? "#1a1a1a" : undefined,
           background: photoSrc ? undefined : palette.shellBackground,
           boxShadow: palette.shellShadow,
           isolation: "isolate",
           overflow: "hidden",
         }}
       >
+
+        {/* Overlay por status */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: isLocked
+              ? "rgba(0,0,0,0.48)"
+              : item.status === "completed"
+              ? "linear-gradient(180deg, rgba(180,110,0,0.22) 0%, rgba(0,0,0,0.28) 100%)"
+              : "linear-gradient(180deg, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.26) 100%)",
+            zIndex: 1,
+          }}
+        />
 
         {/* Borda interna hex dourada */}
         <div
