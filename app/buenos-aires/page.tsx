@@ -423,6 +423,21 @@ export default async function BuenosAiresPage() {
               sitePrediction.seconds ? formatFullDuration(sitePrediction.seconds) : "—"
             }
             sitePredictionCaption={sitePrediction.caption}
+            sitePredictionPaceLabel={
+              sitePrediction.seconds
+                ? formatSecondsPerKm(sitePrediction.seconds / 42.195)
+                : ""
+            }
+            bestHalfPaceLabel={
+              predictedFromHalf
+                ? formatSecondsPerKm(predictedFromHalf / 42.195)
+                : ""
+            }
+            longRunPaceLabel={
+              predictedFromLongRun
+                ? formatSecondsPerKm(predictedFromLongRun / 42.195)
+                : ""
+            }
             manualPredictionInitialValue={
               manualPredictions.stravaMarathonPrediction
             }

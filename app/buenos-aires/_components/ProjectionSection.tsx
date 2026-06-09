@@ -5,10 +5,13 @@ type ProjectionSectionProps = {
   targetPaceLabel: string;
   bestHalfPredictionLabel: string;
   bestHalfCaption: string;
+  bestHalfPaceLabel: string;
   longRunPredictionLabel: string;
   longRunCaption: string;
+  longRunPaceLabel: string;
   sitePredictionLabel: string;
   sitePredictionCaption: string;
+  sitePredictionPaceLabel: string;
   manualPredictionInitialValue: string;
 };
 
@@ -17,10 +20,13 @@ export default function ProjectionSection({
   targetPaceLabel,
   bestHalfPredictionLabel,
   bestHalfCaption,
+  bestHalfPaceLabel,
   longRunPredictionLabel,
   longRunCaption,
+  longRunPaceLabel,
   sitePredictionLabel,
   sitePredictionCaption,
+  sitePredictionPaceLabel,
   manualPredictionInitialValue,
 }: ProjectionSectionProps) {
   return (
@@ -37,7 +43,12 @@ export default function ProjectionSection({
 
       <div className="ba-projection-main">
         <p>Modelo realista atual</p>
-        <strong>{sitePredictionLabel}</strong>
+        <strong>
+          {sitePredictionLabel}
+          {sitePredictionPaceLabel && (
+            <span className="ba-projection-pace"> · {sitePredictionPaceLabel}</span>
+          )}
+        </strong>
         <span>{sitePredictionCaption}</span>
       </div>
 
@@ -55,7 +66,12 @@ export default function ProjectionSection({
             <p>Potencial pela meia</p>
             <span>{bestHalfCaption}</span>
           </div>
-          <strong>{bestHalfPredictionLabel}</strong>
+          <strong>
+            {bestHalfPredictionLabel}
+            {bestHalfPaceLabel && bestHalfPredictionLabel !== "—" && (
+              <span className="ba-projection-pace"> · {bestHalfPaceLabel}</span>
+            )}
+          </strong>
         </div>
 
         <div className="ba-projection-row">
@@ -63,7 +79,12 @@ export default function ProjectionSection({
             <p>Longão forte</p>
             <span>{longRunCaption}</span>
           </div>
-          <strong>{longRunPredictionLabel}</strong>
+          <strong>
+            {longRunPredictionLabel}
+            {longRunPaceLabel && longRunPredictionLabel !== "—" && (
+              <span className="ba-projection-pace"> · {longRunPaceLabel}</span>
+            )}
+          </strong>
         </div>
       </div>
 
