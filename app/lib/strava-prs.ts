@@ -55,7 +55,7 @@ const PR_DISTANCE_RANGES: Record<
 };
 
 const DISTANCE_WEIGHTS: Record<keyof AthletePersonalRecords, number> = {
-  km5: 1, km10: 2, half: 3, marathon: 4,
+  km5: 0, km10: 0, half: 3, marathon: 4,
 };
 
 const WINDOW_FULL_MONTHS    = 6;
