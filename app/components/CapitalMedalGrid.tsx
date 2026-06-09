@@ -113,31 +113,33 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
         minWidth: 0,
       }}
     >
-      {/* Wrapper externo: aplica drop-shadow ANTES do clipPath */}
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 98,
-          aspectRatio: "1 / 0.866",
-          filter: isLocked
-            ? "grayscale(100%) brightness(0.5)"
-            : item.status !== "locked"
-            ? `drop-shadow(0 0 0 3px ${borderColor})`
-            : "none",
-        }}
-      >
-        {/* Inner: clipPath + foto */}
+      {/* Container com posição relativa para a borda pseudoelemento */}
+      <div style={{ width: "100%", maxWidth: 98, aspectRatio: "1 / 0.866", position: "relative" }}>
+        {/* Borda colorida — hexágono ligeiramente maior atrás */}
+        {!isLocked && item.status !== "locked" && (
+          <div
+            style={{
+              position: "absolute",
+              inset: -3,
+              clipPath: REGULAR_HEX,
+              background: borderColor,
+              zIndex: 0,
+            }}
+          />
+        )}
+        {/* Hexágono com foto */}
         <div
           style={{
-            width: "100%",
-            height: "100%",
+            position: "absolute",
+            inset: 0,
             clipPath: REGULAR_HEX,
             backgroundImage: photoSrc ? `url(${photoSrc})` : undefined,
             backgroundSize: "cover",
             backgroundPosition: "center 30%",
             backgroundColor: "#111",
-            position: "relative",
+            filter: isLocked ? "grayscale(100%) brightness(0.5)" : "none",
             overflow: "hidden",
+            zIndex: 1,
           }}
         >
           {/* Overlay por status */}
