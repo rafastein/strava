@@ -117,13 +117,13 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
           backgroundSize: "cover",
           backgroundPosition: "center 20%",
           backgroundColor: photoSrc ? "#1a1a1a" : undefined,
-          background: photoSrc ? undefined : palette.shellBackground,
+          background: photoSrc ? "#111" : palette.shellBackground,
           filter: isLocked
             ? "grayscale(100%) brightness(0.55)"
             : item.status === "completed"
-            ? "drop-shadow(0 0 0 3px rgba(16,185,129,0.9))"
+            ? "drop-shadow(0 0 3px 2px rgba(16,185,129,0.85))"
             : item.status === "next"
-            ? "drop-shadow(0 0 0 3px rgba(245,158,11,0.9))"
+            ? "drop-shadow(0 0 3px 2px rgba(245,158,11,0.85))"
             : "none",
           boxShadow: palette.shellShadow,
           isolation: "isolate",
