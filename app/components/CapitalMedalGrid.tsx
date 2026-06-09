@@ -147,10 +147,10 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
             clipPath: REGULAR_HEX,
             border: `1.5px solid ${
               item.status === "completed"
-                ? "rgba(255,210,100,0.6)"
+                ? "rgba(16,185,129,0.7)"
                 : item.status === "next"
-                ? "rgba(255,255,255,0.4)"
-                : "rgba(255,255,255,0.10)"
+                ? "rgba(245,158,11,0.7)"
+                : "rgba(255,255,255,0.08)"
             }`,
             zIndex: 2,
           }}
@@ -350,9 +350,9 @@ function SummaryBox({
     borderRadius: 14,
     border: `1px solid ${
       tone === "completed"
-        ? "rgba(245,166,35,0.36)"
+        ? "rgba(16,185,129,0.45)"
         : tone === "next"
-        ? "rgba(255,255,255,0.22)"
+        ? "rgba(245,158,11,0.45)"
         : "rgba(255,255,255,0.10)"
     }`,
     background: tone === "locked" ? "rgba(0,0,0,0.24)" : "rgba(0,0,0,0.18)",
