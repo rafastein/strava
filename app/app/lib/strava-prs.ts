@@ -66,6 +66,7 @@ type StravaActivity = {
   id: number;
   name: string;
   type: string;
+  sport_type?: string; // campo atual da API v3 (substitui `type`)
   distance: number;
   moving_time: number;
   start_date: string;
@@ -104,7 +105,7 @@ async function fetchRunsLast18Months(accessToken: string): Promise<StravaActivit
     const data = (await res.json()) as StravaActivity[];
     if (!Array.isArray(data) || data.length === 0) break;
 
-    all.push(...data.filter((a) => a.type === "Run"));
+    all.push(...data.filter((a) => a.type === "Run" || a.sport_type === "Run"));
     if (data.length < 200) break;
   }
 
