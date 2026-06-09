@@ -95,6 +95,13 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
   const photoSrc = PHOTO_BY_CODE[meta.code];
   const isLocked = item.status === "locked";
 
+  const borderColor =
+    item.status === "completed"
+      ? "rgba(16,185,129,0.9)"
+      : item.status === "next"
+      ? "rgba(245,158,11,0.9)"
+      : "transparent";
+
   return (
     <article
       title={`${item.city} · ${meta.motif}`}
@@ -106,84 +113,46 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
         minWidth: 0,
       }}
     >
+      {/* Wrapper externo: aplica drop-shadow ANTES do clipPath */}
       <div
         style={{
-          position: "relative",
           width: "100%",
           maxWidth: 98,
           aspectRatio: "1 / 0.866",
-          clipPath: REGULAR_HEX,
-          backgroundImage: photoSrc ? `url(${photoSrc})` : undefined,
-          backgroundSize: "cover",
-          backgroundPosition: "center 20%",
-          backgroundColor: "#111",
           filter: isLocked
-            ? "grayscale(100%) brightness(0.55)"
-            : item.status === "completed"
-            ? "drop-shadow(0 0 3px 2px rgba(16,185,129,0.85))"
-            : item.status === "next"
-            ? "drop-shadow(0 0 3px 2px rgba(245,158,11,0.85))"
+            ? "grayscale(100%) brightness(0.5)"
+            : item.status !== "locked"
+            ? `drop-shadow(0 0 0 3px ${borderColor})`
             : "none",
-          boxShadow: palette.shellShadow,
-          isolation: "isolate",
-          overflow: "hidden",
         }}
       >
-
-        {/* Overlay por status */}
+        {/* Inner: clipPath + foto */}
         <div
           style={{
-            position: "absolute",
-            inset: 0,
-            background: isLocked
-              ? "rgba(0,0,0,0.48)"
-              : item.status === "completed"
-              ? "linear-gradient(180deg, rgba(180,110,0,0.22) 0%, rgba(0,0,0,0.28) 100%)"
-              : "linear-gradient(180deg, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.26) 100%)",
-            zIndex: 1,
+            width: "100%",
+            height: "100%",
+            clipPath: REGULAR_HEX,
+            backgroundImage: photoSrc ? `url(${photoSrc})` : undefined,
+            backgroundSize: "cover",
+            backgroundPosition: "center 30%",
+            backgroundColor: "#111",
+            position: "relative",
+            overflow: "hidden",
           }}
-        />
-
-
-
-        {/* Brilho topo */}
-        <div
-          style={{
-            position: "absolute",
-            left: "50%",
-            top: "8%",
-            transform: "translateX(-50%)",
-            width: 38,
-            height: 2.5,
-            borderRadius: 999,
-            background: isLocked ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.32)",
-            opacity: 0.72,
-            zIndex: 3,
-          }}
-        />
-
-        {/* Indicador status (ponto laranja/branco) */}
-        {!isLocked && (
+        >
+          {/* Overlay por status */}
           <div
-            aria-hidden="true"
             style={{
               position: "absolute",
-              right: 9,
-              top: 11,
-              width: 7,
-              height: 7,
-              borderRadius: 999,
-              background: item.status === "completed" ? "#fff4c8" : "#f5a623",
-              boxShadow:
-                item.status === "completed"
-                  ? "0 0 10px rgba(255,255,255,0.55)"
-                  : "0 0 8px rgba(245,166,35,0.6)",
-              zIndex: 4,
+              inset: 0,
+              background: isLocked
+                ? "rgba(0,0,0,0.42)"
+                : item.status === "completed"
+                ? "rgba(0,0,0,0.15)"
+                : "rgba(0,0,0,0.10)",
             }}
           />
-        )}
-
-
+        </div>
       </div>
 
       {/* Nome e status abaixo */}
