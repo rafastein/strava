@@ -55,8 +55,8 @@ function getPalette(status: CapitalStatus): Palette {
       shellBackground:
         "radial-gradient(circle at 50% 14%, rgba(255,243,204,0.96), rgba(247,187,69,0.96) 42%, rgba(178,104,18,0.98) 100%)",
       shellShadow: "0 18px 40px rgba(245,166,35,0.30)",
-      codeColor: "#f5a623",
-      motifColor: "#f5a623",
+      codeColor: "#10b981",
+      motifColor: "#10b981",
       glowColor: "rgba(255,213,118,0.44)",
       ringColor: "rgba(98,55,7,0.22)",
     };
@@ -68,8 +68,8 @@ function getPalette(status: CapitalStatus): Palette {
       shellBackground:
         "linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,248,229,0.98) 50%, rgba(239,220,178,0.98) 100%)",
       shellShadow: "0 16px 34px rgba(255,233,185,0.16)",
-      codeColor: "#4db8ff",
-      motifColor: "#4db8ff",
+      codeColor: "#f59e0b",
+      motifColor: "#f59e0b",
       glowColor: "rgba(255,236,190,0.24)",
       ringColor: "rgba(154,106,18,0.18)",
     };
