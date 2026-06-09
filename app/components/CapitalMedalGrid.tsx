@@ -118,7 +118,13 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
           backgroundPosition: "center 20%",
           backgroundColor: photoSrc ? "#1a1a1a" : undefined,
           background: photoSrc ? undefined : palette.shellBackground,
-          filter: isLocked ? "grayscale(100%) brightness(0.55)" : "none",
+          filter: isLocked
+            ? "grayscale(100%) brightness(0.55)"
+            : item.status === "completed"
+            ? "drop-shadow(0 0 0 3px rgba(16,185,129,0.9))"
+            : item.status === "next"
+            ? "drop-shadow(0 0 0 3px rgba(245,158,11,0.9))"
+            : "none",
           boxShadow: palette.shellShadow,
           isolation: "isolate",
           overflow: "hidden",
@@ -139,22 +145,7 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
           }}
         />
 
-        {/* Borda interna hex dourada */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 4,
-            clipPath: REGULAR_HEX,
-            border: `1.5px solid ${
-              item.status === "completed"
-                ? "rgba(16,185,129,0.7)"
-                : item.status === "next"
-                ? "rgba(245,158,11,0.7)"
-                : "rgba(255,255,255,0.08)"
-            }`,
-            zIndex: 2,
-          }}
-        />
+
 
         {/* Brilho topo */}
         <div
