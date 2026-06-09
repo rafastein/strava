@@ -65,288 +65,356 @@ function SymbolSvg({ symbol, palette }: { symbol: CapitalMedalSymbol; palette: P
   const common = {
     fill: "none",
     stroke: palette.iconStroke,
-    strokeWidth: 1.9,
+    strokeWidth: 2.55,
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
   };
+  const bold = { ...common, strokeWidth: 3.05 };
+  const thin = { ...common, strokeWidth: 1.75, opacity: 0.74 };
+  const fillSoft = { fill: palette.iconStroke, opacity: 0.14 };
+  const fillMedium = { fill: palette.iconStroke, opacity: 0.22 };
+  const svgStyle: CSSProperties = { width: "100%", height: "100%", display: "block" };
 
   switch (symbol) {
-    case "rubber-tree": // AC · Palácio Rio Branco
+    case "palacio-rio-branco":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M14 46h36" />
-          <path {...common} d="M18 46V29h28v17" />
-          <path {...common} d="M21 29h22l-2-6H23l-2 6Z" />
-          <path {...common} d="M24 46V35" />
-          <path {...common} d="M32 46V35" />
-          <path {...common} d="M40 46V35" />
-          <path {...common} d="M27 35h10" />
-          <path {...common} d="M20 24h24" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <path {...fillSoft} d="M15 47V28h34v19Z" />
+          <path {...bold} d="M13 48h38" />
+          <path {...common} d="M17 47V29h30v18" />
+          <path {...common} d="M20 29h24l-4-7H24l-4 7Z" />
+          <path {...common} d="M24 47V35" />
+          <path {...common} d="M32 47V35" />
+          <path {...common} d="M40 47V35" />
+          <path {...thin} d="M21 35h22" />
+          <path {...thin} d="M32 22v-5" />
+          <path {...thin} d="M32 17h7" />
         </svg>
       );
-    case "palm": // AL · Farol da Ponta Verde
+    case "farol-ponta-verde":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M29 47h6" />
-          <path {...common} d="M30 47V20h4v27" />
-          <path {...common} d="M28 20h8l-2-5h-4l-2 5Z" />
-          <path {...common} d="M27 28h10" />
-          <path {...common} d="M26 35h12" />
-          <path {...common} d="M23 47h18" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <path {...fillSoft} d="M27 48 30 19h4l3 29Z" />
+          <path {...bold} d="M24 49h16" />
+          <path {...common} d="M27 48 30 20h4l3 28" />
+          <path {...common} d="M28 20h8l-2-6h-4l-2 6Z" />
+          <path {...thin} d="M28 30h8" />
+          <path {...thin} d="M27 39h10" />
+          <path {...thin} d="M13 24h10" />
+          <path {...thin} d="M41 24h10" />
+          <path {...thin} d="M17 53c4-2 8-2 12 0 4-2 8-2 12 0" />
         </svg>
       );
-    case "equator": // AP · Marco Zero
+    case "marco-zero":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <circle {...common} cx="32" cy="20" r="5" />
-          <path {...common} d="M32 25v16" />
-          <path {...common} d="M24 41h16" />
-          <path {...common} d="M20 47h24" />
-          <path {...common} d="M23 33h18" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <circle {...fillSoft} cx="32" cy="21" r="8" />
+          <circle {...common} cx="32" cy="21" r="8" />
+          <path {...bold} d="M32 29v18" />
+          <path {...common} d="M22 47h20" />
+          <path {...common} d="M18 53h28" />
+          <path {...thin} d="M21 21h22" />
+          <path {...thin} d="M32 13c3 4 3 12 0 16" />
         </svg>
       );
-    case "victoria-regia": // AM · Teatro Amazonas
+    case "teatro-amazonas":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M20 46h24" />
-          <path {...common} d="M22 46V31h20v15" />
-          <path {...common} d="M24 31h16" />
-          <path {...common} d="M26 31v-4c0-3 3-6 6-6s6 3 6 6v4" />
-          <path {...common} d="M28 46V36" />
-          <path {...common} d="M36 46V36" />
-          <path {...common} d="M31 19h2" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <path {...fillSoft} d="M19 48V31h26v17Z" />
+          <path {...bold} d="M16 49h32" />
+          <path {...common} d="M20 48V31h24v17" />
+          <path {...common} d="M23 31h18" />
+          <path {...common} d="M25 31v-3c0-5 4-9 7-9s7 4 7 9v3" />
+          <path {...thin} d="M28 48V38" />
+          <path {...thin} d="M36 48V38" />
+          <path {...thin} d="M27 25h10" />
+          <path {...thin} d="M32 19v-4" />
         </svg>
       );
-    case "berimbau": // BA · Elevador Lacerda
+    case "elevador-lacerda":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M22 46V17" />
-          <path {...common} d="M22 17h14" />
-          <path {...common} d="M36 17v29" />
-          <path {...common} d="M22 28h14" />
-          <path {...common} d="M22 36h14" />
-          <path {...common} d="M18 46h22" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <path {...fillSoft} d="M20 47V17h9v30ZM35 47V17h9v30Z" />
+          <path {...bold} d="M17 49h30" />
+          <path {...common} d="M21 47V17h8v30" />
+          <path {...common} d="M35 47V17h8v30" />
+          <path {...common} d="M21 22h22" />
+          <path {...common} d="M21 32h22" />
+          <path {...thin} d="M24 27h2" />
+          <path {...thin} d="M38 27h2" />
+          <path {...thin} d="M24 40h2" />
+          <path {...thin} d="M38 40h2" />
         </svg>
       );
-    case "jangada": // CE · Ponte dos Ingleses
+    case "ponte-ingleses":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M15 34h34" />
-          <path {...common} d="M20 34 25 26l5 8 5-8 5 8" />
-          <path {...common} d="M15 41c4-2 8-2 12 0 4-2 8-2 12 0 4-2 8-2 12 0" />
-          <path {...common} d="M17 46h30" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <path {...bold} d="M13 33h38" />
+          <path {...common} d="M18 33v-8" />
+          <path {...common} d="M28 33v-8" />
+          <path {...common} d="M38 33v-8" />
+          <path {...thin} d="M15 25h32" />
+          <path {...common} d="M16 42c4-2 8-2 12 0 4-2 8-2 12 0 4-2 8-2 12 0" />
+          <path {...thin} d="M16 49c4-2 8-2 12 0 4-2 8-2 12 0" />
         </svg>
       );
-    case "brasilia-sky": // DF · Congresso Nacional
+    case "congresso-nacional":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M16 45h32" />
-          <path {...common} d="M26 45V28h4v17" />
-          <path {...common} d="M34 45V28h4v17" />
-          <path {...common} d="M24 28h16" />
-          <path {...common} d="M18 36c3-5 7-7 10-7" />
-          <path {...common} d="M46 36c-3-5-7-7-10-7" />
-          <path {...common} d="M19 37h10" />
-          <path {...common} d="M35 37h10" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <path {...bold} d="M14 48h36" />
+          <path {...fillSoft} d="M26 47V24h5v23ZM34 47V24h5v23Z" />
+          <path {...common} d="M26 47V24h5v23" />
+          <path {...common} d="M34 47V24h5v23" />
+          <path {...common} d="M24 24h17" />
+          <path {...common} d="M15 38c4-6 9-9 15-9" />
+          <path {...common} d="M49 38c-4-6-9-9-15-9" />
+          <path {...thin} d="M17 38h12" />
+          <path {...thin} d="M35 38h12" />
         </svg>
       );
-    case "sea-cliff": // ES · Convento da Penha
+    case "convento-penha":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M18 46c10-2 15-9 19-21 5 2 8 9 9 21" />
-          <path {...common} d="M28 31h8" />
-          <path {...common} d="M30 31v-6h4v6" />
-          <path {...common} d="M24 46h18" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <path {...fillSoft} d="M16 49c9-2 14-8 18-24 7 3 12 11 13 24Z" />
+          <path {...common} d="M15 49c9-2 15-9 19-24 7 3 12 11 13 24" />
+          <path {...bold} d="M23 49h27" />
+          <path {...common} d="M28 34h12" />
+          <path {...common} d="M30 34v-7h6v7" />
+          <path {...thin} d="M33 27v-5" />
+          <path {...thin} d="M31 24h4" />
         </svg>
       );
-    case "ipe": // GO · Monumento às Três Raças
+    case "tres-racas":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M22 46c0-8 4-13 10-20" />
-          <path {...common} d="M42 46c0-8-4-13-10-20" />
-          <path {...common} d="M32 46V24" />
-          <path {...common} d="M25 46h14" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <path {...bold} d="M20 49h24" />
+          <path {...common} d="M32 49V21" />
+          <circle {...fillMedium} cx="32" cy="18" r="3" />
+          <circle {...common} cx="32" cy="18" r="3" />
+          <circle {...common} cx="22" cy="29" r="3" />
+          <circle {...common} cx="42" cy="29" r="3" />
+          <path {...common} d="M22 32c-3 4-4 9-4 15" />
+          <path {...common} d="M42 32c3 4 4 9 4 15" />
+          <path {...common} d="M25 32 32 24l7 8" />
         </svg>
       );
-    case "tiles": // MA · Palácio dos Leões
+    case "palacio-leoes":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M18 46h28" />
-          <path {...common} d="M20 46V28h24v18" />
-          <path {...common} d="M24 28v-5h16v5" />
-          <path {...common} d="M25 35h4" />
-          <path {...common} d="M35 35h4" />
-          <path {...common} d="M30 46V36h4v10" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <path {...fillSoft} d="M17 48V29h30v19Z" />
+          <path {...bold} d="M14 49h36" />
+          <path {...common} d="M18 48V29h28v19" />
+          <path {...common} d="M20 29h24l-3-6H23l-3 6Z" />
+          <path {...thin} d="M25 48V36" />
+          <path {...thin} d="M32 48V36" />
+          <path {...thin} d="M39 48V36" />
+          <path {...thin} d="M24 24c3-3 6-4 9-4 4 0 7 1 10 4" />
         </svg>
       );
-    case "viola": // MT · Arena Pantanal
+    case "arena-pantanal":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M18 42c5-7 9-10 14-10s9 3 14 10" />
-          <path {...common} d="M20 42h24" />
-          <path {...common} d="M24 42v4" />
-          <path {...common} d="M32 42v4" />
-          <path {...common} d="M40 42v4" />
-          <path {...common} d="M23 38h18" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <ellipse {...fillSoft} cx="32" cy="38" rx="21" ry="12" />
+          <ellipse {...bold} cx="32" cy="38" rx="21" ry="12" />
+          <ellipse {...thin} cx="32" cy="38" rx="14" ry="7" />
+          <path {...common} d="M16 38h32" />
+          <path {...thin} d="M21 29v18" />
+          <path {...thin} d="M32 26v24" />
+          <path {...thin} d="M43 29v18" />
         </svg>
       );
-    case "bird": // MS · Obelisco
+    case "obelisco":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M32 18 38 45H26l6-27Z" />
-          <path {...common} d="M23 47h18" />
-          <path {...common} d="M28 34h8" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <path {...fillSoft} d="M32 15 39 48H25Z" />
+          <path {...bold} d="M32 15 39 48H25Z" />
+          <path {...thin} d="M32 23v18" />
+          <path {...common} d="M22 49h20" />
+          <path {...thin} d="M18 54h28" />
         </svg>
       );
-    case "mountains": // MG · Igreja da Pampulha
+    case "pampulha":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M16 45c6-8 13-12 18-12 6 0 10 4 14 12" />
-          <path {...common} d="M24 45V27" />
-          <path {...common} d="M24 27h8" />
-          <path {...common} d="M36 45V34" />
-          <path {...common} d="M20 48h24" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <path {...fillSoft} d="M16 45c6-12 13-17 20-17s10 7 12 17Z" />
+          <path {...bold} d="M15 46c6-12 13-18 21-18s10 7 13 18" />
+          <path {...common} d="M23 46V28" />
+          <path {...common} d="M23 28h9" />
+          <path {...thin} d="M25 24v-5" />
+          <path {...thin} d="M22 21h6" />
+          <path {...common} d="M20 50h28" />
         </svg>
       );
-    case "acai": // PA · Ver-o-Peso
+    case "ver-o-peso":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M19 46h26" />
-          <path {...common} d="M22 46V31h20v15" />
-          <path {...common} d="M22 31h20" />
-          <path {...common} d="M27 31v-5l5-4 5 4v5" />
-          <path {...common} d="M28 38h8" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <path {...fillSoft} d="M18 48V33h28v15Z" />
+          <path {...bold} d="M15 49h34" />
+          <path {...common} d="M20 48V33h24v15" />
+          <path {...common} d="M18 33h28" />
+          <path {...common} d="M27 33v-7l5-5 5 5v7" />
+          <path {...thin} d="M32 21v-5" />
+          <path {...thin} d="M25 40h14" />
         </svg>
       );
-    case "sunrise": // PB · Farol do Cabo Branco
+    case "farol-cabo-branco":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M28 47h8" />
-          <path {...common} d="M30 47V19h4v28" />
-          <path {...common} d="M28 19h8l-2-5h-4l-2 5Z" />
-          <path {...common} d="M27 28h10" />
-          <path {...common} d="M26 35h12" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <path {...fillSoft} d="M30 48V20h5l9 28Z" />
+          <path {...bold} d="M28 49h18" />
+          <path {...common} d="M31 48V20h5l8 28" />
+          <path {...common} d="M24 30h19" />
+          <path {...thin} d="M31 21 20 29" />
+          <path {...thin} d="M16 23h9" />
+          <path {...thin} d="M42 22h8" />
         </svg>
       );
-    case "araucaria": // PR · Jardim Botânico
+    case "jardim-botanico":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M18 46h28" />
-          <path {...common} d="M22 46V33c0-7 4-12 10-12s10 5 10 12v13" />
-          <path {...common} d="M24 33h16" />
-          <path {...common} d="M27 29c2-3 4-5 5-5 2 0 4 2 5 5" />
-          <path {...common} d="M32 24v-4" />
-          <path {...common} d="M26 39h12" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <path {...fillSoft} d="M17 49V34c0-10 6-17 15-17s15 7 15 17v15Z" />
+          <path {...bold} d="M15 50h34" />
+          <path {...common} d="M18 49V34c0-10 6-17 14-17s14 7 14 17v15" />
+          <path {...thin} d="M24 49V33" />
+          <path {...thin} d="M32 49V18" />
+          <path {...thin} d="M40 49V33" />
+          <path {...common} d="M20 34h24" />
+          <path {...thin} d="M24 26h16" />
         </svg>
       );
-    case "umbrella": // PE · Ponte Maurício de Nassau
+    case "ponte-nassau":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M15 36h34" />
-          <path {...common} d="M21 36V26" />
-          <path {...common} d="M43 36V26" />
-          <path {...common} d="M21 26c3-4 6-6 11-6s8 2 11 6" />
-          <path {...common} d="M18 42c5-2 9-2 14 0 5-2 9-2 14 0" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <path {...bold} d="M14 35h36" />
+          <path {...common} d="M18 47V35" />
+          <path {...common} d="M46 47V35" />
+          <path {...common} d="M18 35c3-5 7-8 14-8s11 3 14 8" />
+          <path {...thin} d="M23 47c0-5 4-8 9-8s9 3 9 8" />
+          <path {...common} d="M15 53c5-2 9-2 14 0 5-2 9-2 14 0" />
         </svg>
       );
-    case "rivers": // PI · Ponte Estaiada
+    case "ponte-estaiada":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M32 20v25" />
-          <path {...common} d="M24 45h16" />
-          <path {...common} d="M32 24 24 32" />
-          <path {...common} d="M32 29 22 39" />
-          <path {...common} d="M32 24 40 32" />
-          <path {...common} d="M32 29 42 39" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <path {...bold} d="M32 18v30" />
+          <path {...common} d="M18 48h28" />
+          <path {...thin} d="M32 22 20 34" />
+          <path {...thin} d="M32 27 18 42" />
+          <path {...thin} d="M32 22 44 34" />
+          <path {...thin} d="M32 27 46 42" />
+          <path {...common} d="M16 53c5-2 9-2 14 0 5-2 9-2 14 0" />
         </svg>
       );
-    case "wave-boardwalk": // RJ · Cristo Redentor
+    case "cristo-redentor":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M32 21v20" />
-          <path {...common} d="M20 29h24" />
-          <path {...common} d="M28 21c1-4 2-6 4-6s3 2 4 6" />
-          <path {...common} d="M24 45c5-3 11-3 16 0" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <circle {...fillMedium} cx="32" cy="17" r="4" />
+          <circle {...common} cx="32" cy="17" r="4" />
+          <path {...bold} d="M14 28h36" />
+          <path {...bold} d="M32 21v25" />
+          <path {...common} d="M25 46c3-5 11-5 14 0" />
+          <path {...thin} d="M21 51c7-4 15-4 22 0" />
         </svg>
       );
-    case "sun-dunes": // RN · Forte dos Reis Magos
+    case "forte-reis-magos":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M22 45 16 34l16-9 16 9-6 11" />
-          <path {...common} d="M32 25v20" />
-          <path {...common} d="M24 45h16" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <path {...fillSoft} d="M32 17 39 28l12 3-8 9 1 12-12-5-12 5 1-12-8-9 12-3Z" />
+          <path {...bold} d="M32 17 39 28l12 3-8 9 1 12-12-5-12 5 1-12-8-9 12-3Z" />
+          <path {...thin} d="M27 35h10" />
+          <path {...thin} d="M32 29v12" />
         </svg>
       );
-    case "sunset": // RS · Usina do Gasômetro
+    case "gasometro":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M20 46V25h16v21" />
-          <path {...common} d="M36 46V18h8v28" />
-          <path {...common} d="M20 31h16" />
-          <path {...common} d="M16 46h32" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <path {...fillSoft} d="M18 48V29h18v19ZM38 48V17h8v31Z" />
+          <path {...bold} d="M15 49h34" />
+          <path {...common} d="M19 48V29h17v19" />
+          <path {...common} d="M38 48V17h8v31" />
+          <path {...thin} d="M19 35h17" />
+          <path {...thin} d="M22 41h11" />
+          <path {...thin} d="M42 17v-4" />
         </svg>
       );
-    case "boat": // RO · Três Caixas d'Água
+    case "caixas-agua":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <rect {...common} x="18" y="23" width="6" height="18" rx="2" />
-          <rect {...common} x="29" y="19" width="6" height="22" rx="2" />
-          <rect {...common} x="40" y="23" width="6" height="18" rx="2" />
-          <path {...common} d="M16 45h32" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <rect {...fillSoft} x="15" y="24" width="9" height="20" rx="3" />
+          <rect {...fillSoft} x="28" y="18" width="9" height="26" rx="3" />
+          <rect {...fillSoft} x="41" y="24" width="9" height="20" rx="3" />
+          <rect {...common} x="15" y="24" width="9" height="20" rx="3" />
+          <rect {...common} x="28" y="18" width="9" height="26" rx="3" />
+          <rect {...common} x="41" y="24" width="9" height="20" rx="3" />
+          <path {...bold} d="M13 48h39" />
+          <path {...thin} d="M19 44v4" />
+          <path {...thin} d="M32 44v4" />
+          <path {...thin} d="M45 44v4" />
         </svg>
       );
-    case "tepui": // RR · Portal do Milênio
+    case "portal-milenio":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M20 46V24h24v22" />
-          <path {...common} d="M20 24h24" />
-          <path {...common} d="M27 46V32h10v14" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <path {...fillSoft} d="M19 49V25h26v24H36V34h-8v15Z" />
+          <path {...bold} d="M17 50h30" />
+          <path {...common} d="M20 49V25h24v24" />
+          <path {...common} d="M20 25c4-5 8-7 12-7s8 2 12 7" />
+          <path {...common} d="M28 49V35h8v14" />
+          <path {...thin} d="M24 30h16" />
         </svg>
       );
-    case "bridge-sea": // SC · Ponte Hercílio Luz
+    case "ponte-hercilio-luz":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M16 42h32" />
-          <path {...common} d="M22 42V22" />
-          <path {...common} d="M42 42V22" />
-          <path {...common} d="M22 23c2-3 5-5 10-5s8 2 10 5" />
-          <path {...common} d="M22 28h20" />
-          <path {...common} d="M25 28 23 42" />
-          <path {...common} d="M39 28 41 42" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <path {...bold} d="M13 45h38" />
+          <path {...common} d="M21 45V21" />
+          <path {...common} d="M43 45V21" />
+          <path {...common} d="M21 23c4-5 8-8 11-8s7 3 11 8" />
+          <path {...thin} d="M21 29h22" />
+          <path {...thin} d="M25 29 22 45" />
+          <path {...thin} d="M39 29 42 45" />
+          <path {...thin} d="M29 29 32 45 35 29" />
+          <path {...thin} d="M16 52c5-2 9-2 14 0 5-2 9-2 14 0" />
         </svg>
       );
-    case "skyline": // SP · MASP
+    case "masp":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M18 46h28" />
-          <path {...common} d="M22 46V29" />
-          <path {...common} d="M42 46V29" />
-          <path {...common} d="M22 29h20" />
-          <path {...common} d="M28 29v-7h8v7" />
-          <path {...common} d="M24 38h16" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <rect {...fillSoft} x="18" y="21" width="28" height="12" rx="1" />
+          <rect {...bold} x="18" y="21" width="28" height="12" rx="1" />
+          <path {...bold} d="M21 48V33" />
+          <path {...bold} d="M43 48V33" />
+          <path {...common} d="M16 48h32" />
+          <path {...thin} d="M22 40h20" />
+          <path {...thin} d="M21 18h22" />
         </svg>
       );
-    case "crab": // SE · Arcos da Orla
+    case "arcos-orla":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M18 46h28" />
-          <path {...common} d="M20 46c0-9 5-15 12-15s12 6 12 15" />
-          <path {...common} d="M26 46c0-5 3-8 6-8s6 3 6 8" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <path {...bold} d="M14 49h36" />
+          <path {...common} d="M16 49c0-9 5-15 12-15s12 6 12 15" />
+          <path {...common} d="M25 49c0-5 3-8 7-8s7 3 7 8" />
+          <path {...common} d="M38 49c0-6 3-10 8-10s8 4 8 10" />
+          <path {...thin} d="M18 30h30" />
         </svg>
       );
-    case "sunflower": // TO · Palácio Araguaia
+    case "palacio-araguaia":
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path {...common} d="M18 46h28" />
-          <path {...common} d="M21 46V28h22v18" />
-          <path {...common} d="M26 28v-6h12v6" />
-          <path {...common} d="M32 22v-4" />
-          <path {...common} d="M29 37h6" />
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
+          <path {...fillSoft} d="M17 48V30h30v18Z" />
+          <path {...bold} d="M14 49h36" />
+          <path {...common} d="M18 48V30h28v18" />
+          <path {...common} d="M22 30h20l-5-7H27l-5 7Z" />
+          <path {...thin} d="M25 48V37" />
+          <path {...thin} d="M32 48V37" />
+          <path {...thin} d="M39 48V37" />
+          <path {...thin} d="M32 23v-6" />
         </svg>
       );
     default:
       return (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
+        <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false" style={svgStyle}>
           <circle {...common} cx="32" cy="32" r="12" />
         </svg>
       );
@@ -365,7 +433,7 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
         display: "grid",
         justifyItems: "center",
         alignItems: "start",
-        gap: 5,
+        gap: 6,
         minWidth: 0,
       }}
     >
@@ -373,11 +441,11 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
         style={{
           position: "relative",
           width: "100%",
-          maxWidth: 92,
+          maxWidth: 98,
           aspectRatio: "0.866 / 1",
           display: "grid",
           placeItems: "center",
-          padding: "0.54rem 0.50rem 0.62rem",
+          padding: "0.42rem 0.40rem 0.56rem",
           clipPath: REGULAR_HEX,
           border: `1px solid ${palette.shellBorder}`,
           background: palette.shellBackground,
@@ -420,7 +488,7 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
             left: "50%",
             top: "10%",
             transform: "translateX(-50%)",
-            width: 34,
+            width: 38,
             height: 2.5,
             borderRadius: 999,
             background: item.status === "locked" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.36)",
@@ -430,18 +498,18 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
 
         <div
           style={{
-            width: 46,
-            height: 46,
-            borderRadius: 14,
+            width: "min(62px, 72%)",
+            height: "min(56px, 62%)",
+            borderRadius: 16,
             border: `1px solid ${palette.ringColor}`,
             background: item.status === "locked" ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.10)",
             display: "grid",
             placeItems: "center",
-            marginTop: 1,
+            marginTop: 8,
             boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12)",
           }}
         >
-          <div style={{ width: 40, height: 40, display: "grid", placeItems: "center" }}>
+          <div style={{ width: "min(54px, 88%)", height: "min(54px, 88%)", display: "grid", placeItems: "center" }}>
             <SymbolSvg symbol={meta.symbol} palette={palette} />
           </div>
         </div>
@@ -450,11 +518,11 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
           style={{
             position: "absolute",
             left: "50%",
-            bottom: 13,
+            bottom: 10,
             transform: "translateX(-50%)",
             color: palette.codeColor,
             fontWeight: 950,
-            fontSize: 13,
+            fontSize: 10.5,
             lineHeight: 1,
             letterSpacing: "0.08em",
             textShadow: item.status === "completed" ? "0 1px 0 rgba(255,255,255,0.3)" : "none",
@@ -468,7 +536,7 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
             aria-hidden="true"
             style={{
               position: "absolute",
-              right: 8,
+              right: 9,
               top: 13,
               width: 8,
               height: 8,
@@ -480,7 +548,7 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
         )}
       </div>
 
-      <div style={{ textAlign: "center", minHeight: 26, maxWidth: 100 }}>
+      <div style={{ textAlign: "center", minHeight: 26, maxWidth: 106 }}>
         <div
           style={{
             color: "#fff",
@@ -604,8 +672,8 @@ export default function CapitalMedalGrid({ items }: { items: CapitalChallengeIte
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(76px, 1fr))",
-            gap: "10px 8px",
+            gridTemplateColumns: "repeat(auto-fit, minmax(78px, 1fr))",
+            gap: "12px 8px",
             marginTop: "1.1rem",
           }}
         >

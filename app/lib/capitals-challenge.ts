@@ -17,33 +17,33 @@ export type StravaActivity = {
 
 
 export type CapitalMedalSymbol =
-  | "rubber-tree"
-  | "palm"
-  | "equator"
-  | "victoria-regia"
-  | "berimbau"
-  | "jangada"
-  | "brasilia-sky"
-  | "sea-cliff"
-  | "ipe"
-  | "araucaria"
-  | "tiles"
-  | "viola"
-  | "bird"
-  | "mountains"
-  | "acai"
-  | "sunrise"
-  | "umbrella"
-  | "rivers"
-  | "wave-boardwalk"
-  | "sun-dunes"
-  | "sunset"
-  | "boat"
-  | "tepui"
-  | "bridge-sea"
-  | "skyline"
-  | "crab"
-  | "sunflower";
+  | "palacio-rio-branco"
+  | "farol-ponta-verde"
+  | "marco-zero"
+  | "teatro-amazonas"
+  | "elevador-lacerda"
+  | "ponte-ingleses"
+  | "congresso-nacional"
+  | "convento-penha"
+  | "tres-racas"
+  | "palacio-leoes"
+  | "arena-pantanal"
+  | "obelisco"
+  | "pampulha"
+  | "ver-o-peso"
+  | "farol-cabo-branco"
+  | "jardim-botanico"
+  | "ponte-nassau"
+  | "ponte-estaiada"
+  | "cristo-redentor"
+  | "forte-reis-magos"
+  | "gasometro"
+  | "caixas-agua"
+  | "portal-milenio"
+  | "ponte-hercilio-luz"
+  | "masp"
+  | "arcos-orla"
+  | "palacio-araguaia";
 
 export type CapitalMedalMeta = {
   code: string;
@@ -224,31 +224,31 @@ export function getStatusLabel(status: CapitalStatus) {
 
 
 export const capitalMedalMetaByState: Record<string, CapitalMedalMeta> = {
-  AC: { code: "RBR", motif: "Palácio Rio Branco", symbol: "rubber-tree" },
-  AL: { code: "MCZ", motif: "Farol da Ponta Verde", symbol: "palm" },
-  AP: { code: "MCP", motif: "Marco Zero", symbol: "equator" },
-  AM: { code: "MAO", motif: "Teatro Amazonas", symbol: "victoria-regia" },
-  BA: { code: "SSA", motif: "Elevador Lacerda", symbol: "berimbau" },
-  CE: { code: "FOR", motif: "Ponte dos Ingleses", symbol: "jangada" },
-  DF: { code: "BSB", motif: "Congresso Nacional", symbol: "brasilia-sky" },
-  ES: { code: "VIX", motif: "Convento da Penha", symbol: "sea-cliff" },
-  GO: { code: "GYN", motif: "Monumento às Três Raças", symbol: "ipe" },
-  MA: { code: "SLZ", motif: "Palácio dos Leões", symbol: "tiles" },
-  MT: { code: "CGB", motif: "Arena Pantanal", symbol: "viola" },
-  MS: { code: "CGR", motif: "Obelisco", symbol: "bird" },
-  MG: { code: "BHZ", motif: "Igreja da Pampulha", symbol: "mountains" },
-  PA: { code: "BEL", motif: "Ver-o-Peso", symbol: "acai" },
-  PB: { code: "JPA", motif: "Farol do Cabo Branco", symbol: "sunrise" },
-  PR: { code: "CWB", motif: "Jardim Botânico", symbol: "araucaria" },
-  PE: { code: "REC", motif: "Ponte Maurício de Nassau", symbol: "umbrella" },
-  PI: { code: "THE", motif: "Ponte Estaiada", symbol: "rivers" },
-  RJ: { code: "RIO", motif: "Cristo Redentor", symbol: "wave-boardwalk" },
-  RN: { code: "NAT", motif: "Forte dos Reis Magos", symbol: "sun-dunes" },
-  RS: { code: "POA", motif: "Usina do Gasômetro", symbol: "sunset" },
-  RO: { code: "PVH", motif: "Três Caixas d'Água", symbol: "boat" },
-  RR: { code: "BVB", motif: "Portal do Milênio", symbol: "tepui" },
-  SC: { code: "FLN", motif: "Ponte Hercílio Luz", symbol: "bridge-sea" },
-  SP: { code: "SPO", motif: "MASP", symbol: "skyline" },
-  SE: { code: "AJU", motif: "Arcos da Orla", symbol: "crab" },
-  TO: { code: "PMW", motif: "Palácio Araguaia", symbol: "sunflower" },
+  AC: { code: "RBR", motif: "Palácio Rio Branco", symbol: "palacio-rio-branco" },
+  AL: { code: "MCZ", motif: "Farol da Ponta Verde", symbol: "farol-ponta-verde" },
+  AP: { code: "MCP", motif: "Marco Zero", symbol: "marco-zero" },
+  AM: { code: "MAO", motif: "Teatro Amazonas", symbol: "teatro-amazonas" },
+  BA: { code: "SSA", motif: "Elevador Lacerda", symbol: "elevador-lacerda" },
+  CE: { code: "FOR", motif: "Ponte dos Ingleses", symbol: "ponte-ingleses" },
+  DF: { code: "BSB", motif: "Congresso Nacional", symbol: "congresso-nacional" },
+  ES: { code: "VIX", motif: "Convento da Penha", symbol: "convento-penha" },
+  GO: { code: "GYN", motif: "Monumento às Três Raças", symbol: "tres-racas" },
+  MA: { code: "SLZ", motif: "Palácio dos Leões", symbol: "palacio-leoes" },
+  MT: { code: "CGB", motif: "Arena Pantanal", symbol: "arena-pantanal" },
+  MS: { code: "CGR", motif: "Obelisco", symbol: "obelisco" },
+  MG: { code: "BHZ", motif: "Igreja da Pampulha", symbol: "pampulha" },
+  PA: { code: "BEL", motif: "Ver-o-Peso", symbol: "ver-o-peso" },
+  PB: { code: "JPA", motif: "Farol do Cabo Branco", symbol: "farol-cabo-branco" },
+  PR: { code: "CWB", motif: "Jardim Botânico", symbol: "jardim-botanico" },
+  PE: { code: "REC", motif: "Ponte Maurício de Nassau", symbol: "ponte-nassau" },
+  PI: { code: "THE", motif: "Ponte Estaiada", symbol: "ponte-estaiada" },
+  RJ: { code: "RIO", motif: "Cristo Redentor", symbol: "cristo-redentor" },
+  RN: { code: "NAT", motif: "Forte dos Reis Magos", symbol: "forte-reis-magos" },
+  RS: { code: "POA", motif: "Usina do Gasômetro", symbol: "gasometro" },
+  RO: { code: "PVH", motif: "Três Caixas d'Água", symbol: "caixas-agua" },
+  RR: { code: "BVB", motif: "Portal do Milênio", symbol: "portal-milenio" },
+  SC: { code: "FLN", motif: "Ponte Hercílio Luz", symbol: "ponte-hercilio-luz" },
+  SP: { code: "SPO", motif: "MASP", symbol: "masp" },
+  SE: { code: "AJU", motif: "Arcos da Orla", symbol: "arcos-orla" },
+  TO: { code: "PMW", motif: "Palácio Araguaia", symbol: "palacio-araguaia" },
 };
