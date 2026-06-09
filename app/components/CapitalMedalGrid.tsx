@@ -120,7 +120,7 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
           <div
             style={{
               position: "absolute",
-              inset: -3,
+              inset: -1.5,
               clipPath: REGULAR_HEX,
               background: borderColor,
               zIndex: 0,
