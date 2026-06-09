@@ -113,14 +113,11 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
           maxWidth: 98,
           aspectRatio: "0.866 / 1",
           clipPath: REGULAR_HEX,
-          background: photoSrc
-            ? `${isLocked
-                ? "linear-gradient(rgba(0,0,0,0.55),rgba(0,0,0,0.55))"
-                : item.status === "completed"
-                ? "linear-gradient(180deg,rgba(200,130,0,0.25) 0%,rgba(0,0,0,0.35) 100%)"
-                : "linear-gradient(180deg,rgba(0,0,0,0.05) 0%,rgba(0,0,0,0.35) 100%)"
-              }, url(${photoSrc}) center 20% / cover no-repeat`
-            : palette.shellBackground,
+          backgroundImage: photoSrc ? `url(${photoSrc})` : undefined,
+          backgroundSize: "cover",
+          backgroundPosition: "center 20%",
+          backgroundColor: photoSrc ? "transparent" : undefined,
+          background: photoSrc ? undefined : palette.shellBackground,
           boxShadow: palette.shellShadow,
           isolation: "isolate",
           overflow: "hidden",
