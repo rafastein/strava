@@ -1,5 +1,4 @@
 import type { CSSProperties } from "react";
-import Image from "next/image";
 import {
   capitalMedalMetaByState,
   type CapitalChallengeItem,
@@ -126,20 +125,12 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
             style={{
               position: "absolute",
               inset: 0,
-              opacity: isLocked ? 0.18 : 1,
+              backgroundImage: `url(${photoSrc})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center 20%",
+              opacity: isLocked ? 0.55 : 1,
             }}
-          >
-            <Image
-              src={photoSrc}
-              alt={meta.motif}
-              fill
-              sizes="98px"
-              style={{
-                objectFit: "cover",
-                objectPosition: "center 20%",
-              }}
-            />
-          </div>
+          />
         )}
 
         {/* Overlay de cor por status */}
@@ -148,7 +139,7 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
             position: "absolute",
             inset: 0,
             background: isLocked
-              ? "rgba(0,0,0,0.72)"
+              ? "rgba(0,0,0,0.45)"
               : item.status === "completed"
               ? "linear-gradient(180deg, rgba(200,130,0,0.22) 0%, rgba(0,0,0,0.38) 100%)"
               : "linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.42) 100%)",
