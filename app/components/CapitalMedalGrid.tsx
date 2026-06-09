@@ -15,7 +15,7 @@ type Palette = {
   ringColor: string;
 };
 
-const REGULAR_HEX = "polygon(50% 0%, 93.3% 25%, 93.3% 75%, 50% 100%, 6.7% 75%, 6.7% 25%)";
+const REGULAR_HEX = "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)";
 
 // Mapeia code → arquivo de imagem em /public/capitais/
 const PHOTO_BY_CODE: Record<string, string> = {
@@ -111,7 +111,7 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
           position: "relative",
           width: "100%",
           maxWidth: 98,
-          aspectRatio: "0.866 / 1",
+          aspectRatio: "1 / 0.866",
           clipPath: REGULAR_HEX,
           backgroundImage: photoSrc ? `url(${photoSrc})` : undefined,
           backgroundSize: "cover",
