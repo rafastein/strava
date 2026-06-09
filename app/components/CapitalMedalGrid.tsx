@@ -116,8 +116,7 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
           backgroundImage: photoSrc ? `url(${photoSrc})` : undefined,
           backgroundSize: "cover",
           backgroundPosition: "center 20%",
-          backgroundColor: photoSrc ? "#1a1a1a" : undefined,
-          background: photoSrc ? "#111" : palette.shellBackground,
+          backgroundColor: "#111",
           filter: isLocked
             ? "grayscale(100%) brightness(0.55)"
             : item.status === "completed"
