@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
+import athleteConfig from "../../../data/athlete-config.json";
 import { getValidStravaAccessToken } from "../../../lib/strava-auth";
 import { calcTrainingLoad, type StravaActivityForLoad } from "../../../lib/training-load";
 import { getDynamicAthleteProfile } from "../../../lib/strava-prs";
+
+const DISPLAY_DAYS = 90;
+const WARMUP_DAYS = 30;
+const FETCH_DAYS = DISPLAY_DAYS + WARMUP_DAYS;
 
 // Busca atividades dos últimos N dias
 async function fetchActivities(
@@ -34,6 +39,10 @@ async function fetchActivities(
   return all;
 }
 
+function safeNumber(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
 export async function GET() {
   const token = await getValidStravaAccessToken();
   if (!token) {
@@ -41,17 +50,20 @@ export async function GET() {
   }
 
   try {
-    // Busca atividades dos últimos 120 dias (90 para exibir + 30 de aquecimento do CTL)
+    // Busca atividades dos últimos 120 dias: 90 exibidos + 30 de aquecimento real do CTL/ATL.
     const [activities, profile] = await Promise.all([
-      fetchActivities(token, 120),
+      fetchActivities(token, FETCH_DAYS),
       getDynamicAthleteProfile(token),
     ]);
 
-    // Extrai T-pace do VDOT dinâmico do atleta (limiar = ~83-88% VDOT)
-    // Se não disponível, usa 259s/km (4:19/km) como fallback
+    const hrMax = safeNumber(athleteConfig.hrMax, 185);
+    const hrRest = safeNumber(athleteConfig.hrRest, 50);
+
+    // Extrai T-pace do VDOT dinâmico do atleta (limiar = ~83-88% VDOT).
+    // Se não disponível, usa 259s/km (4:19/km) como fallback.
     let thresholdPaceSecPerKm = 259;
     if (profile.vdot) {
-      // T-pace via fórmula de Daniels: ~88% VDOT → velocidade em m/min → s/km
+      // T-pace via fórmula de Daniels: ~88% VDOT → velocidade em m/min → s/km.
       const targetVO2 = 0.88 * profile.vdot;
       const a = 0.000104;
       const b = 0.182258;
@@ -65,13 +77,36 @@ export async function GET() {
       }
     }
 
-    const days = calcTrainingLoad(activities, thresholdPaceSecPerKm, 90);
+    const runActivities = activities.filter((a) => a.type === "Run");
+    const withHeartRate = runActivities.filter(
+      (a) =>
+        typeof a.average_heartrate === "number" &&
+        Number.isFinite(a.average_heartrate) &&
+        a.average_heartrate > hrRest + 10
+    ).length;
+
+    const days = calcTrainingLoad(activities, {
+      thresholdPaceSecPerKm,
+      hrMax,
+      hrRest,
+      displayDays: DISPLAY_DAYS,
+      warmupDays: WARMUP_DAYS,
+    });
 
     return NextResponse.json({
       days,
       thresholdPaceSecPerKm,
       vdot: profile.vdot,
-      totalActivities: activities.filter((a) => a.type === "Run").length,
+      totalActivities: runActivities.length,
+      hrMax,
+      hrRest,
+      displayedDays: DISPLAY_DAYS,
+      warmupDays: WARMUP_DAYS,
+      fetchDays: FETCH_DAYS,
+      loadMethod: {
+        withHeartRate,
+        fallbackPace: runActivities.length - withHeartRate,
+      },
     });
   } catch (err) {
     console.error("Erro ao calcular training load:", err);

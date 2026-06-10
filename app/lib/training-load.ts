@@ -6,9 +6,13 @@
  * - ATL (Acute Training Load)    = carga recente, média exp. ~7 dias = "fadiga"
  * - TSB (Training Stress Balance) = CTL − ATL = "frescor"
  *
- * Métrica de esforço por treino: TRIMP (Training Impulse)
+ * Métrica de esforço por treino:
  * - Com FC: TRIMP de Banister — tempo × FC normalizada × fator exponencial
  * - Sem FC: rTSS estimado por pace relativo ao limiar (T-pace do VDOT)
+ *
+ * Observação importante:
+ * CTL precisa de uma janela de aquecimento para não começar artificialmente em zero.
+ * Por isso a função calcula dias extras antes da janela exibida e só depois corta a série.
  *
  * Referências:
  *   Banister EW (1991) — Modeling elite athletic performance
@@ -35,65 +39,139 @@ export type DayLoad = {
   ratio: number;  // ATL / CTL
 };
 
+export type TrainingLoadOptions = {
+  thresholdPaceSecPerKm?: number;
+  hrMax?: number;
+  hrRest?: number;
+  displayDays?: number;
+  warmupDays?: number;
+};
+
 // Constantes de tempo (em dias) para decaimento exponencial
 const CTL_DAYS = 42;
 const ATL_DAYS = 7;
 
-const CTL_DECAY = 1 - Math.exp(-1 / CTL_DAYS); // ~0.0233
+const CTL_DECAY = 1 - Math.exp(-1 / CTL_DAYS); // ~0.0235
 const ATL_DECAY = 1 - Math.exp(-1 / ATL_DAYS);  // ~0.1331
 
-// FC máxima e de repouso estimadas para normalização (podem ser sobrescritas)
-const HR_MAX  = 185;
-const HR_REST = 50;
+// Fallbacks usados apenas se o perfil do atleta não informar valores próprios.
+const DEFAULT_THRESHOLD_PACE_SEC_PER_KM = 259;
+const DEFAULT_HR_MAX = 185;
+const DEFAULT_HR_REST = 50;
+const DEFAULT_DISPLAY_DAYS = 90;
+const DEFAULT_WARMUP_DAYS = 30;
+
+function round1(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function dateKey(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function normalizeOptions(options: TrainingLoadOptions = {}) {
+  const thresholdPaceSecPerKm =
+    Number.isFinite(options.thresholdPaceSecPerKm) && options.thresholdPaceSecPerKm! > 0
+      ? options.thresholdPaceSecPerKm!
+      : DEFAULT_THRESHOLD_PACE_SEC_PER_KM;
+
+  const hrMax =
+    Number.isFinite(options.hrMax) && options.hrMax! > 0
+      ? options.hrMax!
+      : DEFAULT_HR_MAX;
+
+  const hrRest =
+    Number.isFinite(options.hrRest) && options.hrRest! >= 0
+      ? options.hrRest!
+      : DEFAULT_HR_REST;
+
+  return {
+    thresholdPaceSecPerKm,
+    hrMax,
+    hrRest,
+    displayDays:
+      Number.isFinite(options.displayDays) && options.displayDays! > 0
+        ? Math.round(options.displayDays!)
+        : DEFAULT_DISPLAY_DAYS,
+    warmupDays:
+      Number.isFinite(options.warmupDays) && options.warmupDays! >= 0
+        ? Math.round(options.warmupDays!)
+        : DEFAULT_WARMUP_DAYS,
+  };
+}
 
 /**
  * Calcula o TRIMP de Banister para uma atividade com FC.
  * TRIMP = duração(min) × ΔHR × 0.64 × e^(1.92 × ΔHR)
  * onde ΔHR = (FC_média - FC_repouso) / (FC_max - FC_repouso)
  */
-function trimpFromHR(movingTimeSec: number, avgHR: number): number {
+function trimpFromHR(
+  movingTimeSec: number,
+  avgHR: number,
+  hrMax: number,
+  hrRest: number
+): number {
+  if (movingTimeSec <= 0) return 0;
+  if (hrMax <= hrRest) return 0;
+
   const durationMin = movingTimeSec / 60;
-  const deltaHR = (avgHR - HR_REST) / (HR_MAX - HR_REST);
-  if (deltaHR <= 0) return 0;
-  // Fórmula de Banister com constante b=1.92 para corrida
+  const rawDeltaHR = (avgHR - hrRest) / (hrMax - hrRest);
+  if (rawDeltaHR <= 0) return 0;
+
+  // Pequena trava para evitar explosões por leitura óptica claramente acima da FC máx configurada.
+  const deltaHR = Math.min(rawDeltaHR, 1.05);
+
+  // Fórmula de Banister com constante b=1.92 para homens.
   return durationMin * deltaHR * 0.64 * Math.exp(1.92 * deltaHR);
 }
 
 /**
  * Calcula rTSS estimado por pace quando não há FC disponível.
- * rTSS = (duração_seg × pace_médio_ms) / (limiar_pace_ms × 3600) × 100
- * onde limiar_pace_ms = T-pace do VDOT do atleta
+ * rTSS = duração_h × IF² × 100
+ * onde IF = pace_limiar / pace_médio.
  *
- * T-pace padrão: 4:19/km = 259 s/km (do Coros — equivalente VDOT ~53)
- * Pode ser sobrescrito via parâmetro.
+ * Este valor é usado apenas como fallback. Ele não é idêntico ao TRIMP de FC,
+ * mas preserva uma estimativa razoável de carga quando o Strava não traz batimentos.
  */
 function rTSSFromPace(
   movingTimeSec: number,
   distanceM: number,
-  thresholdPaceSecPerKm = 259
+  thresholdPaceSecPerKm = DEFAULT_THRESHOLD_PACE_SEC_PER_KM
 ): number {
   if (distanceM <= 0 || movingTimeSec <= 0) return 0;
+
   const paceSecPerKm = (movingTimeSec / distanceM) * 1000;
-  // Intensidade relativa: quão duro em relação ao limiar
+  if (paceSecPerKm <= 0) return 0;
+
   const intensityFactor = thresholdPaceSecPerKm / paceSecPerKm;
-  // rTSS = (duração_h) × IF² × 100
   const durationH = movingTimeSec / 3600;
+
   return durationH * intensityFactor * intensityFactor * 100;
 }
 
 /**
- * Calcula o TRIMP de uma atividade.
- * Usa FC quando disponível, senão cai para rTSS por pace.
+ * Calcula a carga de uma atividade.
+ * Usa TRIMP por FC quando disponível; se não houver FC confiável, usa rTSS por pace.
  */
 export function calcActivityTRIMP(
   activity: StravaActivityForLoad,
-  thresholdPaceSecPerKm = 259
+  options: TrainingLoadOptions = {}
 ): number {
   if (activity.type !== "Run") return 0;
   if (activity.moving_time <= 0) return 0;
 
-  if (activity.average_heartrate && activity.average_heartrate > 80) {
-    return trimpFromHR(activity.moving_time, activity.average_heartrate);
+  const { thresholdPaceSecPerKm, hrMax, hrRest } = normalizeOptions(options);
+
+  if (
+    typeof activity.average_heartrate === "number" &&
+    Number.isFinite(activity.average_heartrate) &&
+    activity.average_heartrate > hrRest + 10
+  ) {
+    return trimpFromHR(activity.moving_time, activity.average_heartrate, hrMax, hrRest);
   }
 
   return rTSSFromPace(
@@ -115,8 +193,10 @@ function classifyStatus(ratio: number): DayLoad["status"] {
 }
 
 /**
- * Dado um array de atividades, retorna a série temporal de ATL/CTL/TSB
- * para cada dia desde a primeira atividade até hoje.
+ * Dado um array de atividades, retorna a série temporal de ATL/CTL/TSB.
+ *
+ * A função calcula displayDays + warmupDays, mas retorna apenas displayDays.
+ * O warmup evita que CTL/ATL comecem zerados exatamente no primeiro dia visível.
  *
  * O algoritmo usa média exponencial recursiva:
  *   CTL_hoje = CTL_ontem + (TRIMP_hoje - CTL_ontem) × k_ctl
@@ -124,53 +204,57 @@ function classifyStatus(ratio: number): DayLoad["status"] {
  */
 export function calcTrainingLoad(
   activities: StravaActivityForLoad[],
-  thresholdPaceSecPerKm = 259,
-  daysBack = 90
+  options: TrainingLoadOptions = {}
 ): DayLoad[] {
-  // Monta mapa date → TRIMP total do dia
-  const trimpByDate: Record<string, number> = {};
+  const normalized = normalizeOptions(options);
+  const { displayDays, warmupDays } = normalized;
+  const totalDays = displayDays + warmupDays;
+
+  // Monta mapa date → carga total do dia
+  const loadByDate: Record<string, number> = {};
 
   for (const act of activities) {
     if (act.type !== "Run") continue;
+    if (!act.start_date_local) continue;
+
     const date = act.start_date_local.slice(0, 10);
-    const trimp = calcActivityTRIMP(act, thresholdPaceSecPerKm);
-    trimpByDate[date] = (trimpByDate[date] ?? 0) + trimp;
+    const load = calcActivityTRIMP(act, normalized);
+    loadByDate[date] = (loadByDate[date] ?? 0) + load;
   }
 
-  // Gera lista de dias a cobrir
   const today = new Date();
   const startDate = new Date(today);
-  startDate.setDate(today.getDate() - daysBack);
+  startDate.setDate(today.getDate() - (totalDays - 1));
 
-  const days: DayLoad[] = [];
+  const allDays: DayLoad[] = [];
   let ctl = 0;
   let atl = 0;
 
   const current = new Date(startDate);
   while (current <= today) {
-    const dateStr = current.toISOString().slice(0, 10);
-    const trimp = trimpByDate[dateStr] ?? 0;
+    const dateStr = dateKey(current);
+    const trimp = loadByDate[dateStr] ?? 0;
 
-    // Atualiza ATL e CTL com média exponencial
+    // Atualiza ATL e CTL com média exponencial.
     atl = atl + (trimp - atl) * ATL_DECAY;
     ctl = ctl + (trimp - ctl) * CTL_DECAY;
 
     const ratio = ctl > 0 ? atl / ctl : 0;
 
-    days.push({
+    allDays.push({
       date: dateStr,
-      trimp: Math.round(trimp * 10) / 10,
-      atl:   Math.round(atl * 10) / 10,
-      ctl:   Math.round(ctl * 10) / 10,
-      tsb:   Math.round((ctl - atl) * 10) / 10,
-      ratio: Math.round(ratio * 100) / 100,
+      trimp: round1(trimp),
+      atl: round1(atl),
+      ctl: round1(ctl),
+      tsb: round1(ctl - atl),
+      ratio: round2(ratio),
       status: classifyStatus(ratio),
     });
 
     current.setDate(current.getDate() + 1);
   }
 
-  return days;
+  return allDays.slice(-displayDays);
 }
 
 /**
@@ -187,9 +271,9 @@ export const STATUS_META: Record<
   DayLoad["status"],
   { label: string; color: string; description: string }
 > = {
-  performance:  { label: "Performance",   color: "#60a5fa", description: "Carga baixa — bom para competir ou testar" },
-  optimal:      { label: "Ótimo",         color: "#10b981", description: "Zona ideal de desenvolvimento" },
-  maintaining:  { label: "Manutenção",    color: "#f5a623", description: "Carga alta — absorvendo treino" },
-  overreaching: { label: "Sobrecarga",    color: "#ef4444", description: "Carga muito alta — risco de overtraining" },
-  recovery:     { label: "Recuperação",   color: "#a78bfa", description: "Carga baixa — destreinando ou descansando" },
+  performance:  { label: "Performance",   color: "#60a5fa", description: "Fadiga baixa em relação à base — bom para competir ou testar" },
+  optimal:      { label: "Ótimo",         color: "#10b981", description: "Carga bem encaixada para desenvolvimento" },
+  maintaining:  { label: "Manutenção",    color: "#f5a623", description: "Carga recente alta — bloco produtivo, mas precisa ser absorvido" },
+  overreaching: { label: "Sobrecarga",    color: "#ef4444", description: "Carga recente muito acima da base — sinal de cautela, não diagnóstico" },
+  recovery:     { label: "Recuperação",   color: "#a78bfa", description: "Carga baixa — descanso, polimento ou pouco estímulo recente" },
 };

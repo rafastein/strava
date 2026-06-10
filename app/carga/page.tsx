@@ -9,6 +9,15 @@ type ApiResponse = {
   thresholdPaceSecPerKm: number;
   vdot: number | null;
   totalActivities: number;
+  hrMax?: number;
+  hrRest?: number;
+  displayedDays?: number;
+  warmupDays?: number;
+  fetchDays?: number;
+  loadMethod?: {
+    withHeartRate: number;
+    fallbackPace: number;
+  };
 };
 
 type RatioZone = {
@@ -108,7 +117,7 @@ function getRatioInsight(day: DayLoad): string {
     return `Sua fadiga recente está ${pct.toFixed(0)}% acima da forma. Isso indica bloco forte: produtivo, mas precisa ser absorvido.`;
   }
 
-  return `Sua fadiga recente está ${pct.toFixed(0)}% acima da forma. É sinal de sobrecarga e pede cautela nos próximos treinos.`;
+  return `Sua fadiga recente está ${pct.toFixed(0)}% acima da forma. É sinal de sobrecarga recente e pede cautela nos próximos treinos.`;
 }
 
 function getTsbInsight(tsb: number): string {
@@ -325,7 +334,7 @@ export default function CargaPage() {
             <h1 className="ba-title">CARGA</h1>
             <p className="ba-muted" style={{ marginTop: 8, maxWidth: 760, lineHeight: 1.55 }}>
               Esta página mostra se o ciclo está construindo forma, acumulando fadiga ou pedindo recuperação.
-              A leitura principal é sempre: forma de longo prazo, fadiga recente e frescor para render.
+              A leitura principal é sempre: forma de longo prazo, fadiga recente e frescor para render — com 30 dias de aquecimento antes da janela visível.
             </p>
           </div>
         </div>
@@ -352,6 +361,7 @@ export default function CargaPage() {
                   <p style={{ marginTop: 6, color: "rgba(255,255,255,0.62)", fontSize: 13, lineHeight: 1.55 }}>
                     Primeiro olhe o <strong>Status</strong> e o <strong>Ratio ATL/CTL</strong>. Depois confira se o gráfico mostra a
                     fadiga subindo mais rápido que a forma. Se o TSB ficar muito negativo por muitos dias, o corpo está pagando a conta.
+                    O ratio é um semáforo de tendência, não um diagnóstico fechado de overtraining.
                   </p>
                 </div>
                 <div
@@ -382,7 +392,7 @@ export default function CargaPage() {
                   Diferença entre forma e fadiga. Positivo costuma indicar pernas mais leves; negativo indica carga acumulada.
                 </HelpCard>
                 <HelpCard title="Ratio ATL/CTL" color={meta.color}>
-                  É o termômetro da página. Abaixo de 1, fadiga menor que a base. Acima de 1, fadiga recente maior que a base.
+                  É o termômetro da página. Abaixo de 1, fadiga menor que a base. Acima de 1, fadiga recente maior que a base. Use como alerta, não como diagnóstico.
                 </HelpCard>
               </div>
             </div>
@@ -470,7 +480,7 @@ export default function CargaPage() {
                 <div>
                   <p className="ba-label">Ratio ATL / CTL</p>
                   <p style={{ marginTop: 4, fontSize: 12, color: "rgba(255,255,255,0.52)", lineHeight: 1.45 }}>
-                    Compara a carga recente com sua base. A faixa verde é a zona mais equilibrada; vermelho é carga recente pesada demais.
+                    Compara a carga recente com sua base. A faixa verde é a zona mais equilibrada; vermelho indica sobrecarga recente e pede leitura junto com sono, dor, FC e sensação.
                   </p>
                 </div>
                 <p style={{ fontFamily: "var(--font-mono)", fontSize: 16, color: meta.color, whiteSpace: "nowrap" }}>
@@ -660,8 +670,11 @@ export default function CargaPage() {
               {[
                 { label: "T-pace (limiar)", value: formatPace(data.thresholdPaceSecPerKm), help: "Usado quando não há FC confiável." },
                 { label: "VDOT dinâmico", value: data.vdot ? data.vdot.toFixed(1) : "—", help: "Base para estimar o limiar atual." },
-                { label: "Atividades analisadas", value: String(data.totalActivities), help: "Corridas puxadas do Strava." },
-                { label: "Método", value: "TRIMP + rTSS", help: "FC quando existe; pace quando não existe." },
+                { label: "Atividades analisadas", value: String(data.totalActivities), help: "Corridas puxadas do Strava, incluindo aquecimento." },
+                { label: "FC usada", value: `${data.hrMax ?? "—"}/${data.hrRest ?? "—"} bpm`, help: "FC máx/repouso do athlete-config.json." },
+                { label: "Aquecimento CTL", value: `${data.warmupDays ?? 30}d`, help: "Calculado antes dos dias exibidos para evitar CTL artificialmente baixo." },
+                { label: "Janela exibida", value: `${data.displayedDays ?? 90}d`, help: "Período visível no gráfico e na análise atual." },
+                { label: "Método", value: "TRIMP + rTSS", help: `FC em ${data.loadMethod?.withHeartRate ?? "—"}; pace em ${data.loadMethod?.fallbackPace ?? "—"}.` },
               ].map((item) => (
                 <div key={item.label} className="ba-card-soft" style={{ padding: "0.7rem 1rem", flex: "1 1 160px" }}>
                   <p className="ba-label">{item.label}</p>
@@ -686,7 +699,7 @@ export default function CargaPage() {
                   TSB indo para perto de zero ou positivo, com ATL caindo antes da prova ou treino-chave.
                 </HelpCard>
                 <HelpCard title="Para não quebrar">
-                  Evitar ratio acima de 1.3 por vários dias e TSB muito negativo sem recuperação planejada.
+                  Evitar ratio acima de 1.3 por vários dias e TSB muito negativo sem recuperação planejada. É alerta de gestão de carga, não diagnóstico médico.
                 </HelpCard>
               </div>
             </div>
