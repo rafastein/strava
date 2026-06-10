@@ -123,19 +123,33 @@ export default function MarathonProjection({
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const chartRef = useRef<Chart | null>(null);
-
-  const weeks = Math.max(1, Math.ceil((RACE_DATE.getTime() - Date.now()) / (7 * 86400000)));
+  const [now, setNow] = useState<number | null>(null);
   const [nLongRuns, setNLongRuns] = useState(5);
   const [pacingFactor, setPacingFactor] = useState(0.92);
 
+  useEffect(() => {
+    const updateNow = () => setNow(Date.now());
+    const initial = window.setTimeout(updateNow, 0);
+    const interval = window.setInterval(updateNow, 60_000);
+    return () => {
+      window.clearTimeout(initial);
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  const weeks = useMemo(() => {
+    if (now === null) return null;
+    return Math.max(1, Math.ceil((RACE_DATE.getTime() - now) / (7 * 86400000)));
+  }, [now]);
+
   const data = useMemo(() => {
-    if (!longRuns || longRuns.length === 0) return null;
+    if (!longRuns || longRuns.length === 0 || weeks === null || now === null) return null;
 
     const t0 = new Date(longRuns[0].date).getTime();
     const days = longRuns.map(
       (longRun) => (new Date(longRun.date).getTime() - t0) / 86400000,
     );
-    const today = (Date.now() - t0) / 86400000;
+    const today = (now - t0) / 86400000;
 
     const paceReg = linReg(
       days,
@@ -155,8 +169,6 @@ export default function MarathonProjection({
 
     const PACE_FLOOR_SEC = 295;
     const futureDays = today + weeks * 7;
-    const projPaceRaw = paceReg.slope * futureDays + paceReg.intercept;
-    const projPaceRegression = Math.max(projPaceRaw, PACE_FLOOR_SEC);
     const projEff = effReg ? effReg.slope * futureDays + effReg.intercept : null;
 
     // Pace médio dos últimos N longões
@@ -191,7 +203,7 @@ export default function MarathonProjection({
       biggestLongRun,
       avgFc,
     };
-  }, [longRuns, weeks, pacingFactor, nLongRuns]);
+  }, [longRuns, weeks, now, pacingFactor, nLongRuns]);
 
   useEffect(() => {
     if (!canvasRef.current || !longRuns || longRuns.length === 0 || !data) return;
@@ -222,7 +234,7 @@ export default function MarathonProjection({
       }
     });
 
-    const datasets: any[] = [
+    const datasets: ChartConfiguration<"line">["data"]["datasets"] = [
       {
         label: "Pace",
         data: longRuns.map((longRun) => longRun.paceSeconds),
@@ -306,7 +318,7 @@ export default function MarathonProjection({
                   return ` ${name}: ${secToStr(seconds)}/km`;
                 }
 
-                if ((ctx.dataset as any).yAxisID === "yPace") {
+                if ((ctx.dataset as { yAxisID?: string }).yAxisID === "yPace") {
                   const seconds = ctx.raw as number;
                   return ` Pace: ${secToStr(seconds)}/km`;
                 }
@@ -368,7 +380,7 @@ export default function MarathonProjection({
     };
   }, [longRuns, races, data]);
 
-  if (!longRuns || longRuns.length === 0 || !data) return null;
+  if (!longRuns || longRuns.length === 0 || !data || weeks === null) return null;
 
   return (
     <section

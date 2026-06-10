@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdminRequest } from "../../lib/admin-auth";
 
 const PATHS = [
   "/treinos-qualidade",
@@ -10,6 +11,9 @@ const PATHS = [
 ];
 
 export async function POST(req: NextRequest) {
+  const unauthorized = requireAdminRequest(req);
+  if (unauthorized) return unauthorized;
+
   const { searchParams } = new URL(req.url);
   const path = searchParams.get("path");
 

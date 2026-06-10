@@ -14,11 +14,21 @@ export type SisrunWeek = {
   weekEnd: string;
   totalPlannedKm: number;
   longRunPlannedKm: number;
+  workoutCount?: number;
 };
 
 export type SisrunParsedData = {
+  athleteName?: string;
+  uploadedAt?: string;
+  fileName?: string;
   rows: SisrunRow[];
   weeks: SisrunWeek[];
+};
+
+export type SisrunDataQualityWarning = {
+  level: "warning" | "error";
+  title: string;
+  description: string;
 };
 
 export type WeeklyComparisonItem = {
@@ -29,7 +39,15 @@ export type WeeklyComparisonItem = {
   adherencePct: number | null;
 };
 
-function getActivityDate(activity: any): Date | null {
+export type StravaActivitySummary = {
+  type?: string;
+  sport_type?: string;
+  distance: number;
+  start_date?: string;
+  start_date_local?: string;
+};
+
+function getActivityDate(activity: StravaActivitySummary): Date | null {
   const raw = activity.start_date_local ?? activity.start_date;
   if (!raw) return null;
 
@@ -178,7 +196,62 @@ export function getTodaySisrunRow(data: SisrunParsedData | null) {
   return data.rows.find((r) => r.date === today) ?? null;
 }
 
-export function getCurrentWeekStravaKm(activities: any[]) {
+export function getSisrunDataQualityWarnings(
+  data: SisrunParsedData | null
+): SisrunDataQualityWarning[] {
+  if (!data) return [];
+
+  const warnings: SisrunDataQualityWarning[] = [];
+  const currentWeek = getCurrentWeek(data);
+
+  if (data.uploadedAt) {
+    const uploadedDate = new Date(data.uploadedAt);
+    if (!Number.isNaN(uploadedDate.getTime())) {
+      const ageDays = Math.floor(
+        (getTodayBrazilDate().getTime() - uploadedDate.getTime()) / 86_400_000
+      );
+
+      if (ageDays > 14) {
+        warnings.push({
+          level: "warning",
+          title: "Planilha possivelmente desatualizada",
+          description: `Último upload registrado há ${ageDays} dias${data.fileName ? ` (${data.fileName})` : ""}.`,
+        });
+      }
+    }
+  }
+
+  if (currentWeek && currentWeek.totalPlannedKm === 0 && (currentWeek.workoutCount ?? 0) === 0) {
+    warnings.push({
+      level: "warning",
+      title: "Semana atual sem treino planejado",
+      description: `${currentWeek.weekStart} até ${currentWeek.weekEnd} aparece com 0 km e 0 treinos. Confirme se é descanso planejado ou ausência de atualização.`,
+    });
+  }
+
+  data.weeks?.forEach((week) => {
+    if (week.totalPlannedKm > 70 || week.longRunPlannedKm > 50) {
+      warnings.push({
+        level: "error",
+        title: "Volume planejado suspeito",
+        description: `${week.weekStart} até ${week.weekEnd} aparece com ${week.totalPlannedKm.toFixed(1)} km planejados e longão de ${week.longRunPlannedKm.toFixed(1)} km.`,
+      });
+    }
+
+    if ((week.workoutCount ?? 0) > 0 && week.totalPlannedKm === 0) {
+      warnings.push({
+        level: "warning",
+        title: "Treino sem distância planejada",
+        description: `${week.weekStart} até ${week.weekEnd} tem ${week.workoutCount} treino(s), mas 0 km planejados.`,
+      });
+    }
+  });
+
+  return warnings;
+}
+
+
+export function getCurrentWeekStravaKm(activities: StravaActivitySummary[]) {
   const currentWeekKey = getWeekStart(getTodayBrazilDate()).toISOString();
 
   return Number(
@@ -195,7 +268,7 @@ export function getCurrentWeekStravaKm(activities: any[]) {
   );
 }
 
-export function getTodayStravaKm(activities: any[]) {
+export function getTodayStravaKm(activities: StravaActivitySummary[]) {
   const todayKey = getDateKey(getTodayBrazilDate());
 
   return Number(
@@ -212,7 +285,7 @@ export function getTodayStravaKm(activities: any[]) {
   );
 }
 
-export function getCurrentWeekLongestRunKm(activities: any[]) {
+export function getCurrentWeekLongestRunKm(activities: StravaActivitySummary[]) {
   const currentWeekKey = getWeekStart(getTodayBrazilDate()).toISOString();
 
   const runs = activities
@@ -240,7 +313,7 @@ function getLastWeekAllowedInCurrentMonth() {
 
 export function buildWeeklyComparison(
   sisrunData: SisrunParsedData | null,
-  activities: any[],
+  activities: StravaActivitySummary[],
   limit = 6
 ): WeeklyComparisonItem[] {
   const map = new Map<string, WeeklyComparisonItem>();

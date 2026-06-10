@@ -4,7 +4,12 @@ import Link from "next/link";
 import Navbar from "../components/Navbar";
 import SisrunUploadForm from "../components/SisrunUploadForm";
 import { getValidStravaAccessToken } from "../lib/strava-auth";
-import { getSisrunData, getCurrentWeek, getTodaySisrunRow } from "../lib/sisrun-utils";
+import {
+  getSisrunData,
+  getCurrentWeek,
+  getTodaySisrunRow,
+  getSisrunDataQualityWarnings,
+} from "../lib/sisrun-utils";
 
 type StravaActivity = {
   id: number;
@@ -88,6 +93,7 @@ export default async function SisrunPage() {
   const sisrunData      = await getSisrunData();
   const currentWeek     = getCurrentWeek(sisrunData);
   const todayRow        = getTodaySisrunRow(sisrunData);
+  const dataWarnings    = getSisrunDataQualityWarnings(sisrunData);
   const weekRows        = getWeekRows(sisrunData, currentWeek);
   const stravaKmByDate  = await getWeekStravaKmByDate(currentWeek);
   const plannedDays     = weekRows.filter((r) => r.plannedDistanceKm > 0).length;
@@ -182,6 +188,25 @@ export default async function SisrunPage() {
             )}
           </div>
         </section>
+
+        {dataWarnings.length > 0 && (
+          <section className="ba-card" style={{ padding: "1.25rem", marginBottom: "1rem", borderColor: "rgba(245,166,35,.28)" }}>
+            <p className="ba-eyebrow">Qualidade dos dados</p>
+            <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.35rem", color: "#fff", marginTop: 4 }}>
+              Atenção ao SisRUN carregado
+            </h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: ".75rem", marginTop: "1rem" }}>
+              {dataWarnings.map((warning, index) => (
+                <div key={`${warning.title}-${index}`} className="ba-card-soft" style={{ padding: "1rem" }}>
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: warning.level === "error" ? "#ff8a8a" : "#f5a623" }}>
+                    {warning.title}
+                  </p>
+                  <p className="ba-muted" style={{ marginTop: ".35rem" }}>{warning.description}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* ── AGENDA ── */}
         <section className="ba-card sisrun-agenda-card">

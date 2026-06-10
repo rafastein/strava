@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { fetchWithAdminRetry } from "../lib/admin-client";
 type Props = {
   path?: string;
   label?: string;
@@ -16,7 +17,7 @@ export default function RevalidateButton({ path, label = "Atualizar dados" }: Pr
       const url = path
         ? `/api/revalidate?path=${encodeURIComponent(path)}`
         : "/api/revalidate";
-      const res = await fetch(url, { method: "POST" });
+      const res = await fetchWithAdminRetry(url, { method: "POST" });
       if (res.ok) {
         setStatus("done");
         // Reload page after short delay to show updated data

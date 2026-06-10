@@ -23,18 +23,26 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-function daysUntil(iso: string): number {
-  return Math.ceil((new Date(iso).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+function daysUntil(iso: string, now: number): number {
+  return Math.ceil((new Date(iso).getTime() - now) / (1000 * 60 * 60 * 24));
 }
 
 type Props = { races: Race[]; dark?: boolean };
 
 export default function NextRaceCard({ races }: Props) {
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState<number | null>(null);
+
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 60_000);
-    return () => clearInterval(t);
+    const updateNow = () => setNow(Date.now());
+    const initial = window.setTimeout(updateNow, 0);
+    const interval = window.setInterval(updateNow, 60_000);
+    return () => {
+      window.clearTimeout(initial);
+      window.clearInterval(interval);
+    };
   }, []);
+
+  if (now === null) return null;
 
   const upcoming = races
     .filter((r) => new Date(r.date).getTime() > now)
@@ -43,7 +51,7 @@ export default function NextRaceCard({ races }: Props) {
   if (upcoming.length === 0) return null;
 
   const next = upcoming[0];
-  const days = daysUntil(next.date);
+  const days = daysUntil(next.date, now);
 
   return (
     <div className="ba-card" style={{ padding: "1.25rem 1.5rem" }}>
@@ -86,7 +94,7 @@ export default function NextRaceCard({ races }: Props) {
               <div key={r.date} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12 }}>
                 <span style={{ color: "rgba(255,255,255,.6)" }}>{r.name}</span>
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "rgba(255,255,255,.3)" }}>
-                  {formatDate(r.date)} · {daysUntil(r.date)}d
+                  {formatDate(r.date)} · {daysUntil(r.date, now)}d
                 </span>
               </div>
             ))}

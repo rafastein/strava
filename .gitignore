@@ -28,3 +28,4 @@ Thumbs.db
 *.zip
 *.tsbuildinfo
 .claude/settings.local.json
+app/.claude/settings.local.json

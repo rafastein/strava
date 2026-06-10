@@ -91,7 +91,10 @@ export default function ZonesAggregate() {
     setProcessing(false);
   }, [period, fetchPeriod]);
 
-  useEffect(() => { fetchPeriod("week"); }, []);
+  useEffect(() => {
+    const initial = window.setTimeout(() => fetchPeriod("week"), 0);
+    return () => window.clearTimeout(initial);
+  }, [fetchPeriod]);
 
   function handleTab(p: Period) {
     setPeriod(p);

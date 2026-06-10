@@ -7,6 +7,11 @@ type Props = {
   className?: string;
 };
 
+type SimpleIcon = {
+  hex: string;
+  path: string;
+};
+
 function normalize(text?: string) {
   return String(text ?? "")
     .toLowerCase()
@@ -18,7 +23,7 @@ function normalize(text?: string) {
 export default function BrandIcon({ brand, className = "h-6 w-6" }: Props) {
   const b = normalize(brand);
 
-  const simpleIcons: Record<string, any> = {
+  const simpleIcons: Record<string, SimpleIcon> = {
     adidas: siAdidas,
     puma: siPuma,
     "new balance": siNewbalance,

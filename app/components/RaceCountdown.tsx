@@ -41,15 +41,21 @@ function Digit({ value, label }: { value: number; label: string }) {
 }
 
 export default function RaceCountdown({ targetDate, raceName }: Props) {
-  const [timeLeft, setTimeLeft] = useState<TimeLeft>(calcTimeLeft(targetDate));
+  const [timeLeft, setTimeLeft] = useState<TimeLeft>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    const interval = setInterval(() => {
+    const update = () => {
+      setMounted(true);
       setTimeLeft(calcTimeLeft(targetDate));
-    }, 1000);
-    return () => clearInterval(interval);
+    };
+
+    const initial = window.setTimeout(update, 0);
+    const interval = window.setInterval(update, 1000);
+    return () => {
+      window.clearTimeout(initial);
+      window.clearInterval(interval);
+    };
   }, [targetDate]);
 
   if (!mounted) {

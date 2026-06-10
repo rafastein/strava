@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
+import { requireAdminRequest } from "../../../lib/admin-auth";
 import * as XLSX from "xlsx";
 import { parseSisrunWorkbook } from "@/app/lib/sisrun-xls-parser";
 
 const SISRUN_KEY = "sisrun:latest";
 
 export async function POST(req: Request) {
+  const unauthorized = requireAdminRequest(req);
+  if (unauthorized) return unauthorized;
+
   try {
     const formData = await req.formData();
     const file = formData.get("file");

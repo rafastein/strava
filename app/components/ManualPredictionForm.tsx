@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { fetchWithAdminRetry } from "../lib/admin-client";
 type Props = {
   initialValue: string;
 };
@@ -14,7 +15,7 @@ export default function ManualPredictionForm({ initialValue }: Props) {
     try {
       setStatus("Salvando...");
 
-      const res = await fetch("/api/predictions", {
+      const res = await fetchWithAdminRetry("/api/predictions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

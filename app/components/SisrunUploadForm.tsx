@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { fetchWithAdminRetry } from "../lib/admin-client";
 export default function SisrunUploadForm() {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState("");
@@ -25,7 +26,7 @@ export default function SisrunUploadForm() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await fetch("/api/sisrun/upload", {
+      const res = await fetchWithAdminRetry("/api/sisrun/upload", {
         method: "POST",
         body: formData,
       });
