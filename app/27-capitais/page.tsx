@@ -6,6 +6,13 @@ import CapitalsBrazilMap from "../components/CapitalsBrazilMap";
 import CapitalMedalGrid from "../components/CapitalMedalGrid";
 import { getValidStravaAccessToken } from "../lib/strava-auth";
 import {
+  getStravaActivities as fetchStravaActivities,
+  getStravaActivityDetail,
+  getStravaActivityPhotos,
+  getStravaAthlete,
+  type StravaAthlete,
+} from "../lib/strava-client";
+import {
   buildCapitalChallenge,
   capitals,
   formatDateBR,
@@ -17,10 +24,7 @@ import {
   type StravaActivity,
 } from "../lib/capitals-challenge";
 
-type Athlete = {
-  firstname?: string | null;
-  profile_medium?: string | null;
-};
+type Athlete = StravaAthlete;
 
 type StravaPhotoMap = Record<number, string>;
 
@@ -169,42 +173,11 @@ function getDateSortValue(capital: CapitalChallengeItem) {
 }
 
 async function getAthlete(accessToken: string): Promise<Athlete | null> {
-  try {
-    const response = await fetch("https://www.strava.com/api/v3/athlete", {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      cache: "no-store",
-    });
-
-    if (!response.ok) return null;
-    return response.json();
-  } catch {
-    return null;
-  }
+  return getStravaAthlete(accessToken);
 }
 
 async function getStravaActivities(accessToken: string) {
-  const allActivities: StravaActivity[] = [];
-
-  for (let page = 1; page <= 8; page++) {
-    const response = await fetch(
-      `https://www.strava.com/api/v3/athlete/activities?per_page=200&page=${page}`,
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        cache: "no-store",
-      },
-    );
-
-    if (!response.ok) break;
-
-    const data = (await response.json()) as StravaActivity[];
-    if (!Array.isArray(data) || data.length === 0) break;
-
-    allActivities.push(...data);
-
-    if (data.length < 200) break;
-  }
-
-  return allActivities;
+  return fetchStravaActivities({ accessToken, maxPages: 8 }) as Promise<StravaActivity[]>;
 }
 
 function extractBestPhotoUrl(value: unknown): string | null {
@@ -260,32 +233,12 @@ async function getActivityCoverPhotos(accessToken: string, activityIds: number[]
   const photoEntries = await Promise.all(
     uniqueIds.map(async (activityId) => {
       try {
-        const photosResponse = await fetch(
-          `https://www.strava.com/api/v3/activities/${activityId}/photos?size=1000`,
-          {
-            headers: { Authorization: `Bearer ${accessToken}` },
-            cache: "no-store",
-          },
-        );
+        const photosPayload = await getStravaActivityPhotos(activityId, 1000, accessToken);
+        const photoUrl = extractBestPhotoUrl(photosPayload);
+        if (photoUrl) return [activityId, photoUrl] as const;
 
-        if (photosResponse.ok) {
-          const photosPayload = await photosResponse.json();
-          const photoUrl = extractBestPhotoUrl(photosPayload);
-          if (photoUrl) return [activityId, photoUrl] as const;
-        }
-
-        const activityResponse = await fetch(
-          `https://www.strava.com/api/v3/activities/${activityId}?include_all_efforts=false`,
-          {
-            headers: { Authorization: `Bearer ${accessToken}` },
-            cache: "no-store",
-          },
-        );
-
-        if (!activityResponse.ok) return null;
-
-        const activityPayload = await activityResponse.json();
-        const fallbackUrl = extractBestPhotoUrl((activityPayload as Record<string, unknown>).photos);
+        const activityPayload = await getStravaActivityDetail(activityId, accessToken);
+        const fallbackUrl = extractBestPhotoUrl((activityPayload as Record<string, unknown> | null)?.photos);
 
         return fallbackUrl ? ([activityId, fallbackUrl] as const) : null;
       } catch {

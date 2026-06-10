@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { SEASON_RACE_MONTHS, type SeasonRaceDef, type SeasonRaceStatus } from "./lib/race-calendar";
 
 type StravaActivity = {
   id: number;
@@ -24,100 +24,6 @@ type AthletePersonalRecords = {
   half:     BestEffort | null;
   marathon: BestEffort | null;
 };
-
-type SeasonRaceStatus = "completed" | "next" | "simulation" | "mission";
-
-type SeasonRaceDef = {
-  number: string;
-  name: string;
-  /** DD/MM */
-  date: string;
-  location: string;
-  distanceKm: number;
-  fixedStatus?: SeasonRaceStatus;
-  /** se true, entra na timeline mesmo sem ser PR */
-  featured: boolean;
-  badge?: string;
-};
-
-type SeasonMonth = { label: string; races: SeasonRaceDef[] };
-
-// ── Provas curadas ────────────────────────────────────────────────────────────
-// featured: true  → sempre na timeline
-// featured: false → só entra se for PR
-const ALL_RACES: SeasonMonth[] = [
-  {
-    label: "JAN",
-    races: [
-      { number: "01", name: "Meia da Chapada",   date: "31/01", location: "Chapada",       distanceKm: 21.1, featured: true },
-    ],
-  },
-  {
-    label: "MAR",
-    races: [
-      { number: "02", name: "Meia de Lisboa", badge: "SuperHalfs",    date: "08/03", location: "Lisboa",        distanceKm: 21.1, featured: true },
-      { number: "03", name: "Meia de Berlim", badge: "SuperHalfs",    date: "29/03", location: "Berlim",        distanceKm: 21.1, featured: true },
-    ],
-  },
-  {
-    label: "ABR",
-    races: [
-      { number: "04", name: "Meia de São Paulo", badge: "27 Capitais", date: "12/04", location: "São Paulo",     distanceKm: 21.1, featured: true },
-    ],
-  },
-  {
-    label: "MAI",
-    races: [
-      { number: "05", name: "100% Você 10K",     date: "01/05", location: "Brasil",        distanceKm: 10,   featured: false },
-      { number: "06", name: "Circuito Serrano",  date: "16/05", location: "Brasil",        distanceKm: 5,    featured: false },
-      { number: "07", name: "Meia de Lima", badge: "MegaFinisher",      date: "24/05", location: "Lima",          distanceKm: 21.1, featured: true },
-    ],
-  },
-  {
-    label: "JUN",
-    races: [
-      { number: "08", name: "Meia do Rio", badge: "27 Capitais",       date: "06/06", location: "Rio de Janeiro",distanceKm: 21.1, featured: true },
-      { number: "09", name: "Praia Grande 10K",  date: "20/06", location: "Praia Grande",  distanceKm: 10,   featured: false },
-      { number: "10", name: "Praia Grande 5K",   date: "21/06", location: "Praia Grande",  distanceKm: 5,    featured: false },
-      { number: "11", name: "Meia de BH", badge: "27 Capitais", date: "28/06", location: "Belo Horizonte",distanceKm: 21.1, featured: true },
-    ],
-  },
-  {
-    label: "JUL",
-    races: [
-      { number: "12", name: "Cats Run",          date: "12/07", location: "Brasil",        distanceKm: 5,    featured: false },
-      { number: "13", name: "Asics Run Challenge",date: "26/07",location: "Brasil",        distanceKm: 15,   featured: true },
-    ],
-  },
-  {
-    label: "AGO",
-    races: [
-      { number: "14", name: "Meia da Chapada",   date: "01/08", location: "Chapada",       distanceKm: 21.1, featured: true },
-      { number: "15", name: "Meia da PF",        date: "09/08", location: "Brasília",      distanceKm: 21.1, featured: true },
-      { number: "16", name: "Track & Field 15K", date: "16/08", location: "Brasília",      distanceKm: 15,   featured: true },
-      { number: "17", name: "Quatro Poderes 10K",date: "22/08", location: "Brasília",      distanceKm: 10,   featured: false },
-      { number: "18", name: "Run The Bridge",    date: "30/08", location: "Brasil",        distanceKm: 30,   fixedStatus: "simulation", featured: true },
-    ],
-  },
-  {
-    label: "SET",
-    races: [
-      { number: "19", name: "Buenos Aires",      date: "20/09", location: "Argentina",     distanceKm: 42,   fixedStatus: "mission",    featured: true },
-    ],
-  },
-  {
-    label: "OUT",
-    races: [
-      { number: "20", name: "Meia de Goiânia", badge: "27 Capitais",   date: "18/10", location: "Goiânia",       distanceKm: 21.1, featured: true },
-    ],
-  },
-  {
-    label: "NOV",
-    races: [
-      { number: "21", name: "Meia de Curitiba", badge: "27 Capitais",  date: "15/11", location: "Curitiba",      distanceKm: 21.1, featured: true },
-    ],
-  },
-];
 
 // Semestres para dividir a timeline
 const S1_MONTHS = new Set(["JAN", "FEB", "MAR", "ABR", "MAI", "JUN"]);
@@ -174,7 +80,7 @@ function resolveEvents(
   const now = Date.now();
   const result: ResolvedEvent[] = [];
 
-  for (const m of ALL_RACES) {
+  for (const m of SEASON_RACE_MONTHS) {
     for (const race of m.races) {
       if (race.fixedStatus) {
         result.push({

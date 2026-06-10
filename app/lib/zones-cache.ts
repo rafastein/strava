@@ -1,6 +1,8 @@
 // lib/zones-cache.ts
 // Cache progressivo de zonas de ritmo no Redis (Upstash)
 
+import { getStravaActivityStreams, getStravaAthleteZones } from "./strava-client";
+
 export type ZoneEntry = {
   zone: number;
   label: string;
@@ -93,21 +95,12 @@ export async function fetchAndCacheZones(
   token: string
 ): Promise<CachedActivityZones | null> {
   try {
-    const [streamsRes, zonesRes] = await Promise.all([
-      fetch(
-        `https://www.strava.com/api/v3/activities/${activityId}/streams?keys=velocity_smooth,time&key_by_type=true&resolution=medium`,
-        { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }
-      ),
-      fetch(
-        "https://www.strava.com/api/v3/athlete/zones",
-        { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }
-      ),
+    const [streams, zonesData] = await Promise.all([
+      getStravaActivityStreams(activityId, ["velocity_smooth", "time"], token),
+      getStravaAthleteZones(token),
     ]);
 
-    if (!streamsRes.ok || !zonesRes.ok) return null;
-
-    const streams = await streamsRes.json();
-    const zonesData = await zonesRes.json();
+    if (!streams || !zonesData) return null;
 
     const velocities: number[] = streams.velocity_smooth?.data ?? [];
     const times: number[]      = streams.time?.data ?? [];

@@ -3,61 +3,28 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import { getValidStravaAccessToken } from "../lib/strava-auth";
+import {
+  getStravaActivities,
+  getStravaActivitySplits,
+  isRunActivity,
+  STRAVA_2024_START_EPOCH,
+  type StravaActivitySummary,
+  type StravaSplit,
+} from "../lib/strava-client";
 import HalfMarathonComparison from "../components/HalfMarathonComparison";
 import type { HalfMarathonEntry } from "../components/HalfMarathonComparison";
 
-type StravaSplit = {
-  distance: number;
-  moving_time: number;
-  split: number;
-  average_heartrate?: number | null;
-};
-
-type StravaActivity = {
-  id: number;
-  name: string;
-  type: string;
-  distance: number;
-  moving_time: number;
-  start_date: string;
-  start_date_local: string;
-};
-
-const STRAVA_AFTER = Math.floor(new Date("2024-01-01T00:00:00Z").getTime() / 1000);
+type StravaActivity = StravaActivitySummary;
 
 async function getActivities(): Promise<StravaActivity[]> {
-  try {
-    const token = await getValidStravaAccessToken();
-    if (!token) return [];
-    const all: StravaActivity[] = [];
-    for (let page = 1; page <= 10; page++) {
-      const res = await fetch(
-        `https://www.strava.com/api/v3/athlete/activities?per_page=200&page=${page}&after=${STRAVA_AFTER}`,
-        { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }
-      );
-      if (!res.ok) break;
-      const batch = (await res.json()) as StravaActivity[];
-      if (!batch.length) break;
-      all.push(...batch);
-      if (batch.length < 200) break;
-    }
-    return all;
-  } catch { return []; }
+  return getStravaActivities({ after: STRAVA_2024_START_EPOCH, maxPages: 10 });
 }
 
 async function getActivitySplits(
   id: number,
-  token: string
+  token: string,
 ): Promise<StravaSplit[]> {
-  try {
-    const res = await fetch(`https://www.strava.com/api/v3/activities/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data?.splits_metric ?? [];
-  } catch { return []; }
+  return getStravaActivitySplits(id, token);
 }
 
 function formatBRDate(iso: string): string {
@@ -80,7 +47,7 @@ export default async function MeiasPage() {
   const activities = await getActivities();
 
   const halvesBase = activities
-    .filter((a) => a.type === "Run" && a.distance >= 20000 && a.distance <= 22500)
+    .filter((a) => isRunActivity(a) && a.distance >= 20000 && a.distance <= 22500)
     .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
 
   const halves: HalfMarathonEntry[] = [];

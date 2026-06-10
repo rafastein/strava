@@ -3,23 +3,18 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import BrandIcon from "../components/BrandIcon";
-import { getValidStravaAccessToken } from "../lib/strava-auth";
+import {
+  getStravaActivities,
+  getStravaAthlete,
+  isRunActivity,
+  STRAVA_2024_START_EPOCH,
+  type StravaActivitySummary,
+} from "../lib/strava-client";
 import { formatBRDate } from "../lib/date-utils";
 import { formatEfficiency, formatLongRunPace } from "../lib/strava-long-runs";
 import ShoeUsageChart from "../components/ShoeUsageChart";
 
-type StravaActivity = {
-  id: number;
-  name: string;
-  type: string;
-  distance: number;
-  moving_time: number;
-  total_elevation_gain: number;
-  average_heartrate?: number | null;
-  gear_id?: string | null;
-  start_date: string;
-  start_date_local: string;
-};
+type StravaActivity = StravaActivitySummary;
 
 type WorkoutType =
   | "regenerativo"
@@ -84,10 +79,6 @@ const GEAR_MAX_KM: Record<string, number> = {
 
 const VALID_GEAR_IDS = new Set(Object.keys(GEAR_NAMES));
 
-const STRAVA_AFTER_EPOCH = Math.floor(
-  new Date("2024-01-01T00:00:00Z").getTime() / 1000
-);
-
 function extractBrand(name: string) {
   const lower = name.toLowerCase();
 
@@ -109,48 +100,12 @@ type StravaGear = {
 };
 
 async function getAthleteGear(): Promise<StravaGear[]> {
-  try {
-    const token = await getValidStravaAccessToken();
-    if (!token) return [];
-    const res = await fetch("https://www.strava.com/api/v3/athlete", {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    });
-    if (!res.ok) return [];
-    const athlete = await res.json();
-    return (athlete.shoes ?? []) as StravaGear[];
-  } catch { return []; }
+  const athlete = await getStravaAthlete();
+  return (athlete?.shoes ?? []) as StravaGear[];
 }
 
 async function getActivities(): Promise<StravaActivity[]> {
-  const token = await getValidStravaAccessToken();
-  if (!token) return [];
-
-  const all: StravaActivity[] = [];
-  const perPage = 200;
-
-  for (let page = 1; page <= 20; page++) {
-    const url = new URL("https://www.strava.com/api/v3/athlete/activities");
-    url.searchParams.set("per_page", String(perPage));
-    url.searchParams.set("page", String(page));
-    url.searchParams.set("after", String(STRAVA_AFTER_EPOCH));
-
-    const res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    });
-
-    if (!res.ok) break;
-
-    const data = (await res.json()) as StravaActivity[];
-    if (!Array.isArray(data) || data.length === 0) break;
-
-    all.push(...data);
-
-    if (data.length < perPage) break;
-  }
-
-  return all;
+  return getStravaActivities({ after: STRAVA_2024_START_EPOCH, maxPages: 20 });
 }
 
 function calculateEfficiency(
@@ -353,7 +308,7 @@ export default async function EquipamentosPage() {
   ]);
 
   const runs = activities.filter(
-    (a) => a.type === "Run" && a.gear_id && allGearIds.has(a.gear_id)
+    (a) => isRunActivity(a) && a.gear_id && allGearIds.has(a.gear_id)
   );
 
   const gearNameLookup = { ...GEAR_NAMES, ...dynamicGearNames };

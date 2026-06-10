@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import athleteConfig from "../../../../data/athlete-config.json";
 import { getValidStravaAccessToken } from "../../../lib/strava-auth";
+import { getStravaActivities } from "../../../lib/strava-client";
 import { calcTrainingLoad, type StravaActivityForLoad } from "../../../lib/training-load";
 import { getDynamicAthleteProfile } from "../../../lib/strava-prs";
 
@@ -15,29 +16,7 @@ async function fetchActivities(
   daysBack: number
 ): Promise<StravaActivityForLoad[]> {
   const after = Math.floor(Date.now() / 1000) - daysBack * 24 * 3600;
-  const all: StravaActivityForLoad[] = [];
-
-  for (let page = 1; page <= 10; page++) {
-    const url = new URL("https://www.strava.com/api/v3/athlete/activities");
-    url.searchParams.set("per_page", "200");
-    url.searchParams.set("page", String(page));
-    url.searchParams.set("after", String(after));
-
-    const res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      cache: "no-store",
-    });
-
-    if (!res.ok) break;
-
-    const batch = (await res.json()) as StravaActivityForLoad[];
-    if (!Array.isArray(batch) || batch.length === 0) break;
-
-    all.push(...batch);
-    if (batch.length < 200) break;
-  }
-
-  return all;
+  return getStravaActivities({ accessToken, after, maxPages: 10 });
 }
 
 function safeNumber(value: unknown, fallback: number): number {

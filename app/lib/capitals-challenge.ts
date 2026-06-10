@@ -8,10 +8,10 @@ export type StravaActivity = {
   moving_time: number;
   elapsed_time?: number;
   start_date_local: string;
-  average_speed: number;
+  average_speed?: number;
   average_heartrate?: number | null;
   total_elevation_gain?: number;
-  start_latlng?: [number, number] | null;
+  start_latlng?: [number, number] | [] | null;
   workout_type?: number | null;
 };
 

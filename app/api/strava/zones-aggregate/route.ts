@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getValidStravaAccessToken } from "../../../lib/strava-auth";
 import {
+  getStravaActivities,
+  getStravaActivityStreams,
+  getStravaAthleteZones,
+  isRunActivity,
+  type StravaActivitySummary,
+} from "../../../lib/strava-client";
+import {
   getMultiCachedZones,
   fetchAndCacheZones,
   aggregateZones,
   type CachedActivityZones,
 } from "../../../lib/zones-cache";
 
-type StravaActivity = {
-  id: number;
-  type: string;
-  start_date_local: string;
-  moving_time: number;
-};
+type StravaActivity = StravaActivitySummary;
 
 function getWeekStart(date: Date): Date {
   const d = new Date(date);
@@ -44,14 +46,13 @@ export async function GET(req: NextRequest) {
     }
 
     const after = Math.floor(afterDate.getTime() / 1000);
-    const activitiesRes = await fetch(
-      `https://www.strava.com/api/v3/athlete/activities?per_page=80&after=${after}`,
-      { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }
-    );
-    if (!activitiesRes.ok) return NextResponse.json({ error: "Erro Strava" }, { status: 502 });
-
-    const activities: StravaActivity[] = await activitiesRes.json();
-    const runs = activities.filter((a) => a.type === "Run");
+    const activities: StravaActivity[] = await getStravaActivities({
+      accessToken: token,
+      after,
+      perPage: 80,
+      maxPages: 1,
+    });
+    const runs = activities.filter(isRunActivity);
 
     if (!runs.length) return NextResponse.json({ zones: [], runCount: 0, period });
 
@@ -73,15 +74,13 @@ export async function GET(req: NextRequest) {
             newlyFetched.push(result);
           } else {
             // Debug: check what the streams and zones endpoints return
-            const [sRes, zRes] = await Promise.all([
-              fetch(`https://www.strava.com/api/v3/activities/${run.id}/streams?keys=velocity_smooth,time&key_by_type=true&resolution=medium`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }),
-              fetch("https://www.strava.com/api/v3/athlete/zones", { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }),
+            const [sData, zData] = await Promise.all([
+              getStravaActivityStreams(run.id, ["velocity_smooth", "time"], token),
+              getStravaAthleteZones(token),
             ]);
-            const sData = await sRes.json();
-            const zData = await zRes.json();
             fetchErrors.push({
               id: run.id,
-              error: `streams_ok=${sRes.ok} velocities=${sData.velocity_smooth?.data?.length ?? 0} zones_ok=${zRes.ok} pace_zones=${zData.pace?.zones?.length ?? 0} zone_keys=${Object.keys(zData).join(",")}`,
+              error: `streams_ok=${Boolean(sData)} velocities=${sData?.velocity_smooth?.data?.length ?? 0} zones_ok=${Boolean(zData)} pace_zones=${zData?.pace?.zones?.length ?? 0} zone_keys=${Object.keys(zData ?? {}).join(",")}`,
             });
           }
         } catch (e) {

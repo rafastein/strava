@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import { getValidStravaAccessToken } from "../lib/strava-auth";
+import { fetchStravaApi, getStravaActivities } from "../lib/strava-client";
 import { getLongRunsFromActivities } from "../lib/strava-long-runs";
 import QualityWorkoutsChart, {
   type QualityWorkout,
@@ -51,51 +52,22 @@ type StravaSplit = {
 const AFTER_EPOCH = Math.floor(new Date("2026-01-01T00:00:00Z").getTime() / 1000);
 
 async function getActivities(): Promise<StravaActivity[]> {
-  try {
-    const token = await getValidStravaAccessToken();
-    if (!token) return [];
-    const all: StravaActivity[] = [];
-    for (let page = 1; page <= 15; page++) {
-      const res = await fetch(
-        `https://www.strava.com/api/v3/athlete/activities?per_page=200&page=${page}&after=${AFTER_EPOCH}`,
-        { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }
-      );
-      if (!res.ok) break;
-      const batch = (await res.json()) as StravaActivity[];
-      if (!batch.length) break;
-      all.push(...batch);
-      if (batch.length < 200) break;
-    }
-    return all;
-  } catch { return []; }
+  return getStravaActivities({ after: AFTER_EPOCH, maxPages: 15 });
 }
 
 async function getDetailedActivity(
   id: number,
   token: string
 ): Promise<StravaActivity | null> {
-  try {
-    const res = await fetch(`https://www.strava.com/api/v3/activities/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch { return null; }
+  return fetchStravaApi<StravaActivity>(`/activities/${id}`, { accessToken: token });
 }
 
 async function getActivityLaps(
   id: number,
   token: string
 ): Promise<StravaLap[]> {
-  try {
-    const res = await fetch(`https://www.strava.com/api/v3/activities/${id}/laps`, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    });
-    if (!res.ok) return [];
-    return await res.json();
-  } catch { return []; }
+  const laps = await fetchStravaApi<StravaLap[]>(`/activities/${id}/laps`, { accessToken: token });
+  return Array.isArray(laps) ? laps : [];
 }
 
 // ── Workout classifier ───────────────────────────────────────────────────────

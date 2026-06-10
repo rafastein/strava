@@ -14,6 +14,7 @@
  * como âncora sem deixar performances antigas distorcer para cima.
  */
 
+import { getStravaRunActivities, type StravaActivitySummary } from "./strava-client";
 import { calculateVdot, aggregateVdot, pacesFromVdot, vo2maxFromVdot } from "./vdot";
 
 export type BestEffort = {
@@ -62,21 +63,12 @@ const WINDOW_FULL_MONTHS    = 6;
 const WINDOW_PARTIAL_MONTHS = 18;
 const PARTIAL_WEIGHT        = 0.5;
 
-type StravaActivity = {
-  id: number;
-  name: string;
-  type: string;
-  sport_type?: string; // campo atual da API v3 (substitui `type`)
-  distance: number;
-  moving_time: number;
-  start_date: string;
-  start_date_local: string;
-};
+type StravaActivity = StravaActivitySummary;
 
 function temporalWeight(startDate: string): number {
-  const ageMs     = Date.now() - new Date(startDate).getTime();
+  const ageMs = Date.now() - new Date(startDate).getTime();
   const ageMonths = ageMs / (1000 * 60 * 60 * 24 * 30.44);
-  if (ageMonths <= WINDOW_FULL_MONTHS)    return 1.0;
+  if (ageMonths <= WINDOW_FULL_MONTHS) return 1.0;
   if (ageMonths <= WINDOW_PARTIAL_MONTHS) return PARTIAL_WEIGHT;
   return 0;
 }
@@ -88,28 +80,7 @@ function ageInMonths(startDate: string): number {
 
 async function fetchRunsLast18Months(accessToken: string): Promise<StravaActivity[]> {
   const after = Math.floor(Date.now() / 1000) - Math.ceil(WINDOW_PARTIAL_MONTHS * 30.44) * 24 * 3600;
-  const all: StravaActivity[] = [];
-
-  for (let page = 1; page <= 15; page++) {
-    const url = new URL("https://www.strava.com/api/v3/athlete/activities");
-    url.searchParams.set("per_page", "200");
-    url.searchParams.set("page",     String(page));
-    url.searchParams.set("after",    String(after));
-
-    const res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      cache: "no-store",
-    });
-    if (!res.ok) break;
-
-    const data = (await res.json()) as StravaActivity[];
-    if (!Array.isArray(data) || data.length === 0) break;
-
-    all.push(...data.filter((a) => a.type === "Run" || a.sport_type === "Run"));
-    if (data.length < 200) break;
-  }
-
-  return all;
+  return getStravaRunActivities({ accessToken, after, maxPages: 15 });
 }
 
 function extractPRsFromRuns(runs: StravaActivity[]): {

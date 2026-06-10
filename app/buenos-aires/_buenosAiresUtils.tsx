@@ -1,31 +1,17 @@
 import path from "path";
 import { formatBRDate, getActivityDate } from "../lib/date-utils";
-import { getValidStravaAccessToken } from "../lib/strava-auth";
+import {
+  getStravaActivities,
+  getStravaActivityDetail as fetchStravaActivityDetail,
+  getStravaAthlete,
+  type StravaActivitySummary,
+  type StravaAthlete,
+} from "../lib/strava-client";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type StravaActivity = {
-  id: number;
-  name: string;
-  distance: number;
-  moving_time: number;
-  elapsed_time: number;
-  total_elevation_gain: number;
-  type: string;
-  start_date_local: string;
-  average_heartrate?: number;
-  max_heartrate?: number;
-};
-
-export type Athlete = {
-  id: number;
-  firstname: string;
-  lastname: string;
-  city: string | null;
-  state: string | null;
-  profile_medium: string | null;
-  profile: string | null;
-};
+export type StravaActivity = StravaActivitySummary;
+export type Athlete = StravaAthlete;
 
 export type ManualPredictions = {
   stravaMarathonPrediction: string;
@@ -41,60 +27,18 @@ export type HrZone = {
 // ─── Data fetchers ────────────────────────────────────────────────────────────
 
 export async function getActivities(): Promise<StravaActivity[]> {
-  try {
-    const accessToken = await getValidStravaAccessToken();
-    if (!accessToken) return [];
-    const res = await fetch(
-      "https://www.strava.com/api/v3/athlete/activities?per_page=80",
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        cache: "no-store",
-      },
-    );
-    if (!res.ok) {
-      console.warn("Falha Strava activities:", res.status);
-      return [];
-    }
-    return res.json();
-  } catch (error) {
-    console.warn("Erro ao buscar atividades:", error);
-    return [];
-  }
+  return getStravaActivities({ perPage: 200, maxPages: 4 });
 }
 
 export async function getActivityDetail(
   id: number,
-  accessToken: string,
+  accessToken?: string,
 ): Promise<StravaActivity | null> {
-  try {
-    const res = await fetch(`https://www.strava.com/api/v3/activities/${id}`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
+  return fetchStravaActivityDetail(id, accessToken);
 }
 
 export async function getAthlete(): Promise<Athlete | null> {
-  try {
-    const accessToken = await getValidStravaAccessToken();
-    if (!accessToken) return null;
-    const res = await fetch("https://www.strava.com/api/v3/athlete", {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      cache: "no-store",
-    });
-    if (!res.ok) {
-      console.warn("Falha Strava athlete:", res.status);
-      return null;
-    }
-    return res.json();
-  } catch (error) {
-    console.warn("Erro ao buscar atleta:", error);
-    return null;
-  }
+  return getStravaAthlete();
 }
 
 export async function getManualPredictions(): Promise<ManualPredictions> {

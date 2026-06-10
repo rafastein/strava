@@ -1,4 +1,4 @@
-import { getValidStravaAccessToken } from "./strava-auth";
+import { getStravaActivityDetail } from "./strava-client";
 
 export type StravaSplitMetric = {
   distance: number;
@@ -34,21 +34,8 @@ export async function getActivitySplits(
   activityId: number
 ): Promise<ActivitySplits | null> {
   try {
-    const token = await getValidStravaAccessToken();
-    if (!token) return null;
-
-    const res = await fetch(
-      `https://www.strava.com/api/v3/activities/${activityId}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store",
-      }
-    );
-
-    if (!res.ok) return null;
-
-    const data = await res.json();
-    const raw: StravaSplitMetric[] = data?.splits_metric ?? [];
+    const data = await getStravaActivityDetail(activityId);
+    const raw = (data?.splits_metric ?? []) as StravaSplitMetric[];
 
     if (!Array.isArray(raw) || raw.length === 0) return null;
 

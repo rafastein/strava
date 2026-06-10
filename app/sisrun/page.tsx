@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import SisrunUploadForm from "../components/SisrunUploadForm";
-import { getValidStravaAccessToken } from "../lib/strava-auth";
+import { getStravaActivities, isRunActivity, type StravaActivitySummary } from "../lib/strava-client";
 import {
   getSisrunData,
   getCurrentWeek,
@@ -11,13 +11,7 @@ import {
   getSisrunDataQualityWarnings,
 } from "../lib/sisrun-utils";
 
-type StravaActivity = {
-  id: number;
-  type: string;
-  distance: number;
-  start_date?: string;
-  start_date_local?: string;
-};
+type StravaActivity = StravaActivitySummary;
 
 type WeekRow = NonNullable<Awaited<ReturnType<typeof getSisrunData>>>["rows"][number];
 
@@ -58,23 +52,17 @@ function getActivityDateKey(activity: StravaActivity) {
 async function getWeekStravaKmByDate(currentWeek: ReturnType<typeof getCurrentWeek>) {
   if (!currentWeek) return new Map<string, number>();
   try {
-    const token = await getValidStravaAccessToken();
-    if (!token) return new Map<string, number>();
     const start = parseBrDateLocal(currentWeek.weekStart);
     const end   = parseBrDateLocal(currentWeek.weekEnd);
     end.setHours(23, 59, 59, 999);
-    const url = new URL("https://www.strava.com/api/v3/athlete/activities");
-    url.searchParams.set("per_page", "100");
-    url.searchParams.set("after",  String(Math.floor(start.getTime() / 1000)));
-    url.searchParams.set("before", String(Math.floor(end.getTime() / 1000)));
-    const res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
+    const activities = await getStravaActivities({
+      after: Math.floor(start.getTime() / 1000),
+      before: Math.floor(end.getTime() / 1000),
+      perPage: 100,
+      maxPages: 1,
     });
-    if (!res.ok) return new Map<string, number>();
-    const activities = (await res.json()) as StravaActivity[];
     const map = new Map<string, number>();
-    activities.filter((a) => a.type === "Run").forEach((a) => {
+    activities.filter(isRunActivity).forEach((a) => {
       const key = getActivityDateKey(a);
       if (!key) return;
       map.set(key, (map.get(key) ?? 0) + a.distance / 1000);

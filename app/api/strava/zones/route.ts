@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getValidStravaAccessToken } from "../../../lib/strava-auth";
+import { getStravaActivityStreams, getStravaAthleteZones } from "../../../lib/strava-client";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -13,19 +14,16 @@ export async function GET(req: NextRequest) {
   if (!token) return NextResponse.json({ error: "Token inválido" }, { status: 401 });
 
   try {
-    const [streamsRes, zonesRes] = await Promise.all([
-      fetch(`https://www.strava.com/api/v3/activities/${id}/streams?keys=velocity_smooth,time&key_by_type=true&resolution=medium`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }),
-      fetch("https://www.strava.com/api/v3/athlete/zones", { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }),
+    const [streams, zonesData] = await Promise.all([
+      getStravaActivityStreams(Number(id), ["velocity_smooth", "time"], token),
+      getStravaAthleteZones(token),
     ]);
 
-    if (!streamsRes.ok) return NextResponse.json({ error: "Erro ao buscar stream" }, { status: 502 });
-
-    const streams   = await streamsRes.json();
-    const zonesData = zonesRes.ok ? await zonesRes.json() : {};
+    if (!streams) return NextResponse.json({ error: "Erro ao buscar stream" }, { status: 502 });
 
     const velocities: number[] = streams.velocity_smooth?.data ?? [];
     const times: number[]      = streams.time?.data ?? [];
-    let paceZones: { min: number; max: number }[] = zonesData.pace?.zones ?? [];
+    let paceZones: { min: number; max: number }[] = zonesData?.pace?.zones ?? [];
 
     if (!paceZones.length) {
       paceZones = [
@@ -64,7 +62,7 @@ export async function GET(req: NextRequest) {
     })).reverse();
 
     return NextResponse.json({ zones: result });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }

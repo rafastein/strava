@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { getValidStravaAccessToken } from "./strava-auth";
+import { getStravaActivities } from "./strava-client";
 import { getActivityDate } from "./date-utils";
 
 export type StravaRaceActivity = {
@@ -16,7 +16,7 @@ export type StravaRaceActivity = {
   start_date: string;
   start_date_local: string;
   timezone?: string;
-  start_latlng?: [number, number] | null;
+  start_latlng?: [number, number] | [] | null;
   location_city?: string | null;
   location_state?: string | null;
   location_country?: string | null;
@@ -433,43 +433,16 @@ function cleanDisplayedRaceName(name: string) {
   return name.replace(/^prova\b[:\s-]*/i, "").trim();
 }
 
-async function fetchAllStravaActivitiesSince2024(
-  token: string
-): Promise<StravaRaceActivity[]> {
-  const allActivities: StravaRaceActivity[] = [];
-
-  for (let page = 1; page <= STRAVA_MAX_PAGES; page++) {
-    const url = new URL("https://www.strava.com/api/v3/athlete/activities");
-    url.searchParams.set("per_page", String(STRAVA_PER_PAGE));
-    url.searchParams.set("page", String(page));
-    url.searchParams.set("after", String(STRAVA_AFTER_EPOCH));
-
-    const res = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-    });
-
-    if (!res.ok) break;
-
-    const pageActivities = (await res.json()) as StravaRaceActivity[];
-
-    if (!Array.isArray(pageActivities) || pageActivities.length === 0) break;
-
-    allActivities.push(...pageActivities);
-
-    if (pageActivities.length < STRAVA_PER_PAGE) break;
-  }
-
-  return allActivities;
+async function fetchAllStravaActivitiesSince2024(): Promise<StravaRaceActivity[]> {
+  return getStravaActivities({
+    after: STRAVA_AFTER_EPOCH,
+    perPage: STRAVA_PER_PAGE,
+    maxPages: STRAVA_MAX_PAGES,
+  });
 }
 
 export async function getRaceLikeActivitiesFromStrava(): Promise<RaceLikeEntry[]> {
-  const token = await getValidStravaAccessToken();
-  if (!token) return [];
-
-  const activities = await fetchAllStravaActivitiesSince2024(token);
+  const activities = await fetchAllStravaActivitiesSince2024();
   const filtered = activities.filter(isRaceLikeActivity);
 
   const enriched = await Promise.all(
@@ -488,7 +461,7 @@ export async function getRaceLikeActivitiesFromStrava(): Promise<RaceLikeEntry[]
         stravaCountry === "Não identificado" ||
         stravaCity === "Não identificado";
 
-      if (needsGeocode && activity.start_latlng) {
+      if (needsGeocode && activity.start_latlng?.length === 2) {
         const [lat, lon] = activity.start_latlng;
         geo = await getOrFetchGeocode(lat, lon);
       }

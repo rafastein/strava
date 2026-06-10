@@ -2,7 +2,14 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import Navbar from "../components/Navbar";
-import { getValidStravaAccessToken } from "../lib/strava-auth";
+import { getStravaActivities, type StravaActivitySummary } from "../lib/strava-client";
+import {
+  BUENOS_AIRES_GOAL_PACE_SEC_PER_KM,
+  BUENOS_AIRES_RACE_DATE,
+  MARATHON_CYCLE_END_DATE,
+  MARATHON_CYCLE_RACES,
+  MARATHON_CYCLE_START_DATE,
+} from "../lib/race-calendar";
 import { formatBRDate, getBRDateKey } from "../lib/date-utils";
 import { getSisrunData } from "../lib/sisrun-utils";
 import {
@@ -15,87 +22,12 @@ import {
 import LongRunCharts from "../components/LongRunCharts";
 import ActivitySplitsChart from "../components/ActivitySplitsChart";
 
-type StravaActivity = {
-  id: number;
-  name: string;
-  distance: number;
-  moving_time: number;
-  elapsed_time?: number;
-  total_elevation_gain: number;
-  average_heartrate?: number;
-  max_heartrate?: number;
-  type: string;
-  start_date: string;
-  start_date_local: string;
-  start_latlng?: [number, number] | [] | null;
-  location_city?: string | null;
-  location_state?: string | null;
-};
+type StravaActivity = StravaActivitySummary;
 
-const STRAVA_AFTER_EPOCH = Math.floor(
-  new Date("2024-01-01T00:00:00Z").getTime() / 1000,
-);
-const BUENOS_AIRES_GOAL_PACE_SEC_PER_KM = 320;
-const BUENOS_AIRES_RACE_DATE = new Date("2026-09-20T12:00:00");
-const MARATHON_CYCLE_START_DATE = new Date("2026-05-18T12:00:00");
-const MARATHON_CYCLE_END_DATE = new Date("2026-09-20T12:00:00");
 const MAX_REASONABLE_LONG_RUN_KM = 45;
 
-type MarathonCycleRace = {
-  dateKey: string;
-  name: string;
-  location: string;
-  distanceKm: number;
-  isGoal?: boolean;
-};
-
-const MARATHON_CYCLE_RACES: MarathonCycleRace[] = [
-  { dateKey: "2026-05-24", name: "Meia de Lima", location: "Lima", distanceKm: 21.1 },
-  { dateKey: "2026-06-06", name: "Meia do Rio", location: "Rio de Janeiro", distanceKm: 21.1 },
-  { dateKey: "2026-06-20", name: "Praia Grande 10K", location: "Praia Grande", distanceKm: 10 },
-  { dateKey: "2026-06-21", name: "Praia Grande 5K", location: "Praia Grande", distanceKm: 5 },
-  { dateKey: "2026-06-28", name: "Meia de BH", location: "Belo Horizonte", distanceKm: 21.1 },
-  { dateKey: "2026-07-26", name: "Asics Run Challenge", location: "Brasil", distanceKm: 15 },
-  { dateKey: "2026-08-01", name: "Meia da Chapada", location: "Chapada", distanceKm: 21.1 },
-  { dateKey: "2026-08-09", name: "Meia da PF", location: "Brasília", distanceKm: 21.1 },
-  { dateKey: "2026-08-16", name: "Track & Field 15K", location: "Brasília", distanceKm: 15 },
-  { dateKey: "2026-08-30", name: "Run The Bridge", location: "Brasil", distanceKm: 30 },
-  { dateKey: "2026-09-20", name: "Buenos Aires", location: "Argentina", distanceKm: 42, isGoal: true },
-];
-
 async function getActivities(): Promise<StravaActivity[]> {
-  try {
-    const accessToken = await getValidStravaAccessToken();
-    if (!accessToken) return [];
-
-    const allActivities: StravaActivity[] = [];
-    const perPage = 200;
-    const maxPages = 20;
-
-    for (let page = 1; page <= maxPages; page++) {
-      const url = new URL("https://www.strava.com/api/v3/athlete/activities");
-      url.searchParams.set("per_page", String(perPage));
-      url.searchParams.set("page", String(page));
-      url.searchParams.set("after", String(STRAVA_AFTER_EPOCH));
-
-      const res = await fetch(url.toString(), {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        cache: "no-store",
-      });
-
-      if (!res.ok) break;
-
-      const pageActivities = (await res.json()) as StravaActivity[];
-      if (!Array.isArray(pageActivities) || pageActivities.length === 0) break;
-
-      allActivities.push(...pageActivities);
-      if (pageActivities.length < perPage) break;
-    }
-
-    return allActivities;
-  } catch {
-    return [];
-  }
+  return getStravaActivities({ maxPages: 20 });
 }
 
 function getEfficiencyBadge(efficiency: number | null): {
