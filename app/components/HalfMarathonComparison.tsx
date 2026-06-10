@@ -8,6 +8,7 @@ export type HalfMarathonEntry = {
   name: string;
   date: string;
   distanceKm: number;
+  splitSource?: "splits_metric" | "laps" | "estimated";
   splits: { km: number; paceSecPerKm: number; heartrate: number | null; distanceM?: number }[];
 };
 
@@ -90,7 +91,6 @@ export default function HalfMarathonComparison({ races }: Props) {
       chartInstance.current = null;
     }
 
-    const isDark = true; // site sempre dark
     const gridColor = "rgba(255,255,255,0.06)";
     const tickColor = "rgba(255,255,255,0.4)";
 
@@ -105,7 +105,7 @@ export default function HalfMarathonComparison({ races }: Props) {
         const color = COLORS[origIdx % COLORS.length];
         return {
           type: "line" as const,
-          label: `${formatShortDate(race.date)} ${cleanRaceName(race.name)}`,
+          label: `${formatShortDate(race.date)} ${cleanRaceName(race.name)}${race.splitSource === "estimated" ? " (média)" : ""}`,
           data: race.splits.map((s) =>
             s.paceSecPerKm > 0 && s.paceSecPerKm < 900
               ? s.paceSecPerKm / 60
@@ -219,7 +219,7 @@ export default function HalfMarathonComparison({ races }: Props) {
                 className="inline-block h-2 w-2 rounded-full"
                 style={{ background: isOn ? color : "rgba(255,255,255,.2)" }}
               />
-              {formatShortDate(race.date)} {cleanRaceName(race.name)}
+              {formatShortDate(race.date)} {cleanRaceName(race.name)}{race.splitSource === "estimated" ? " · média" : ""}
             </button>
           );
         })}
@@ -266,7 +266,9 @@ export default function HalfMarathonComparison({ races }: Props) {
                         className="inline-block h-2.5 w-2.5 rounded-full"
                         style={{ background: color }}
                       />
-                      <span style={{ fontWeight: 500, color: "var(--text)", fontSize: 13 }}>{cleanRaceName(race.name)}</span>
+                      <span style={{ fontWeight: 500, color: "var(--text)", fontSize: 13 }}>
+                        {cleanRaceName(race.name)}{race.splitSource === "estimated" ? " · média" : ""}
+                      </span>
                     </span>
                   </td>
                   <td style={{ padding: "8px 0", textAlign: "right", color: "var(--text-muted)", fontSize: 12 }}>{formatShortDate(race.date)}</td>

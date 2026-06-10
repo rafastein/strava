@@ -5,26 +5,143 @@ import Navbar from "../components/Navbar";
 import { getValidStravaAccessToken } from "../lib/strava-auth";
 import {
   getStravaActivities,
-  getStravaActivitySplits,
+  getStravaActivityDetail,
+  getStravaActivityLaps,
   isRunActivity,
   STRAVA_2024_START_EPOCH,
   type StravaActivitySummary,
+  type StravaLap,
   type StravaSplit,
 } from "../lib/strava-client";
 import HalfMarathonComparison from "../components/HalfMarathonComparison";
 import type { HalfMarathonEntry } from "../components/HalfMarathonComparison";
 
 type StravaActivity = StravaActivitySummary;
+type HalfSplitSource = "splits_metric" | "laps" | "estimated";
+type HalfSplitsResult = {
+  splits: HalfMarathonEntry["splits"];
+  source: HalfSplitSource;
+};
+type StravaActivityDetailWithSplits = StravaActivitySummary & {
+  splits_metric?: StravaSplit[] | null;
+  laps?: StravaLap[] | null;
+};
 
-async function getActivities(): Promise<StravaActivity[]> {
-  return getStravaActivities({ after: STRAVA_2024_START_EPOCH, maxPages: 10 });
+const HALF_MARATHON_MIN_M = 19_500;
+const HALF_MARATHON_MAX_M = 23_500;
+
+async function getActivities(token: string): Promise<StravaActivity[]> {
+  return getStravaActivities({
+    accessToken: token,
+    after: STRAVA_2024_START_EPOCH,
+    maxPages: 10,
+  });
+}
+
+function toComparisonSplit(split: StravaSplit): HalfMarathonEntry["splits"][number] | null {
+  const distanceM = split.distance ?? 0;
+  const movingTimeSec = split.moving_time ?? 0;
+  const paceSecPerKm = distanceM > 0 && movingTimeSec > 0 ? (movingTimeSec / distanceM) * 1000 : 0;
+
+  if (!paceSecPerKm || !Number.isFinite(paceSecPerKm)) return null;
+
+  return {
+    km: split.split,
+    paceSecPerKm: Math.round(paceSecPerKm),
+    heartrate: split.average_heartrate ? Math.round(split.average_heartrate) : null,
+    distanceM: Math.round(distanceM),
+  };
+}
+
+function convertMetricSplits(rawSplits: StravaSplit[] | null | undefined): HalfMarathonEntry["splits"] {
+  if (!Array.isArray(rawSplits)) return [];
+
+  return rawSplits
+    .map(toComparisonSplit)
+    .filter((split): split is HalfMarathonEntry["splits"][number] => Boolean(split));
+}
+
+function convertLaps(laps: StravaLap[] | null | undefined): HalfMarathonEntry["splits"] {
+  if (!Array.isArray(laps)) return [];
+
+  const splits: HalfMarathonEntry["splits"] = [];
+
+  laps.forEach((lap, index) => {
+    const distanceM = lap.distance ?? 0;
+    const movingTimeSec = lap.moving_time ?? 0;
+    const paceSecPerKm = distanceM > 0 && movingTimeSec > 0 ? (movingTimeSec / distanceM) * 1000 : 0;
+
+    if (!paceSecPerKm || !Number.isFinite(paceSecPerKm)) return;
+
+    const roundedDistanceM = Math.round(distanceM);
+
+    // Evita voltas manuais muito curtas/longas entrando como se fossem splits de km.
+    if (roundedDistanceM < 750 || roundedDistanceM > 1_500) return;
+
+    splits.push({
+      km: lap.split ?? index + 1,
+      paceSecPerKm: Math.round(paceSecPerKm),
+      heartrate: lap.average_heartrate ? Math.round(lap.average_heartrate) : null,
+      distanceM: roundedDistanceM,
+    });
+  });
+
+  return splits;
+}
+
+function buildEstimatedSplits(activity: StravaActivity): HalfMarathonEntry["splits"] {
+  const totalDistanceM = activity.distance ?? 0;
+  const totalMovingTimeSec = activity.moving_time ?? 0;
+  const paceSecPerKm = totalDistanceM > 0 && totalMovingTimeSec > 0
+    ? (totalMovingTimeSec / totalDistanceM) * 1000
+    : 0;
+
+  if (!paceSecPerKm || !Number.isFinite(paceSecPerKm)) return [];
+
+  const fullKilometers = Math.floor(totalDistanceM / 1000);
+  const remainderM = Math.round(totalDistanceM - fullKilometers * 1000);
+  const splits: HalfMarathonEntry["splits"] = [];
+
+  for (let km = 1; km <= fullKilometers; km += 1) {
+    splits.push({
+      km,
+      paceSecPerKm: Math.round(paceSecPerKm),
+      heartrate: activity.average_heartrate ? Math.round(activity.average_heartrate) : null,
+      distanceM: 1000,
+    });
+  }
+
+  if (remainderM >= 300) {
+    splits.push({
+      km: fullKilometers + 1,
+      paceSecPerKm: Math.round(paceSecPerKm),
+      heartrate: activity.average_heartrate ? Math.round(activity.average_heartrate) : null,
+      distanceM: remainderM,
+    });
+  }
+
+  return splits;
 }
 
 async function getActivitySplits(
-  id: number,
+  activity: StravaActivity,
   token: string,
-): Promise<StravaSplit[]> {
-  return getStravaActivitySplits(id, token);
+): Promise<HalfSplitsResult> {
+  const detail = await getStravaActivityDetail(
+    activity.id,
+    token,
+  ) as StravaActivityDetailWithSplits | null;
+
+  const metricSplits = convertMetricSplits(detail?.splits_metric);
+  if (metricSplits.length > 0) return { splits: metricSplits, source: "splits_metric" };
+
+  const detailLaps = convertLaps(detail?.laps);
+  if (detailLaps.length > 0) return { splits: detailLaps, source: "laps" };
+
+  const apiLaps = convertLaps(await getStravaActivityLaps(activity.id, token));
+  if (apiLaps.length > 0) return { splits: apiLaps, source: "laps" };
+
+  return { splits: buildEstimatedSplits(activity), source: "estimated" };
 }
 
 function formatBRDate(iso: string): string {
@@ -44,40 +161,31 @@ function cleanRaceName(name: string): string {
 
 export default async function MeiasPage() {
   const token = await getValidStravaAccessToken();
-  const activities = await getActivities();
+  const activities = token ? await getActivities(token) : [];
 
   const halvesBase = activities
-    .filter((a) => isRunActivity(a) && a.distance >= 20000 && a.distance <= 22500)
+    .filter((a) => isRunActivity(a) && a.distance >= HALF_MARATHON_MIN_M && a.distance <= HALF_MARATHON_MAX_M)
     .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
 
   const halves: HalfMarathonEntry[] = [];
 
   if (token) {
     for (const activity of halvesBase) {
-      const rawSplits = await getActivitySplits(activity.id, token);
-      if (rawSplits.length === 0) continue;
-
-      const splits = rawSplits.map((s) => {
-        const distM = s.distance ?? 0;
-        const movSec = s.moving_time ?? 0;
-        const paceSecPerKm = distM > 0 && movSec > 0 ? (movSec / distM) * 1000 : 0;
-        return {
-          km: s.split,
-          paceSecPerKm: Math.round(paceSecPerKm),
-          heartrate: s.average_heartrate ? Math.round(s.average_heartrate) : null,
-          distanceM: Math.round(distM),
-        };
-      });
+      const result = await getActivitySplits(activity, token);
+      if (result.splits.length === 0) continue;
 
       halves.push({
         id: activity.id,
         name: cleanRaceName(activity.name),
         date: activity.start_date_local,
         distanceKm: Number((activity.distance / 1000).toFixed(2)),
-        splits,
+        splits: result.splits,
+        splitSource: result.source,
       });
     }
   }
+
+  const estimatedCount = halves.filter((half) => half.splitSource === "estimated").length;
 
   const validPaces = halves.map((h) => {
     const ps = h.splits.map((s) => s.paceSecPerKm).filter((p) => p > 0 && p < 900);
@@ -93,14 +201,22 @@ export default async function MeiasPage() {
           <div>
             <p className="ba-eyebrow">Análise</p>
             <h1 className="ba-title">Comparativo de Meias</h1>
-            <p className="ba-muted" style={{ marginTop: ".5rem" }}>{halves.length} meias encontradas desde jan/2024 — splits km a km sobrepostos.</p>
+            <p className="ba-muted" style={{ marginTop: ".5rem" }}>
+              {halves.length} meias exibidas desde jan/2024 — {halvesBase.length} candidatas encontradas no Strava.
+            </p>
           </div>
           <Link href="/" className="ba-back">← Voltar ao dashboard</Link>
         </div>
 
         {halves.length === 0 ? (
           <div className="ba-card" style={{ padding: "1.5rem" }}>
-            <p className="ba-muted">Nenhuma meia maratona com splits disponíveis encontrada.</p>
+            <p className="ba-muted">
+              {!token
+                ? "Não consegui autenticar no Strava. Confira as variáveis STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET e STRAVA_REFRESH_TOKEN na Vercel."
+                : halvesBase.length > 0
+                  ? `Encontrei ${halvesBase.length} meia(s) candidata(s), mas o Strava não retornou splits/laps válidos para montar o gráfico.`
+                  : "Nenhuma meia maratona encontrada no intervalo de 19,5 km a 23,5 km desde jan/2024."}
+            </p>
           </div>
         ) : (
           <>
@@ -136,6 +252,14 @@ export default async function MeiasPage() {
                 <p className="ba-muted" style={{ marginTop: ".3rem" }}>1ª vs última prova</p>
               </div>
             </section>
+
+            {estimatedCount > 0 ? (
+              <div className="ba-card ba-section" style={{ padding: "1rem" }}>
+                <p className="ba-muted">
+                  {estimatedCount} prova(s) apareceram com linha estimada por pace médio porque o Strava não retornou splits/laps detalhados.
+                </p>
+              </div>
+            ) : null}
 
             <section>
               <HalfMarathonComparison races={halves} />
