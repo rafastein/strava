@@ -22,6 +22,7 @@
 export type StravaActivityForLoad = {
   id: number;
   type: string;
+  sport_type?: string;
   start_date_local: string;
   moving_time: number;        // segundos
   distance: number;           // metros
@@ -45,6 +46,8 @@ export type TrainingLoadOptions = {
   hrRest?: number;
   displayDays?: number;
   warmupDays?: number;
+  timeZone?: string;
+  today?: string;
 };
 
 // Constantes de tempo (em dias) para decaimento exponencial
@@ -60,6 +63,8 @@ const DEFAULT_HR_MAX = 185;
 const DEFAULT_HR_REST = 50;
 const DEFAULT_DISPLAY_DAYS = 90;
 const DEFAULT_WARMUP_DAYS = 30;
+const DEFAULT_TIME_ZONE = "America/Sao_Paulo";
+const RUN_SPORT_TYPES = new Set(["Run", "TrailRun", "VirtualRun"]);
 
 function round1(value: number): number {
   return Math.round(value * 10) / 10;
@@ -69,8 +74,35 @@ function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-function dateKey(date: Date): string {
+function dateKeyInTimeZone(date: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const year = parts.find((p) => p.type === "year")?.value;
+  const month = parts.find((p) => p.type === "month")?.value;
+  const day = parts.find((p) => p.type === "day")?.value;
+
+  if (!year || !month || !day) {
+    return date.toISOString().slice(0, 10);
+  }
+
+  return `${year}-${month}-${day}`;
+}
+
+function addDaysToDateKey(dateStr: string, days: number): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
+}
+
+function isRunActivity(activity: StravaActivityForLoad): boolean {
+  return RUN_SPORT_TYPES.has(activity.type) ||
+    Boolean(activity.sport_type && RUN_SPORT_TYPES.has(activity.sport_type));
 }
 
 function normalizeOptions(options: TrainingLoadOptions = {}) {
@@ -101,6 +133,8 @@ function normalizeOptions(options: TrainingLoadOptions = {}) {
       Number.isFinite(options.warmupDays) && options.warmupDays! >= 0
         ? Math.round(options.warmupDays!)
         : DEFAULT_WARMUP_DAYS,
+    timeZone: options.timeZone || DEFAULT_TIME_ZONE,
+    today: options.today,
   };
 }
 
@@ -161,7 +195,7 @@ export function calcActivityTRIMP(
   activity: StravaActivityForLoad,
   options: TrainingLoadOptions = {}
 ): number {
-  if (activity.type !== "Run") return 0;
+  if (!isRunActivity(activity)) return 0;
   if (activity.moving_time <= 0) return 0;
 
   const { thresholdPaceSecPerKm, hrMax, hrRest } = normalizeOptions(options);
@@ -207,14 +241,14 @@ export function calcTrainingLoad(
   options: TrainingLoadOptions = {}
 ): DayLoad[] {
   const normalized = normalizeOptions(options);
-  const { displayDays, warmupDays } = normalized;
+  const { displayDays, warmupDays, timeZone } = normalized;
   const totalDays = displayDays + warmupDays;
 
   // Monta mapa date → carga total do dia
   const loadByDate: Record<string, number> = {};
 
   for (const act of activities) {
-    if (act.type !== "Run") continue;
+    if (!isRunActivity(act)) continue;
     if (!act.start_date_local) continue;
 
     const date = act.start_date_local.slice(0, 10);
@@ -222,17 +256,15 @@ export function calcTrainingLoad(
     loadByDate[date] = (loadByDate[date] ?? 0) + load;
   }
 
-  const today = new Date();
-  const startDate = new Date(today);
-  startDate.setDate(today.getDate() - (totalDays - 1));
+  const todayStr = normalized.today || dateKeyInTimeZone(new Date(), timeZone);
+  const startStr = addDaysToDateKey(todayStr, -(totalDays - 1));
 
   const allDays: DayLoad[] = [];
   let ctl = 0;
   let atl = 0;
 
-  const current = new Date(startDate);
-  while (current <= today) {
-    const dateStr = dateKey(current);
+  for (let offset = 0; offset < totalDays; offset++) {
+    const dateStr = addDaysToDateKey(startStr, offset);
     const trimp = loadByDate[dateStr] ?? 0;
 
     // Atualiza ATL e CTL com média exponencial.
@@ -251,7 +283,6 @@ export function calcTrainingLoad(
       status: classifyStatus(ratio),
     });
 
-    current.setDate(current.getDate() + 1);
   }
 
   return allDays.slice(-displayDays);

@@ -14,6 +14,7 @@ type ApiResponse = {
   displayedDays?: number;
   warmupDays?: number;
   fetchDays?: number;
+  timeZone?: string;
   loadMethod?: {
     withHeartRate: number;
     fallbackPace: number;
@@ -121,8 +122,8 @@ function getRatioInsight(day: DayLoad): string {
 }
 
 function getTsbInsight(tsb: number): string {
-  if (tsb >= 10) return "TSB bem positivo: você tende a estar descansado, mas talvez com pouco estímulo recente.";
-  if (tsb >= 0) return "TSB positivo: a fadiga recente está menor que a sua base. Bom sinal para render.";
+  if (tsb >= 10) return "TSB bem positivo: carga recente baixa em relação à base. Bom para prova, mas longo demais pode reduzir estímulo.";
+  if (tsb >= 0) return "TSB positivo: a fadiga recente está menor que a sua base. Bom sinal para chegar mais leve.";
   if (tsb >= -10) return "TSB levemente negativo: normal em semanas de treino. Você está carregado, mas ainda controlado.";
   if (tsb >= -25) return "TSB negativo: fadiga acumulada. Funciona em bloco específico, mas a recuperação vira prioridade.";
   return "TSB muito negativo: sinal forte de peso acumulado. Vale olhar sono, pernas, FC e sensação antes de forçar.";
@@ -180,7 +181,10 @@ export default function CargaPage() {
 
   useEffect(() => {
     fetch("/api/strava/training-load")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Resposta inválida da API de carga");
+        return r.json();
+      })
       .then((d: ApiResponse) => {
         setData(d);
         setLoading(false);
@@ -201,13 +205,17 @@ export default function CargaPage() {
     const atlData = visible.map((d) => d.atl);
     const tsbData = visible.map((d) => d.tsb);
 
+    let cancelled = false;
+
     // Carrega chart.js dinamicamente
     import("chart.js/auto").then(({ default: Chart }) => {
+      if (cancelled || !canvasRef.current) return;
+
       if (chartRef.current) {
         (chartRef.current as { destroy: () => void }).destroy();
       }
 
-      chartRef.current = new Chart(canvasRef.current!, {
+      chartRef.current = new Chart(canvasRef.current, {
         type: "line",
         data: {
           labels,
@@ -312,6 +320,7 @@ export default function CargaPage() {
     });
 
     return () => {
+      cancelled = true;
       if (chartRef.current) {
         (chartRef.current as { destroy: () => void }).destroy();
         chartRef.current = null;
@@ -389,7 +398,7 @@ export default function CargaPage() {
                   Peso dos treinos recentes. Sobe rápido depois de longões e treinos fortes; cai rápido quando você descansa.
                 </HelpCard>
                 <HelpCard title="TSB / Frescor" color="#60a5fa">
-                  Diferença entre forma e fadiga. Positivo costuma indicar pernas mais leves; negativo indica carga acumulada.
+                  Diferença entre forma e fadiga no estado calculado. Se o treino de hoje já entrou, leia como pós-carga registrada.
                 </HelpCard>
                 <HelpCard title="Ratio ATL/CTL" color={meta.color}>
                   É o termômetro da página. Abaixo de 1, fadiga menor que a base. Acima de 1, fadiga recente maior que a base. Use como alerta, não como diagnóstico.
@@ -441,7 +450,7 @@ export default function CargaPage() {
                   {formatSigned(today.tsb)}
                 </p>
                 <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 4, lineHeight: 1.4 }}>
-                  CTL − ATL. Positivo = mais fresco; negativo = mais carregado.
+                  CTL − ATL no estado calculado. Com treino já sincronizado, é leitura pós-carga do dia.
                 </p>
               </div>
             </div>
@@ -465,7 +474,7 @@ export default function CargaPage() {
                 <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                   <Dot color="#f5a623" />
                   <p style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.55 }}>
-                    <strong style={{ color: "rgba(255,255,255,0.78)" }}>TRIMP:</strong> esforço do dia. Dia sem corrida aparece como “—” na tabela.
+                    <strong style={{ color: "rgba(255,255,255,0.78)" }}>Carga:</strong> esforço calculado do dia. Com FC, usa TRIMP; sem FC, usa estimativa por pace. Dia sem corrida aparece como “—” na tabela.
                   </p>
                 </div>
               </div>
@@ -517,13 +526,20 @@ export default function CargaPage() {
                   }}
                 />
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontFamily: "var(--font-mono)", fontSize: 9, color: "rgba(255,255,255,0.25)" }}>
-                <span>0.0</span>
-                <span>0.7</span>
-                <span>0.8</span>
-                <span>1.0</span>
-                <span>1.3</span>
-                <span>1.5+</span>
+              <div style={{ position: "relative", height: 16, marginTop: 5, fontFamily: "var(--font-mono)", fontSize: 9, color: "rgba(255,255,255,0.25)" }}>
+                {([0, 0.7, 0.8, 1.0, 1.3, 1.5] as const).map((tick) => (
+                  <span
+                    key={tick}
+                    style={{
+                      position: "absolute",
+                      left: `${ratioToPercent(tick)}%`,
+                      transform: tick === 0 ? "translateX(0)" : tick === 1.5 ? "translateX(-100%)" : "translateX(-50%)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {tick === 1.5 ? "1.5+" : tick.toFixed(1)}
+                  </span>
+                ))}
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(145px, 1fr))", gap: 8, marginTop: 12 }}>
@@ -546,7 +562,7 @@ export default function CargaPage() {
                 <div>
                   <p className="ba-label">Evolução da carga</p>
                   <p style={{ marginTop: 6, fontSize: 12, color: "rgba(255,255,255,0.52)", lineHeight: 1.45, maxWidth: 760 }}>
-                    Verde deve subir devagar ao longo do ciclo. Laranja sobe rápido depois de semanas fortes. Azul mostra se você está mais fresco ou mais carregado.
+                    Verde deve subir devagar ao longo do ciclo. Laranja sobe rápido depois de semanas fortes. Azul mostra se você está mais fresco ou mais carregado no estado calculado após a carga registrada.
                   </p>
                 </div>
 
@@ -608,16 +624,16 @@ export default function CargaPage() {
                 <div>
                   <p className="ba-label">Últimos 14 dias</p>
                   <p style={{ marginTop: 6, fontSize: 12, color: "rgba(255,255,255,0.5)", lineHeight: 1.45 }}>
-                    Use a tabela para entender por que o status mudou: um TRIMP alto aumenta ATL primeiro; o CTL acompanha mais devagar.
+                    Use a tabela para entender por que o status mudou: uma carga alta aumenta ATL primeiro; o CTL acompanha mais devagar.
                   </p>
                 </div>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8, marginBottom: 14 }}>
-                <HelpCard title="TRIMP" color="#f5a623">Esforço do treino do dia.</HelpCard>
+                <HelpCard title="Carga" color="#f5a623">Esforço calculado do treino do dia.</HelpCard>
                 <HelpCard title="ATL" color="#f5a623">Fadiga recente acumulada.</HelpCard>
                 <HelpCard title="CTL" color="#10b981">Forma/base construída.</HelpCard>
-                <HelpCard title="TSB" color="#60a5fa">Quanto você está fresco ou carregado.</HelpCard>
+                <HelpCard title="TSB" color="#60a5fa">Quanto você está fresco ou carregado no estado calculado.</HelpCard>
                 <HelpCard title="Ratio" color={meta.color}>ATL dividido por CTL.</HelpCard>
               </div>
 
@@ -625,7 +641,7 @@ export default function CargaPage() {
                 <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: 12 }}>
                   <thead>
                     <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-                      {["Data", "TRIMP", "ATL", "CTL", "TSB", "Ratio", "Status"].map((h) => (
+                      {["Data", "Carga", "ATL", "CTL", "TSB", "Ratio", "Status"].map((h) => (
                         <th key={h} style={{ padding: "4px 10px", color: "rgba(255,255,255,0.3)", fontWeight: 500, textAlign: "right", whiteSpace: "nowrap" }}>
                           {h}
                         </th>
@@ -674,7 +690,8 @@ export default function CargaPage() {
                 { label: "FC usada", value: `${data.hrMax ?? "—"}/${data.hrRest ?? "—"} bpm`, help: "FC máx/repouso do athlete-config.json." },
                 { label: "Aquecimento CTL", value: `${data.warmupDays ?? 30}d`, help: "Calculado antes dos dias exibidos para evitar CTL artificialmente baixo." },
                 { label: "Janela exibida", value: `${data.displayedDays ?? 90}d`, help: "Período visível no gráfico e na análise atual." },
-                { label: "Método", value: "TRIMP + rTSS", help: `FC em ${data.loadMethod?.withHeartRate ?? "—"}; pace em ${data.loadMethod?.fallbackPace ?? "—"}.` },
+                { label: "Fuso dos dias", value: data.timeZone?.replace("America/", "") ?? "São_Paulo", help: "Alinha o calendário ao horário local das atividades." },
+                { label: "Método", value: "TRIMP / pace", help: `FC em ${data.loadMethod?.withHeartRate ?? "—"}; fallback por pace em ${data.loadMethod?.fallbackPace ?? "—"}.` },
               ].map((item) => (
                 <div key={item.label} className="ba-card-soft" style={{ padding: "0.7rem 1rem", flex: "1 1 160px" }}>
                   <p className="ba-label">{item.label}</p>

@@ -7,6 +7,7 @@ import { getDynamicAthleteProfile } from "../../../lib/strava-prs";
 const DISPLAY_DAYS = 90;
 const WARMUP_DAYS = 30;
 const FETCH_DAYS = DISPLAY_DAYS + WARMUP_DAYS;
+const TIME_ZONE = "America/Sao_Paulo";
 
 // Busca atividades dos últimos N dias
 async function fetchActivities(
@@ -59,12 +60,13 @@ export async function GET() {
     const hrMax = safeNumber(athleteConfig.hrMax, 185);
     const hrRest = safeNumber(athleteConfig.hrRest, 50);
 
-    // Extrai T-pace do VDOT dinâmico do atleta (limiar = ~83-88% VDOT).
+    // Extrai T-pace do VDOT dinâmico do atleta.
+    // A faixa clássica usada no projeto é ~83–88% do VDOT; aqui usamos o meio da faixa
+    // para o fallback por pace não ficar agressivo demais.
     // Se não disponível, usa 259s/km (4:19/km) como fallback.
     let thresholdPaceSecPerKm = 259;
     if (profile.vdot) {
-      // T-pace via fórmula de Daniels: ~88% VDOT → velocidade em m/min → s/km.
-      const targetVO2 = 0.88 * profile.vdot;
+      const targetVO2 = 0.855 * profile.vdot;
       const a = 0.000104;
       const b = 0.182258;
       const c = -(4.60 + targetVO2);
@@ -77,7 +79,10 @@ export async function GET() {
       }
     }
 
-    const runActivities = activities.filter((a) => a.type === "Run");
+    const runActivities = activities.filter((a) =>
+      ["Run", "TrailRun", "VirtualRun"].includes(a.type) ||
+      Boolean(a.sport_type && ["Run", "TrailRun", "VirtualRun"].includes(a.sport_type))
+    );
     const withHeartRate = runActivities.filter(
       (a) =>
         typeof a.average_heartrate === "number" &&
@@ -91,6 +96,7 @@ export async function GET() {
       hrRest,
       displayDays: DISPLAY_DAYS,
       warmupDays: WARMUP_DAYS,
+      timeZone: TIME_ZONE,
     });
 
     return NextResponse.json({
@@ -103,6 +109,7 @@ export async function GET() {
       displayedDays: DISPLAY_DAYS,
       warmupDays: WARMUP_DAYS,
       fetchDays: FETCH_DAYS,
+      timeZone: TIME_ZONE,
       loadMethod: {
         withHeartRate,
         fallbackPace: runActivities.length - withHeartRate,
