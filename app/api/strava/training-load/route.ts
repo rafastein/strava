@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import athleteConfig from "../../../data/athlete-config.json";
+import athleteConfig from "../../../../data/athlete-config.json";
 import { getValidStravaAccessToken } from "../../../lib/strava-auth";
 import { calcTrainingLoad, type StravaActivityForLoad } from "../../../lib/training-load";
 import { getDynamicAthleteProfile } from "../../../lib/strava-prs";

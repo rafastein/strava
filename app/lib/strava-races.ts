@@ -81,7 +81,7 @@ export const STATE_NAME_BY_UF: Record<string, string> = {
   TO: "Tocantins",
 };
 
-const cachePath = path.join(process.cwd(), "app/data/geocode-cache.json");
+const cachePath = path.join(process.cwd(), "data/geocode-cache.json");
 const isProduction = process.env.NODE_ENV === "production";
 const memoryCache: Record<string, ReverseGeocodeResult | null> = {};
 

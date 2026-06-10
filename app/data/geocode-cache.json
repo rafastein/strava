@@ -1,0 +1,311 @@
+{
+  "38.679,-9.175": {
+    "city": "Almada",
+    "state": null,
+    "country": "Portugal"
+  },
+  "52.515,13.357": {
+    "city": "Berlin",
+    "state": null,
+    "country": "Deutschland"
+  },
+  "-15.797,-47.871": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil"
+  },
+  "-15.786,-47.908": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil"
+  },
+  "-23.585,-46.656": {
+    "city": "São Paulo",
+    "state": "São Paulo",
+    "country": "Brasil"
+  },
+  "-15.796,-47.877": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil"
+  },
+  "-15.634,-47.718": {
+    "city": "Planaltina",
+    "state": "Distrito Federal",
+    "country": "Brasil"
+  },
+  "-15.721,-47.888": {
+    "city": "Lago Norte",
+    "state": "Distrito Federal",
+    "country": "Brasil"
+  },
+  "-22.986,-43.215": {
+    "city": "Rio de Janeiro",
+    "state": "Rio de Janeiro",
+    "country": "Brasil"
+  },
+  "-15.797,-47.875": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil"
+  },
+  "-15.810,-47.918": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1776880414576
+  },
+  "-15.805,-47.889": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1776881005106
+  },
+  "-15.798,-47.902": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1776880111405
+  },
+  "-15.820,-47.834": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1776880111086
+  },
+  "-15.760,-47.831": {
+    "city": "Lago Norte",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1776880468548
+  },
+  "-15.735,-47.898": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1776880414283
+  },
+  "-15.796,-47.878": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1776880912376
+  },
+  "-14.155,-47.643": {
+    "city": "Alto Paraíso de Goiás",
+    "state": "Goiás",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1776880110884
+  },
+  "-23.558,-46.660": {
+    "city": "São Paulo",
+    "state": "São Paulo",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1776880111301
+  },
+  "-19.865,-43.974": {
+    "city": "Belo Horizonte",
+    "state": "Minas Gerais",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1776880223586
+  },
+  "-15.813,-47.838": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1776880414106
+  },
+  "-15.832,-47.892": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1776880414476
+  },
+  "-25.276,-57.628": {
+    "city": "Asunción",
+    "state": "Distrito Capital",
+    "country": "Paraguay / Paraguái",
+    "status": "ok",
+    "cachedAt": 1776880436653
+  },
+  "-15.876,-47.918": {
+    "city": "Lago Sul",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1776880512077
+  },
+  "-15.826,-47.876": {
+    "city": "Lago Sul",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1776880836338
+  },
+  "-15.811,-47.920": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1776880852730
+  },
+  "-15.817,-47.858": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1776880904732
+  },
+  "-15.786,-47.909": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1776880905220
+  },
+  "-15.795,-47.877": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1776880980308
+  },
+  "-15.783,-47.916": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1776881030500
+  },
+  "-15.802,-47.905": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1777030913860
+  },
+  "-15.836,-47.867": {
+    "city": "Lago Sul",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1777030959412
+  },
+  "-15.802,-47.906": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1777031085706
+  },
+  "-15.822,-47.908": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1777031086596
+  },
+  "-15.792,-47.899": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1777031092536
+  },
+  "52.311,4.950": {
+    "city": "Amsterdam",
+    "state": "Noord-Holland",
+    "country": "Nederland",
+    "status": "ok",
+    "cachedAt": 1777031106447
+  },
+  "-15.815,-47.898": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1777031265169
+  },
+  "-15.820,-47.833": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1777031501810
+  },
+  "-7.139,-34.818": {
+    "city": "João Pessoa",
+    "state": "Paraíba",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1777306041400
+  },
+  "-15.837,-47.863": {
+    "city": "Lago Sul",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1778370088902
+  },
+  "-15.798,-47.874": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1778371667305
+  },
+  "-15.792,-47.900": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1778371835925
+  },
+  "-15.771,-47.920": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1779013706264
+  },
+  "-15.793,-47.899": {
+    "city": null,
+    "state": null,
+    "country": null,
+    "status": "rate_limited",
+    "cachedAt": 1779014554688
+  },
+  "-15.791,-47.902": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1779015236902
+  },
+  "-15.734,-47.930": {
+    "city": "Plano Piloto",
+    "state": "Distrito Federal",
+    "country": "Brasil",
+    "status": "ok",
+    "cachedAt": 1779015390930
+  },
+  "-12.122,-77.029": {
+    "city": "Miraflores",
+    "state": "Lima",
+    "country": "Perú",
+    "status": "ok",
+    "cachedAt": 1780362271664
+  }
+}

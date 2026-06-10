@@ -58,7 +58,7 @@ type ReverseGeocodeResult = {
   cachedAt?: number;
 };
 
-const cachePath = path.join(process.cwd(), "app/data/geocode-cache.json");
+const cachePath = path.join(process.cwd(), "data/geocode-cache.json");
 const isProduction = process.env.NODE_ENV === "production";
 const memoryCache: Record<string, ReverseGeocodeResult | null> = {};
 const GEOCODE_RATE_LIMIT_TTL_MS = 1000 * 60 * 30;

@@ -20,9 +20,11 @@ pnpm-debug.log*
 
 # local runtime data
 data/strava-token.json
-app/data/geocode-cache.json
+data/geocode-cache.json
 
 # misc
 .DS_Store
 Thumbs.db
 *.zip
+*.tsbuildinfo
+.claude/settings.local.json
