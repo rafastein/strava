@@ -1,4 +1,9 @@
 import type { SisrunParsedData, SisrunRow, SisrunWorkout } from "./sisrun-utils";
+import {
+  formatPlannedWorkoutDateLabel,
+  getStructuredWorkoutSourceLabel,
+  type StructuredPlannedWorkout,
+} from "./planned-workout";
 
 export type EquipmentWorkoutType =
   | "regenerativo"
@@ -19,10 +24,11 @@ export type EquipmentWorkout = {
   label: string;
   dateLabel: string;
   distanceKm: number | null;
-  source: "sisrun-workout" | "sisrun-row" | "none";
+  source: "structured-workout" | "sisrun-workout" | "sisrun-row" | "none";
   evidence: string[];
   plannedWorkout?: SisrunWorkout | null;
   sisrunRow?: SisrunRow | null;
+  structuredWorkout?: StructuredPlannedWorkout | null;
 };
 
 export type ShoeProfile = {
@@ -384,6 +390,51 @@ export function classifyEquipmentWorkout(
   return "rodagem";
 }
 
+
+export function getEquipmentWorkoutFromStructuredWorkout(
+  structuredWorkout: StructuredPlannedWorkout,
+): EquipmentWorkout {
+  const type = structuredWorkout.type === "descanso" || structuredWorkout.type === "forca" || structuredWorkout.type === "indefinido"
+    ? null
+    : structuredWorkout.type;
+
+  const evidence = [
+    getStructuredWorkoutSourceLabel(structuredWorkout.source),
+    structuredWorkout.title,
+    structuredWorkout.description,
+    structuredWorkout.durationMin ? `${structuredWorkout.durationMin} min` : null,
+    ...structuredWorkout.steps.slice(0, 4).map((step) => {
+      const repeat = step.repeat ? `${step.repeat}x ` : "";
+      const distance = step.distanceKm ? ` ${step.distanceKm.toFixed(2)} km` : "";
+      const intensity = step.intensity ? ` ${step.intensity}` : "";
+      return `${repeat}${step.label}${distance}${intensity}`.trim();
+    }),
+  ].filter((item): item is string => Boolean(item));
+
+  if (!type) {
+    return {
+      status: structuredWorkout.type === "descanso" ? "rest" : "unknown",
+      type: null,
+      label: structuredWorkout.type === "descanso" ? "Descanso" : "Treino estruturado sem corrida",
+      dateLabel: formatPlannedWorkoutDateLabel(structuredWorkout.date),
+      distanceKm: structuredWorkout.distanceKm,
+      source: "structured-workout",
+      evidence,
+      structuredWorkout,
+    };
+  }
+
+  return {
+    status: "planned",
+    type,
+    label: getWorkoutLabel(type),
+    dateLabel: formatPlannedWorkoutDateLabel(structuredWorkout.date),
+    distanceKm: structuredWorkout.distanceKm,
+    source: "structured-workout",
+    evidence,
+    structuredWorkout,
+  };
+}
 
 export function getWorkoutLabel(type: EquipmentWorkoutType | null) {
   if (!type) return "Descanso";

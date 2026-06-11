@@ -13,6 +13,7 @@ const NAV_LINKS = [
   { href: "/corridas-brasil", label: "Brasil" },
   { href: "/corridas-mundo", label: "Mundo" },
   { href: "/equipamentos", label: "Tênis" },
+  { href: "/coros", label: "COROS" },
   { href: "/sisrun", label: "SisRUN" },
   { href: "/carga", label: "Carga" },
 ];

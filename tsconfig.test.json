@@ -30,6 +30,7 @@
     "app/lib/sisrun-xls-parser.ts",
     "app/lib/redis-client.ts",
     "app/lib/manual-predictions.ts",
-    "app/lib/equipment-recommendation.ts"
+    "app/lib/equipment-recommendation.ts",
+    "app/lib/planned-workout.ts"
   ]
 }

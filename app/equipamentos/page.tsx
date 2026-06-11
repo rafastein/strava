@@ -15,9 +15,11 @@ import { formatBRDate } from "../lib/date-utils";
 import { formatEfficiency, formatLongRunPace } from "../lib/strava-long-runs";
 import ShoeUsageChart from "../components/ShoeUsageChart";
 import { getSisrunDataWithSource } from "../lib/sisrun-utils";
+import { getStructuredPlannedWorkout } from "../lib/planned-workout";
 import {
   EQUIPMENT_RECOMMENDATION_TYPES,
   KNOWN_GEAR_NAME_FALLBACKS,
+  getEquipmentWorkoutFromStructuredWorkout,
   getShoeMaxKm,
   getTodayEquipmentWorkout,
   getWorkoutLabel,
@@ -215,14 +217,17 @@ function getRecommendationAlternatives(
 }
 
 export default async function EquipamentosPage() {
-  const [activities, athleteGear, sisrunResult] = await Promise.all([
+  const [activities, athleteGear, sisrunResult, structuredWorkoutResult] = await Promise.all([
     getActivities(),
     getAthleteGear(),
     getSisrunDataWithSource(),
+    getStructuredPlannedWorkout(),
   ]);
 
   const grouped = buildGearSummaries(activities, athleteGear);
-  const todayWorkout = getTodayEquipmentWorkout(sisrunResult.data);
+  const todayWorkout = structuredWorkoutResult.data
+    ? getEquipmentWorkoutFromStructuredWorkout(structuredWorkoutResult.data)
+    : getTodayEquipmentWorkout(sisrunResult.data);
   const todayShoe = pickRecommendedShoeForWorkout(grouped, todayWorkout);
   const todayAlternatives = getRecommendationAlternatives(
     grouped,
@@ -235,10 +240,10 @@ export default async function EquipamentosPage() {
     <main className="ba-page">
         <div className="ba-page-header">
           <div>
-            <p className="ba-eyebrow">Strava + SisRUN</p>
+            <p className="ba-eyebrow">Strava + COROS/treino estruturado + SisRUN</p>
             <h1 className="ba-title">Equipamentos</h1>
             <p className="ba-muted" style={{ marginTop: ".5rem" }}>
-              Quilometragem, desgaste, eficiência e recomendação dinâmica de tênis a partir do treino planejado.
+              Quilometragem, desgaste, eficiência e recomendação dinâmica de tênis a partir do treino estruturado, com SisRUN como fallback.
             </p>
           </div>
           <Link href="/" className="ba-back">← Voltar ao dashboard</Link>
@@ -248,7 +253,7 @@ export default async function EquipamentosPage() {
           workout={todayWorkout}
           shoe={todayShoe}
           alternatives={todayAlternatives}
-          sisrunSource={sisrunResult.sourceLabel}
+          workoutSource={structuredWorkoutResult.data ? structuredWorkoutResult.data.source.toUpperCase() : sisrunResult.sourceLabel}
         />
 
         {grouped.length === 0 ? (
@@ -414,12 +419,12 @@ function TodayShoeCard({
   workout,
   shoe,
   alternatives,
-  sisrunSource,
+  workoutSource,
 }: {
   workout: EquipmentWorkout;
   shoe: ShoeRecommendation | null;
   alternatives: GearSummary[];
-  sisrunSource: string;
+  workoutSource: string;
 }) {
   const isRest = workout.status === "rest";
   const isUnknown = workout.status === "unknown";
@@ -436,12 +441,14 @@ function TodayShoeCard({
             {isRest
               ? "Nenhum tênis recomendado hoje. Melhor preservar o rodízio."
               : isUnknown
-                ? "Não encontrei treino do dia no SisRUN carregado."
+                ? "Não encontrei treino estruturado nem treino do dia no SisRUN carregado."
                 : `${
                     typeof workout.distanceKm === "number" && workout.distanceKm > 0
                       ? `${workout.distanceKm.toFixed(1)} km planejados`
-                      : "Distância não informada no SisRUN"
-                  } · fonte: ${sisrunSource}`}
+                      : workout.source === "structured-workout"
+                        ? "Distância não informada no treino estruturado"
+                        : "Distância não informada no SisRUN"
+                  } · fonte: ${workoutSource}`}
           </p>
 
           {workout.evidence.length > 0 && (
