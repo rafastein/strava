@@ -5,18 +5,46 @@ import { isRunActivity } from "./strava-activity";
 
 export type SisrunRow = {
   date: string;
+  plannedWorkouts?: number;
+  completedWorkouts?: number;
+  completionPct?: number;
   plannedDistanceKm: number;
   completedDistanceKm: number;
   minPlannedTime: string | null;
   maxPlannedTime: string | null;
+  completedTime?: string | null;
+  avgPace?: string | null;
+  avgHeartRate?: number | null;
+  elevationGain?: number;
+  calories?: number;
+};
+
+export type SisrunWorkout = {
+  weekday?: string;
+  dateLabel: string;
+  modality?: string;
+  workoutType?: string;
+  intensity?: string;
+  plannedDistanceKm?: number | null;
+  routeType?: string;
+  description?: string;
+  minTime?: string | null;
+  maxTime?: string | null;
+  isRace?: boolean;
 };
 
 export type SisrunWeek = {
   weekStart: string;
   weekEnd: string;
+  weekLabel?: string;
   totalPlannedKm: number;
   longRunPlannedKm: number;
   workoutCount?: number;
+  raceCount?: number;
+  completedKm?: number;
+  completedWorkouts?: number;
+  adherencePct?: number;
+  workouts?: SisrunWorkout[];
 };
 
 export type SisrunParsedData = {

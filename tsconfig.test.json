@@ -1,7 +1,10 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022", "DOM"],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
     "module": "CommonJS",
     "moduleResolution": "Node",
     "rootDir": ".",
@@ -11,7 +14,9 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "jsx": "react-jsx",
     "noEmit": false,
     "incremental": false
@@ -24,6 +29,7 @@
     "app/lib/sisrun-utils.ts",
     "app/lib/sisrun-xls-parser.ts",
     "app/lib/redis-client.ts",
-    "app/lib/manual-predictions.ts"
+    "app/lib/manual-predictions.ts",
+    "app/lib/equipment-recommendation.ts"
   ]
 }
