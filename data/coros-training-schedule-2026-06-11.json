@@ -1,0 +1,103 @@
+{
+  "source": "coros-mcp",
+  "importedFrom": "queryTrainingSchedule",
+  "startDate": "2026-06-11",
+  "endDate": "2026-07-11",
+  "timezone": "America/Sao_Paulo",
+  "preferredTitlesByDate": {
+    "2026-06-13": "Longão 23k"
+  },
+  "entries": [
+    {
+      "date": "2026-06-11",
+      "title": "11/06 Qui - Corrida Intervalad",
+      "distanceKm": 9,
+      "estimatedTime": "54:00",
+      "loadTl": 73
+    },
+    {
+      "date": "2026-06-13",
+      "title": "13/06 Sab - Corrida Longo 23,0",
+      "distanceKm": 23,
+      "estimatedTime": "2:02:19",
+      "loadTl": 236
+    },
+    {
+      "date": "2026-06-13",
+      "title": "Longão 23k",
+      "distanceKm": 23,
+      "estimatedTime": "2:07:33",
+      "loadTl": 203
+    },
+    {
+      "date": "2026-06-14",
+      "title": "14/06 Dom - Corrida Regenerati",
+      "distanceKm": 4.58,
+      "estimatedTime": "30:00",
+      "loadTl": 29
+    },
+    {
+      "date": "2026-06-16",
+      "title": "16/06 Ter - Corrida Fartlek 10",
+      "distanceKm": 10.5,
+      "estimatedTime": "1:04:53",
+      "loadTl": 107
+    },
+    {
+      "date": "2026-06-18",
+      "title": "18/06 Qui - Corrida Intervalad",
+      "distanceKm": 9,
+      "estimatedTime": "55:53",
+      "loadTl": 105
+    },
+    {
+      "date": "2026-06-20",
+      "title": "20/06 Sab - Corrida Prova 10,0",
+      "distanceKm": 10,
+      "estimatedTime": "51:20",
+      "loadTl": 108
+    },
+    {
+      "date": "2026-06-21",
+      "title": "21/06 Dom - Corrida Longo 25,0",
+      "distanceKm": 25,
+      "estimatedTime": "2:12:35",
+      "loadTl": 257
+    },
+    {
+      "date": "2026-06-23",
+      "title": "23/06 Ter - Corrida Intervalad",
+      "distanceKm": 10.5,
+      "estimatedTime": "1:00:30",
+      "loadTl": 104
+    },
+    {
+      "date": "2026-06-25",
+      "title": "25/06 Qui - Corrida Fartlek 10",
+      "distanceKm": 10,
+      "estimatedTime": "1:02:36",
+      "loadTl": 104
+    },
+    {
+      "date": "2026-06-27",
+      "title": "27/06 Sab - Corrida Regenerati",
+      "distanceKm": 6.11,
+      "estimatedTime": "40:00",
+      "loadTl": 39
+    },
+    {
+      "date": "2026-06-28",
+      "title": "28/06 Dom - Corrida Longo 15,9",
+      "distanceKm": 17.87,
+      "estimatedTime": "1:35:00",
+      "loadTl": 183
+    },
+    {
+      "date": "2026-06-30",
+      "title": "30/06 Ter - Corrida Fartlek 8,",
+      "distanceKm": 8.87,
+      "estimatedTime": "53:00",
+      "loadTl": 120
+    }
+  ]
+}

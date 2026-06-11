@@ -31,7 +31,7 @@ export default async function CorosPage() {
   const todayIso = getTodayIsoDate();
   const [todayWorkoutResult, nextWorkouts, sisrunResult] = await Promise.all([
     getStructuredPlannedWorkout(todayIso),
-    getStructuredPlannedWorkoutsForRange(7),
+    getStructuredPlannedWorkoutsForRange(30),
     getSisrunDataWithSource(),
   ]);
 
@@ -101,7 +101,7 @@ export default async function CorosPage() {
         </section>
 
         <section className="ba-section ba-card" style={{ padding: "1.5rem" }}>
-          <p className="ba-eyebrow">Próximos 7 dias</p>
+          <p className="ba-eyebrow">Próximos 30 dias</p>
           <h2 className="ba-title" style={{ fontSize: "1.7rem", marginTop: 4 }}>Treinos estruturados salvos</h2>
           <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
             {nextWorkouts.map((result) => (
@@ -124,14 +124,27 @@ export default async function CorosPage() {
           <p className="ba-eyebrow">Entrada provisória</p>
           <h2 className="ba-title" style={{ fontSize: "1.7rem", marginTop: 4 }}>Como salvar um treino estruturado</h2>
           <p className="ba-muted" style={{ marginTop: ".5rem" }}>
-            Enquanto o conector COROS/MCP não estiver automatizado, a rota protegida abaixo já permite gravar um treino no mesmo formato que a página vai consumir.
+            Enquanto a automação pelo MCP não roda dentro da Vercel, a rota protegida abaixo permite gravar um treino ou importar a agenda COROS em lote no mesmo formato que a página vai consumir.
           </p>
           <pre className="mt-4 overflow-auto rounded-2xl" style={{ background: "rgba(255,255,255,0.06)", color: "var(--text)", padding: "1rem", fontSize: 12, lineHeight: 1.6 }}>
 {`POST /api/planned-workout
 Header: x-admin-secret: seu ADMIN_SECRET
 Content-Type: application/json
 
-${SAMPLE_JSON}`}
+${SAMPLE_JSON}
+
+---
+
+POST /api/coros/import-schedule
+Header: x-admin-secret: seu ADMIN_SECRET
+Content-Type: application/json
+
+{
+  "preferredTitlesByDate": { "2026-06-13": "Longão 23k" },
+  "entries": [
+    { "date": "2026-06-13", "title": "Longão 23k", "distanceKm": 23, "estimatedTime": "2:07:33", "loadTl": 203 }
+  ]
+}`}
           </pre>
         </section>
       </main>
