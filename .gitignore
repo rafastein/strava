@@ -4,6 +4,7 @@ node_modules/
 # next
 .next/
 out/
+.test-build/
 
 # env
 .env

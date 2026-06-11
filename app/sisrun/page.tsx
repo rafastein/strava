@@ -5,7 +5,9 @@ import Navbar from "../components/Navbar";
 import SisrunUploadForm from "../components/SisrunUploadForm";
 import { getStravaActivities, isRunActivity, type StravaActivitySummary } from "../lib/strava-client";
 import {
+  buildSisrunStatusSummary,
   getSisrunData,
+  getSisrunDataWithSource,
   getCurrentWeek,
   getTodaySisrunRow,
   getSisrunDataQualityWarnings,
@@ -77,11 +79,18 @@ function getCompletedKm(row: WeekRow, stravaKmByDate: Map<string, number>) {
 
 function formatKm(value: number) { return `${value.toFixed(1)} km`; }
 
+function formatStatusValue(value: string | number | null) {
+  if (value === null || value === "") return "—";
+  return String(value);
+}
+
 export default async function SisrunPage() {
-  const sisrunData      = await getSisrunData();
+  const sisrunResult    = await getSisrunDataWithSource();
+  const sisrunData      = sisrunResult.data;
   const currentWeek     = getCurrentWeek(sisrunData);
   const todayRow        = getTodaySisrunRow(sisrunData);
   const dataWarnings    = getSisrunDataQualityWarnings(sisrunData);
+  const sisrunStatus    = buildSisrunStatusSummary(sisrunResult, dataWarnings);
   const weekRows        = getWeekRows(sisrunData, currentWeek);
   const stravaKmByDate  = await getWeekStravaKmByDate(currentWeek);
   const plannedDays     = weekRows.filter((r) => r.plannedDistanceKm > 0).length;
@@ -175,6 +184,87 @@ export default async function SisrunPage() {
               </div>
             )}
           </div>
+        </section>
+
+        <section className="ba-card" style={{ padding: "1.25rem", marginBottom: "1rem" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: "1rem", flexWrap: "wrap" }}>
+            <div>
+              <p className="ba-eyebrow">Fonte dos dados</p>
+              <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.35rem", color: "#fff", marginTop: 4 }}>
+                Status do SisRUN
+              </h2>
+              <p className="ba-muted" style={{ marginTop: ".35rem" }}>
+                Mostra se a página está lendo o planejamento do Upstash/Redis ou do arquivo local do projeto.
+              </p>
+            </div>
+            <span
+              className="badge badge--muted"
+              style={{
+                color: sisrunStatus.source === "redis" ? "var(--success)" : sisrunStatus.source === "file" ? "#f5a623" : "#ff8a8a",
+              }}
+            >
+              {sisrunStatus.sourceLabel}
+            </span>
+          </div>
+
+          <div className="ba-grid-4">
+            {[
+              { label: "Fonte atual", value: sisrunStatus.sourceLabel },
+              { label: "Arquivo", value: sisrunStatus.fileName },
+              { label: "Upload", value: sisrunStatus.uploadedAtLabel },
+              { label: "Chave Redis", value: sisrunStatus.key },
+            ].map((item) => (
+              <div key={item.label} className="ba-card-soft" style={{ padding: "1rem" }}>
+                <p className="ba-label">{item.label}</p>
+                <p style={{ marginTop: ".4rem", fontSize: 13, fontWeight: 650, color: "var(--text)", overflowWrap: "anywhere" }}>
+                  {formatStatusValue(item.value)}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="ba-grid-4" style={{ marginTop: ".75rem" }}>
+            {[
+              { label: "Semanas", value: sisrunStatus.weeksCount },
+              { label: "Linhas", value: sisrunStatus.rowsCount },
+              { label: "Treinos", value: sisrunStatus.workoutCount },
+              { label: "Km planejados", value: formatKm(sisrunStatus.totalPlannedKm) },
+            ].map((item) => (
+              <div key={item.label} className="ba-card-soft" style={{ padding: "1rem", textAlign: "center" }}>
+                <p className="ba-label">{item.label}</p>
+                <p style={{ marginTop: ".4rem", fontSize: 18, fontWeight: 800, color: "#fff" }}>
+                  {formatStatusValue(item.value)}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="ba-card-soft" style={{ padding: "1rem", marginTop: ".75rem" }}>
+            <div className="ba-grid-3">
+              {[
+                { label: "Primeira semana", value: sisrunStatus.firstWeekLabel },
+                { label: "Semana atual encontrada", value: sisrunStatus.currentWeekLabel },
+                { label: "Última semana", value: sisrunStatus.lastWeekLabel },
+              ].map((item) => (
+                <div key={item.label}>
+                  <p className="ba-label">{item.label}</p>
+                  <p style={{ marginTop: ".35rem", fontSize: 13, fontWeight: 650, color: "var(--text)" }}>
+                    {formatStatusValue(item.value)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {(sisrunStatus.error || !sisrunStatus.loaded || sisrunStatus.warningsCount > 0) && (
+            <p className="ba-muted" style={{ marginTop: ".75rem" }}>
+              {sisrunStatus.error
+                ? `Observação técnica: ${sisrunStatus.error}`
+                : sisrunStatus.loaded
+                  ? `${sisrunStatus.warningsCount} alerta(s) de qualidade encontrado(s) nesta base.`
+                  : "Nenhum SisRUN carregado foi encontrado nessa fonte."}
+            </p>
+          )}
         </section>
 
         {dataWarnings.length > 0 && (

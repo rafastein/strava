@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
-import { isRunActivity } from "./strava-client";
+import { getRedisClient } from "./redis-client";
+import { isRunActivity } from "./strava-activity";
 
 export type SisrunRow = {
   date: string;
@@ -26,6 +27,41 @@ export type SisrunParsedData = {
   weeks: SisrunWeek[];
 };
 
+export type SisrunDataSource = "redis" | "file" | "none";
+
+export type SisrunDataResult = {
+  data: SisrunParsedData | null;
+  source: SisrunDataSource;
+  sourceLabel: string;
+  redisConfigured: boolean;
+  key: typeof SISRUN_KEY;
+  filePath: string;
+  error?: string;
+};
+
+export type SisrunStatusSummary = {
+  source: SisrunDataSource;
+  sourceLabel: string;
+  redisConfigured: boolean;
+  key: typeof SISRUN_KEY;
+  filePath: string;
+  loaded: boolean;
+  athleteName: string;
+  fileName: string;
+  uploadedAt: string | null;
+  uploadedAtLabel: string;
+  ageDays: number | null;
+  weeksCount: number;
+  rowsCount: number;
+  workoutCount: number;
+  totalPlannedKm: number;
+  firstWeekLabel: string | null;
+  lastWeekLabel: string | null;
+  currentWeekLabel: string | null;
+  warningsCount: number;
+  error?: string;
+};
+
 export type SisrunDataQualityWarning = {
   level: "warning" | "error";
   title: string;
@@ -47,6 +83,10 @@ export type StravaActivitySummary = {
   start_date?: string;
   start_date_local?: string;
 };
+
+export const SISRUN_KEY = "sisrun:latest";
+
+const SISRUN_FILE_PATH = path.join(process.cwd(), "data", "sisrun-latest.json");
 
 function getActivityDate(activity: StravaActivitySummary): Date | null {
   const raw = activity.start_date_local ?? activity.start_date;
@@ -93,31 +133,108 @@ function getDateKey(date: Date) {
   return date.toLocaleDateString("sv-SE");
 }
 
-const SISRUN_KEY = "sisrun:latest";
-
-export async function getSisrunData(): Promise<SisrunParsedData | null> {
+function parseSisrunPayload(raw: unknown): SisrunParsedData | null {
   try {
-    // Em produção (Vercel + Upstash)
-    // A Vercel cria as vars como KV_REST_API_URL e KV_REST_API_TOKEN
-    const redisUrl   = process.env.KV_REST_API_URL   ?? process.env.UPSTASH_REDIS_REST_URL;
-    const redisToken = process.env.KV_REST_API_TOKEN  ?? process.env.UPSTASH_REDIS_REST_TOKEN;
-
-    if (redisUrl && redisToken) {
-      const { Redis } = await import("@upstash/redis");
-      const redis = new Redis({ url: redisUrl, token: redisToken });
-      const raw = await redis.get<string>(SISRUN_KEY);
-      if (!raw) return null;
-      const data = typeof raw === "string" ? JSON.parse(raw) : raw;
-      return data as SisrunParsedData;
+    const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      Array.isArray((parsed as Partial<SisrunParsedData>).rows) &&
+      Array.isArray((parsed as Partial<SisrunParsedData>).weeks)
+    ) {
+      return parsed as SisrunParsedData;
     }
-
-    // Em desenvolvimento local, lê do arquivo
-    const filePath = path.join(process.cwd(), "data", "sisrun-latest.json");
-    const content = await fs.readFile(filePath, "utf-8");
-    return JSON.parse(content);
   } catch {
     return null;
   }
+
+  return null;
+}
+
+export async function getSisrunDataWithSource(): Promise<SisrunDataResult> {
+  const redisConfigured = Boolean(
+    (process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL) &&
+    (process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN)
+  );
+
+  try {
+    const redis = await getRedisClient();
+    if (redis) {
+      const raw = await redis.get<SisrunParsedData | string>(SISRUN_KEY);
+      const data = parseSisrunPayload(raw);
+      if (data) {
+        return {
+          data,
+          source: "redis",
+          sourceLabel: "Redis / Upstash",
+          redisConfigured,
+          key: SISRUN_KEY,
+          filePath: SISRUN_FILE_PATH,
+        };
+      }
+
+      return {
+        data: null,
+        source: "none",
+        sourceLabel: "Redis configurado, sem SisRUN salvo",
+        redisConfigured,
+        key: SISRUN_KEY,
+        filePath: SISRUN_FILE_PATH,
+      };
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Falha ao ler Redis.";
+    return {
+      data: null,
+      source: "none",
+      sourceLabel: "Redis configurado, mas indisponível",
+      redisConfigured,
+      key: SISRUN_KEY,
+      filePath: SISRUN_FILE_PATH,
+      error: message,
+    };
+  }
+
+  try {
+    const content = await fs.readFile(SISRUN_FILE_PATH, "utf-8");
+    const data = parseSisrunPayload(content);
+    if (data) {
+      return {
+        data,
+        source: "file",
+        sourceLabel: "Arquivo local",
+        redisConfigured,
+        key: SISRUN_KEY,
+        filePath: SISRUN_FILE_PATH,
+      };
+    }
+
+    return {
+      data: null,
+      source: "none",
+      sourceLabel: "Arquivo local inválido",
+      redisConfigured,
+      key: SISRUN_KEY,
+      filePath: SISRUN_FILE_PATH,
+      error: "O arquivo data/sisrun-latest.json existe, mas não parece ter o formato esperado.",
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "SisRUN não encontrado.";
+    return {
+      data: null,
+      source: "none",
+      sourceLabel: redisConfigured ? "Sem dados carregados" : "Sem Redis e sem arquivo local",
+      redisConfigured,
+      key: SISRUN_KEY,
+      filePath: SISRUN_FILE_PATH,
+      error: message,
+    };
+  }
+}
+
+export async function getSisrunData(): Promise<SisrunParsedData | null> {
+  const result = await getSisrunDataWithSource();
+  return result.data;
 }
 
 export function parseBrDate(dateStr: string) {
@@ -251,6 +368,68 @@ export function getSisrunDataQualityWarnings(
   return warnings;
 }
 
+function formatUploadedAtLabel(uploadedAt?: string) {
+  if (!uploadedAt) return "Não informado";
+
+  const date = new Date(uploadedAt);
+  if (Number.isNaN(date.getTime())) return uploadedAt;
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function getUploadAgeDays(uploadedAt?: string) {
+  if (!uploadedAt) return null;
+  const date = new Date(uploadedAt);
+  if (Number.isNaN(date.getTime())) return null;
+  return Math.max(0, Math.floor((getTodayBrazilDate().getTime() - date.getTime()) / 86_400_000));
+}
+
+function formatWeekRange(week: SisrunWeek | null | undefined) {
+  if (!week) return null;
+  return `${week.weekStart} até ${week.weekEnd}`;
+}
+
+export function buildSisrunStatusSummary(
+  result: SisrunDataResult,
+  warnings: SisrunDataQualityWarning[] = getSisrunDataQualityWarnings(result.data)
+): SisrunStatusSummary {
+  const data = result.data;
+  const weeks = data?.weeks ?? [];
+  const rows = data?.rows ?? [];
+  const firstWeek = weeks[0] ?? null;
+  const lastWeek = weeks[weeks.length - 1] ?? null;
+  const currentWeek = getCurrentWeek(data);
+
+  return {
+    source: result.source,
+    sourceLabel: result.sourceLabel,
+    redisConfigured: result.redisConfigured,
+    key: result.key,
+    filePath: result.filePath,
+    loaded: Boolean(data),
+    athleteName: data?.athleteName || "Não informado",
+    fileName: data?.fileName || "Não informado",
+    uploadedAt: data?.uploadedAt ?? null,
+    uploadedAtLabel: formatUploadedAtLabel(data?.uploadedAt),
+    ageDays: getUploadAgeDays(data?.uploadedAt),
+    weeksCount: weeks.length,
+    rowsCount: rows.length,
+    workoutCount: weeks.reduce((sum, week) => sum + (week.workoutCount ?? 0), 0),
+    totalPlannedKm: Number(weeks.reduce((sum, week) => sum + week.totalPlannedKm, 0).toFixed(1)),
+    firstWeekLabel: formatWeekRange(firstWeek),
+    lastWeekLabel: formatWeekRange(lastWeek),
+    currentWeekLabel: formatWeekRange(currentWeek),
+    warningsCount: warnings.length,
+    error: result.error,
+  };
+}
 
 export function getCurrentWeekStravaKm(activities: StravaActivitySummary[]) {
   const currentWeekKey = getWeekStart(getTodayBrazilDate()).toISOString();
@@ -318,72 +497,60 @@ export function buildWeeklyComparison(
   limit = 6
 ): WeeklyComparisonItem[] {
   const map = new Map<string, WeeklyComparisonItem>();
-  const maxAllowedWeekStart = getLastWeekAllowedInCurrentMonth();
 
-  sisrunData?.rows?.forEach((row) => {
-    const date = parseBrDate(row.date);
+  sisrunData?.weeks?.forEach((week) => {
+    const start = parseBrDate(week.weekStart);
+    if (!start) return;
+
+    const startTime = start.getTime();
+    if (startTime > getLastWeekAllowedInCurrentMonth()) return;
+
+    map.set(start.toISOString(), {
+      key: start.toISOString(),
+      label: formatWeekLabel(start),
+      plannedKm: week.totalPlannedKm,
+      executedKm: 0,
+      adherencePct: null,
+    });
+  });
+
+  activities.filter(isRunActivity).forEach((activity) => {
+    const date = getActivityDate(activity);
     if (!date) return;
 
     const weekStart = getWeekStart(date);
-    if (weekStart.getTime() > maxAllowedWeekStart) return;
+    const startTime = weekStart.getTime();
+    if (startTime > getLastWeekAllowedInCurrentMonth()) return;
 
     const key = weekStart.toISOString();
-
-    if (!map.has(key)) {
-      map.set(key, {
+    const existing =
+      map.get(key) ??
+      {
         key,
         label: formatWeekLabel(weekStart),
         plannedKm: 0,
         executedKm: 0,
         adherencePct: null,
-      });
-    }
+      };
 
-    map.get(key)!.plannedKm += row.plannedDistanceKm || 0;
+    existing.executedKm += activity.distance / 1000;
+    map.set(key, existing);
   });
 
-  activities
-    .filter(isRunActivity)
-    .forEach((a) => {
-      const activityDate = getActivityDate(a);
-      if (!activityDate) return;
-
-      const weekStart = getWeekStart(activityDate);
-      if (weekStart.getTime() > maxAllowedWeekStart) return;
-
-      const key = weekStart.toISOString();
-
-      if (!map.has(key)) {
-        map.set(key, {
-          key,
-          label: formatWeekLabel(weekStart),
-          plannedKm: 0,
-          executedKm: 0,
-          adherencePct: null,
-        });
-      }
-
-      map.get(key)!.executedKm += a.distance / 1000;
-    });
-
   return Array.from(map.values())
+    .sort((a, b) => a.key.localeCompare(b.key))
+    .slice(-limit)
     .map((item) => {
       const plannedKm = Number(item.plannedKm.toFixed(1));
       const executedKm = Number(item.executedKm.toFixed(1));
-
       return {
         ...item,
         plannedKm,
         executedKm,
-        isCurrentWeek:
-  getWeekStart(getTodayBrazilDate()).toISOString() === item.key,
         adherencePct:
           plannedKm > 0
-            ? Number(((executedKm / plannedKm) * 100).toFixed(0))
+            ? Number(((executedKm / plannedKm) * 100).toFixed(1))
             : null,
       };
-    })
-    .filter((item) => item.plannedKm > 0 || item.executedKm > 0)
-    .sort((a, b) => new Date(b.key).getTime() - new Date(a.key).getTime())
-    .slice(0, limit);
+    });
 }

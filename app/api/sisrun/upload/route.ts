@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { requireAdminRequest } from "../../../lib/admin-auth";
 import * as XLSX from "xlsx";
 import { parseSisrunWorkbook } from "@/app/lib/sisrun-xls-parser";
-
-const SISRUN_KEY = "sisrun:latest";
+import { getRedisClient } from "@/app/lib/redis-client";
+import { SISRUN_KEY } from "@/app/lib/sisrun-utils";
 
 export async function POST(req: Request) {
   const unauthorized = requireAdminRequest(req);
@@ -28,13 +28,9 @@ export async function POST(req: Request) {
     const parsedData = parseSisrunWorkbook(workbook, file.name);
     const json = JSON.stringify(parsedData);
 
-    const redisUrl = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL;
-    const redisToken = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN;
-    const isVercel = !!(redisUrl && redisToken);
+    const redis = await getRedisClient();
 
-    if (isVercel) {
-      const { Redis } = await import("@upstash/redis");
-      const redis = new Redis({ url: redisUrl!, token: redisToken! });
+    if (redis) {
       await redis.set(SISRUN_KEY, json);
     } else {
       const fs = await import("fs/promises");
@@ -46,7 +42,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      storage: isVercel ? "upstash" : "file",
+      storage: redis ? "upstash" : "file",
+      key: SISRUN_KEY,
       fileName: parsedData.fileName,
       athleteName: parsedData.athleteName,
       weeks: parsedData.weeks.length,

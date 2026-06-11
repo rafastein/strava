@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test:build": "rm -rf .test-build && tsc -p tsconfig.test.json",
+    "test": "npm run test:build && node --test .test-build/tests/*.test.js"
   },
   "dependencies": {
     "@upstash/redis": "^1.38.0",
