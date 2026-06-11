@@ -254,14 +254,57 @@ function hasAny(text: string, patterns: string[]) {
 function getDistanceFromWorkout(
   plannedWorkout?: SisrunWorkout | null,
   sisrunRow?: SisrunRow | null,
-) {
+): number | null {
   const workoutDistance = plannedWorkout?.plannedDistanceKm;
   if (typeof workoutDistance === "number" && workoutDistance > 0) return workoutDistance;
 
   const rowDistance = sisrunRow?.plannedDistanceKm;
   if (typeof rowDistance === "number" && rowDistance > 0) return rowDistance;
 
-  return 0;
+  return null;
+}
+
+function parseTimeToSeconds(value: string | null | undefined) {
+  const text = String(value ?? "").trim();
+  const match = text.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (!match) return 0;
+
+  const [, h, m, s = "0"] = match;
+  return Number(h) * 3600 + Number(m) * 60 + Number(s);
+}
+
+function getMaxPlannedSeconds(
+  plannedWorkout?: SisrunWorkout | null,
+  sisrunRow?: SisrunRow | null,
+) {
+  return Math.max(
+    parseTimeToSeconds(plannedWorkout?.minTime),
+    parseTimeToSeconds(plannedWorkout?.maxTime),
+    parseTimeToSeconds(sisrunRow?.minPlannedTime),
+    parseTimeToSeconds(sisrunRow?.maxPlannedTime),
+  );
+}
+
+function hasPlannedTimeWindow(
+  plannedWorkout?: SisrunWorkout | null,
+  sisrunRow?: SisrunRow | null,
+) {
+  return getMaxPlannedSeconds(plannedWorkout, sisrunRow) > 0;
+}
+
+function hasPlannedWorkoutSignal(
+  plannedWorkout?: SisrunWorkout | null,
+  sisrunRow?: SisrunRow | null,
+) {
+  const distanceKm = getDistanceFromWorkout(plannedWorkout, sisrunRow);
+  const workoutType = normalizeText(plannedWorkout?.workoutType);
+
+  return Boolean(
+    (typeof distanceKm === "number" && distanceKm > 0) ||
+      (sisrunRow?.plannedWorkouts ?? 0) > 0 ||
+      hasPlannedTimeWindow(plannedWorkout, sisrunRow) ||
+      (workoutType && !hasAny(workoutType, ["descanso", "off"]))
+  );
 }
 
 function buildEvidence(
@@ -273,11 +316,17 @@ function buildEvidence(
     plannedWorkout?.intensity,
     plannedWorkout?.routeType,
     plannedWorkout?.description,
+    plannedWorkout?.minTime ? `mín. ${plannedWorkout.minTime}` : null,
+    plannedWorkout?.maxTime ? `máx. ${plannedWorkout.maxTime}` : null,
     sisrunRow?.minPlannedTime ? `mín. ${sisrunRow.minPlannedTime}` : null,
     sisrunRow?.maxPlannedTime ? `máx. ${sisrunRow.maxPlannedTime}` : null,
-  ].filter(Boolean) as string[];
+  ].filter((item): item is string => {
+    if (!item) return false;
+    const normalized = normalizeText(item);
+    return !normalized.includes("sem treino realizado registrado");
+  });
 
-  return evidence;
+  return Array.from(new Set(evidence));
 }
 
 export function classifyEquipmentWorkout(
@@ -285,6 +334,10 @@ export function classifyEquipmentWorkout(
   sisrunRow?: SisrunRow | null,
 ): EquipmentWorkoutType | null {
   const distanceKm = getDistanceFromWorkout(plannedWorkout, sisrunRow);
+  const hasDistance = typeof distanceKm === "number" && distanceKm > 0;
+  const hasPlan = hasPlannedWorkoutSignal(plannedWorkout, sisrunRow);
+  const maxPlannedSeconds = getMaxPlannedSeconds(plannedWorkout, sisrunRow);
+  const workoutTypeText = normalizeText(plannedWorkout?.workoutType);
   const text = normalizeText(
     [
       plannedWorkout?.workoutType,
@@ -294,17 +347,22 @@ export function classifyEquipmentWorkout(
     ].join(" ")
   );
 
-  if (!distanceKm || hasAny(text, ["descanso", "off", "sem treino"])) return null;
+  if (!hasPlan) return null;
+
+  const explicitRest = hasAny(workoutTypeText, ["descanso", "off"]);
+  if (explicitRest && !hasDistance && !hasPlannedTimeWindow(plannedWorkout, sisrunRow) && (sisrunRow?.plannedWorkouts ?? 0) <= 0) {
+    return null;
+  }
 
   if (plannedWorkout?.isRace) {
-    return distanceKm <= 10 ? "prova_curta" : "prova_longa";
+    return (distanceKm ?? 0) <= 10 ? "prova_curta" : "prova_longa";
   }
 
-  if (hasAny(text, ["trilha", "trail", "montanha", "terra"  ])) return "trail";
+  if (hasAny(text, ["trilha", "trail", "montanha", "terra"])) return "trail";
   if (hasAny(text, ["prova", "race", "competicao", "competição"])) {
-    return distanceKm <= 10 ? "prova_curta" : "prova_longa";
+    return (distanceKm ?? 0) <= 10 ? "prova_curta" : "prova_longa";
   }
-  if (hasAny(text, ["longao", "longão", "longo"]) || distanceKm >= 16) return "longao";
+  if (hasAny(text, ["longao", "longão", "longo"]) || (hasDistance && distanceKm >= 16)) return "longao";
   if (hasAny(text, ["fartlek", "variacao", "variação"])) return "fartlek";
   if (hasAny(text, ["interval", "tiro", "repet", "pista", "400", "500", "600", "800", "1000", "z5"])) {
     return "intervalado";
@@ -312,12 +370,20 @@ export function classifyEquipmentWorkout(
   if (hasAny(text, ["ritmo", "tempo", "limiar", "progressivo", "maratona", "pace", "z3", "z4"])) {
     return "ritmo";
   }
-  if (hasAny(text, ["regenerativo", "recuper", "leve", "z1"]) || distanceKm <= 6.5) {
+  if (hasAny(text, ["regenerativo", "recuper", "leve", "z1"]) || (hasDistance && distanceKm <= 6.5)) {
     return "regenerativo";
   }
 
+  // Fallback para planilhas agregadas do SisRUN: alguns uploads informam apenas
+  // "Treino" + janela de tempo, sem distância ou descrição dos blocos.
+  // Sem intensidade/descrição explícita, tratamos como rodagem, não como pista.
+
+  if (!hasDistance && maxPlannedSeconds >= 75 * 60) return "longao";
+  if (!hasDistance && maxPlannedSeconds > 0 && maxPlannedSeconds <= 35 * 60) return "regenerativo";
+
   return "rodagem";
 }
+
 
 export function getWorkoutLabel(type: EquipmentWorkoutType | null) {
   if (!type) return "Descanso";
@@ -369,7 +435,7 @@ export function getTodayEquipmentWorkout(
     };
   }
 
-  if (!type || distanceKm <= 0) {
+  if (!type) {
     return {
       status: "rest",
       type: null,

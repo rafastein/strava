@@ -437,7 +437,11 @@ function TodayShoeCard({
               ? "Nenhum tênis recomendado hoje. Melhor preservar o rodízio."
               : isUnknown
                 ? "Não encontrei treino do dia no SisRUN carregado."
-                : `${workout.distanceKm?.toFixed(1)} km planejados · fonte: ${sisrunSource}`}
+                : `${
+                    typeof workout.distanceKm === "number" && workout.distanceKm > 0
+                      ? `${workout.distanceKm.toFixed(1)} km planejados`
+                      : "Distância não informada no SisRUN"
+                  } · fonte: ${sisrunSource}`}
           </p>
 
           {workout.evidence.length > 0 && (

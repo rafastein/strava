@@ -110,3 +110,54 @@ test("inferShoeProfile identifica modelos pelo nome do Strava, não pelo id", ()
   assert.equal(inferShoeProfile("Meu Adidas Adios Pro 4").key, "adidas-adios-pro-4");
   assert.equal(inferShoeProfile("ASICS Superblast 2 - treino").key, "asics-superblast-2");
 });
+
+test("getTodayEquipmentWorkout não trata como descanso quando SisRUN tem treino sem distância, mas com janela de tempo", () => {
+  const data: SisrunParsedData = {
+    athleteName: "Rafael",
+    rows: [
+      {
+        date: "11/06/2026",
+        plannedWorkouts: 1,
+        plannedDistanceKm: 0,
+        completedDistanceKm: 0,
+        minPlannedTime: "00:47:24",
+        maxPlannedTime: "01:00:36",
+      },
+    ],
+    weeks: [
+      {
+        weekStart: "08/06/2026",
+        weekEnd: "14/06/2026",
+        totalPlannedKm: 0,
+        longRunPlannedKm: 0,
+        workoutCount: 1,
+        workouts: [
+          {
+            dateLabel: "11/06/2026",
+            workoutType: "Treino",
+            plannedDistanceKm: null,
+            description: "Sem treino realizado registrado",
+            minTime: "00:47:24",
+            maxTime: "01:00:36",
+          },
+        ],
+      },
+    ],
+  };
+
+  const workout = getTodayEquipmentWorkout(data, new Date("2026-06-11T12:00:00-03:00"));
+  assert.equal(workout.status, "planned");
+  assert.equal(workout.type, "rodagem");
+  assert.equal(workout.distanceKm, null);
+  assert.equal(workout.evidence.includes("Sem treino realizado registrado"), false);
+});
+
+test("classifyEquipmentWorkout usa fallback de rodagem para treino genérico sem intensidade explícita", () => {
+  assert.equal(
+    classifyEquipmentWorkout(
+      { dateLabel: "12/06/2026", workoutType: "Treino", plannedDistanceKm: null, minTime: "00:40:00", maxTime: "00:50:00" },
+      { date: "12/06/2026", plannedWorkouts: 1, plannedDistanceKm: 0, completedDistanceKm: 0, minPlannedTime: "00:40:00", maxPlannedTime: "00:50:00" },
+    ),
+    "rodagem",
+  );
+});

@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx";
 
 type SisrunDailyRow = {
+  [key: string]: string | number | null;
   date: string;
   plannedWorkouts: number;
   completedWorkouts: number;
@@ -164,18 +165,69 @@ export function parseSisrunWorkbook(
   const headers = Object.keys(normalizedRows[0]);
 
   const dateCol = findColumn(headers, ["data"]);
-  const plannedWorkoutsCol = findColumn(headers, ["treinos propostos", "treino proposto"]);
-  const completedWorkoutsCol = findColumn(headers, ["treinos feitos", "treino feito"]);
+  const plannedWorkoutsCol = findColumn(headers, [
+    "treinos propostos",
+    "treino proposto",
+    "treinos planejados",
+    "treino planejado",
+    "treinos previstos",
+    "treino previsto",
+  ]);
+  const completedWorkoutsCol = findColumn(headers, ["treinos feitos", "treino feito", "treinos realizados", "treino realizado"]);
   const completionPctCol = findColumn(headers, [" treinos feitos", "percentual treinos feitos", "treinos feitos %"]);
-  const plannedDistanceCol = findColumn(headers, ["distancia proposta", "km proposto"]);
-  const completedDistanceCol = findColumn(headers, ["distancia feita", "km feito"]);
-  const minPlannedTimeCol = findColumn(headers, ["tempo minimo proposto"]);
-  const maxPlannedTimeCol = findColumn(headers, ["tempo maximo proposto"]);
-  const completedTimeCol = findColumn(headers, ["tempo feito"]);
+  const plannedDistanceCol = findColumn(headers, [
+    "distancia proposta",
+    "km proposto",
+    "distancia planejada",
+    "km planejado",
+    "km planejados",
+    "distancia prevista",
+    "km previsto",
+    "distancia do treino",
+    "km do treino",
+  ]);
+  const completedDistanceCol = findColumn(headers, ["distancia feita", "km feito", "distancia realizada", "km realizado"]);
+  const minPlannedTimeCol = findColumn(headers, [
+    "tempo minimo proposto",
+    "tempo minimo planejado",
+    "tempo minimo previsto",
+    "tempo min",
+  ]);
+  const maxPlannedTimeCol = findColumn(headers, [
+    "tempo maximo proposto",
+    "tempo maximo planejado",
+    "tempo maximo previsto",
+    "tempo max",
+  ]);
+  const completedTimeCol = findColumn(headers, ["tempo feito", "tempo realizado"]);
   const avgPaceCol = findColumn(headers, ["pace"]);
   const avgHeartRateCol = findColumn(headers, ["fc media", "frequencia cardiaca media"]);
   const elevationCol = findColumn(headers, ["elevacao acumulada", "elevacao"]);
   const caloriesCol = findColumn(headers, ["calorias"]);
+  const modalityCol = findColumn(headers, ["modalidade", "esporte"]);
+  const workoutTypeCol = findColumn(headers, [
+    "tipo de treino",
+    "tipo treino",
+    "classificacao do treino",
+    "classificação do treino",
+    "categoria do treino",
+    "sessao de treino",
+    "sessão de treino",
+    "atividade planejada",
+  ]);
+  const intensityCol = findColumn(headers, ["intensidade", "zona", "zonas", "zona de treino"]);
+  const routeTypeCol = findColumn(headers, ["tipo de percurso", "percurso", "terreno", "rota"]);
+  const descriptionCol = findColumn(headers, [
+    "descricao do treino",
+    "descrição do treino",
+    "descricao",
+    "descrição",
+    "detalhamento",
+    "detalhe",
+    "observacao",
+    "observações",
+    "observacoes",
+  ]);
 
   if (!dateCol) {
     throw new Error("Não encontrei a coluna de data na planilha.");
@@ -199,6 +251,11 @@ export function parseSisrunWorkbook(
         avgHeartRate: avgHeartRateCol ? toNullableNumber(row[avgHeartRateCol]) : null,
         elevationGain: elevationCol ? toNullableNumber(row[elevationCol]) : null,
         calories: caloriesCol ? toNullableNumber(row[caloriesCol]) : null,
+        ...(modalityCol ? { [modalityCol]: toText(row[modalityCol]) } : {}),
+        ...(workoutTypeCol ? { [workoutTypeCol]: toText(row[workoutTypeCol]) } : {}),
+        ...(intensityCol ? { [intensityCol]: toText(row[intensityCol]) } : {}),
+        ...(routeTypeCol ? { [routeTypeCol]: toText(row[routeTypeCol]) } : {}),
+        ...(descriptionCol ? { [descriptionCol]: toText(row[descriptionCol]) } : {}),
       };
     })
     .filter((row) => row.date);
@@ -234,25 +291,32 @@ export function parseSisrunWorkbook(
 
     const week = weekMap.get(key)!;
 
+    const explicitWorkoutType = workoutTypeCol ? toText(row[workoutTypeCol]) : null;
+    const explicitDescription = descriptionCol ? toText(row[descriptionCol]) : null;
+
     const workout: PlannedWorkout = {
       weekday: weekdayPt(parsed),
       dateLabel: row.date,
-      modality: "Corrida",
+      modality: modalityCol ? toText(row[modalityCol]) ?? "Corrida" : "Corrida",
       workoutType:
-        row.plannedDistanceKm >= 14
+        explicitWorkoutType ??
+        (row.plannedDistanceKm >= 14
           ? "Longo"
           : row.plannedWorkouts > 0
           ? "Treino"
-          : "Descanso",
-      intensity: "",
+          : "Descanso"),
+      intensity: intensityCol ? toText(row[intensityCol]) ?? "" : "",
       plannedDistanceKm: row.plannedDistanceKm || null,
-      routeType: "",
+      routeType: routeTypeCol ? toText(row[routeTypeCol]) ?? "" : "",
       description:
-        row.completedDistanceKm > 0
+        explicitDescription ??
+        (row.completedDistanceKm > 0
           ? `Feito: ${row.completedDistanceKm.toFixed(2)} km${
               row.avgPace ? ` • pace ${row.avgPace}` : ""
             }`
-          : "Sem treino realizado registrado",
+          : row.plannedWorkouts > 0
+          ? "Treino planejado; execução ainda não registrada"
+          : "Descanso / sem treino planejado"),
       minTime: row.minPlannedTime,
       maxTime: row.maxPlannedTime,
       isRace: false,
