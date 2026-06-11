@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import athleteConfig from "../../../../data/athlete-config.json";
 import { getValidStravaAccessToken } from "../../../lib/strava-auth";
-import { getStravaActivities } from "../../../lib/strava-client";
+import { getStravaActivities, isRunActivity } from "../../../lib/strava-client";
 import { calcTrainingLoad, type StravaActivityForLoad } from "../../../lib/training-load";
 import { getDynamicAthleteProfile } from "../../../lib/strava-prs";
 
 const DISPLAY_DAYS = 90;
-const WARMUP_DAYS = 30;
-const FETCH_DAYS = DISPLAY_DAYS + WARMUP_DAYS;
+const WARMUP_DAYS = 90;
+const FETCH_DAYS = 180;
 const TIME_ZONE = "America/Sao_Paulo";
 
 // Busca atividades dos últimos N dias
@@ -30,7 +30,7 @@ export async function GET() {
   }
 
   try {
-    // Busca atividades dos últimos 120 dias: 90 exibidos + 30 de aquecimento real do CTL/ATL.
+    // Busca atividades dos últimos 180 dias: 90 exibidos + 90 de aquecimento real do CTL/ATL.
     const [activities, profile] = await Promise.all([
       fetchActivities(token, FETCH_DAYS),
       getDynamicAthleteProfile(token),
@@ -58,10 +58,7 @@ export async function GET() {
       }
     }
 
-    const runActivities = activities.filter((a) =>
-      ["Run", "TrailRun", "VirtualRun"].includes(a.type) ||
-      Boolean(a.sport_type && ["Run", "TrailRun", "VirtualRun"].includes(a.sport_type))
-    );
+    const runActivities = activities.filter(isRunActivity);
     const withHeartRate = runActivities.filter(
       (a) =>
         typeof a.average_heartrate === "number" &&

@@ -1,3 +1,5 @@
+import { isRunActivity } from "./strava-activity";
+
 /**
  * Cálculo de Carga de Treino — ATL / CTL / TSB
  *
@@ -62,10 +64,8 @@ const DEFAULT_THRESHOLD_PACE_SEC_PER_KM = 259;
 const DEFAULT_HR_MAX = 185;
 const DEFAULT_HR_REST = 50;
 const DEFAULT_DISPLAY_DAYS = 90;
-const DEFAULT_WARMUP_DAYS = 30;
+const DEFAULT_WARMUP_DAYS = 90;
 const DEFAULT_TIME_ZONE = "America/Sao_Paulo";
-const RUN_SPORT_TYPES = new Set(["Run", "TrailRun", "VirtualRun"]);
-
 function round1(value: number): number {
   return Math.round(value * 10) / 10;
 }
@@ -100,10 +100,6 @@ function addDaysToDateKey(dateStr: string, days: number): string {
   return date.toISOString().slice(0, 10);
 }
 
-function isRunActivity(activity: StravaActivityForLoad): boolean {
-  return RUN_SPORT_TYPES.has(activity.type) ||
-    Boolean(activity.sport_type && RUN_SPORT_TYPES.has(activity.sport_type));
-}
 
 function normalizeOptions(options: TrainingLoadOptions = {}) {
   const thresholdPaceSecPerKm =

@@ -1,5 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
+import { isRunActivity } from "./strava-client";
 
 export type SisrunRow = {
   date: string;
@@ -256,7 +257,7 @@ export function getCurrentWeekStravaKm(activities: StravaActivitySummary[]) {
 
   return Number(
     activities
-      .filter((a) => a.type === "Run")
+      .filter(isRunActivity)
       .filter((a) => {
         const date = getActivityDate(a);
         if (!date) return false;
@@ -273,7 +274,7 @@ export function getTodayStravaKm(activities: StravaActivitySummary[]) {
 
   return Number(
     activities
-      .filter((a) => a.type === "Run")
+      .filter(isRunActivity)
       .filter((a) => {
         const date = getActivityDate(a);
         if (!date) return false;
@@ -289,7 +290,7 @@ export function getCurrentWeekLongestRunKm(activities: StravaActivitySummary[]) 
   const currentWeekKey = getWeekStart(getTodayBrazilDate()).toISOString();
 
   const runs = activities
-    .filter((a) => a.type === "Run")
+    .filter(isRunActivity)
     .filter((a) => {
       const date = getActivityDate(a);
       if (!date) return false;
@@ -342,7 +343,7 @@ export function buildWeeklyComparison(
   });
 
   activities
-    .filter((a) => a.type === "Run")
+    .filter(isRunActivity)
     .forEach((a) => {
       const activityDate = getActivityDate(a);
       if (!activityDate) return;

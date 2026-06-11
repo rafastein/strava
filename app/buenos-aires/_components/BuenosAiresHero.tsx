@@ -5,12 +5,14 @@ type BuenosAiresHeroProps = {
   targetPaceLabel: string;
   targetPredictionLabel: string;
   cyclePhaseName: string;
+  targetDateIso: string;
 };
 
 export default function BuenosAiresHero({
   targetPaceLabel,
   targetPredictionLabel,
   cyclePhaseName,
+  targetDateIso,
 }: BuenosAiresHeroProps) {
   const cyclePhaseCompactName =
     cyclePhaseName.length > 12 ? "Desenv." : cyclePhaseName;
@@ -92,7 +94,7 @@ export default function BuenosAiresHero({
         </div>
         <div style={{ margin: ".75rem 0 1.1rem" }}>
           <RaceCountdown
-            targetDate="2026-09-20T06:00:00-03:00"
+            targetDate={targetDateIso}
             raceName="Buenos Aires"
           />
         </div>

@@ -1,11 +1,13 @@
 import fs from "fs";
 import path from "path";
 import { getActivityDate } from "./date-utils";
+import { isRunActivity } from "./strava-client";
 
 type ActivityLike = {
   id: number | string;
   name?: string;
   type?: string;
+  sport_type?: string;
   distance?: number | null;
   moving_time?: number | null;
   elapsed_time?: number | null;
@@ -331,7 +333,7 @@ export async function getLongRunsFromActivities(
 ): Promise<LongRunEntry[]> {
   const longRuns = await Promise.all(
     activities
-      .filter((activity) => activity.type === "Run")
+      .filter(isRunActivity)
       .filter((activity) => isLongRunActivityName(activity.name))
       .map(async (activity) => {
         const location = await resolveActivityLocation(activity);

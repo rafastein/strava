@@ -18,7 +18,7 @@ import {
   type SisrunWeek,
 } from "./lib/sisrun-utils";
 import { getValidStravaAccessToken } from "./lib/strava-auth";
-import { DASHBOARD_RACES } from "./lib/race-calendar";
+import { BUENOS_AIRES_RACE_ISO, DASHBOARD_RACES } from "./lib/race-calendar";
 import {
   getStravaActivities,
   getStravaAthlete,
@@ -174,7 +174,7 @@ export default async function Home() {
               <p className="ba-eyebrow" style={{ marginBottom: "0.75rem", fontSize: 10 }}>
                 Buenos Aires — 20 set 2026
               </p>
-              <RaceCountdown targetDate="2026-09-20T06:00:00-03:00" raceName="Buenos Aires" />
+              <RaceCountdown targetDate={BUENOS_AIRES_RACE_ISO} raceName="Buenos Aires" />
             </div>
 
             <div className="home-hero__stats-grid">

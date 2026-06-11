@@ -1,9 +1,12 @@
+import { isRunActivity } from "./strava-client";
+
 export type CapitalStatus = "completed" | "next" | "locked";
 
 export type StravaActivity = {
   id: number;
   name: string;
   type: string;
+  sport_type?: string;
   distance: number;
   moving_time: number;
   elapsed_time?: number;
@@ -132,7 +135,7 @@ export function distanceKm(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 export function isHalfMarathon(activity: StravaActivity) {
   const km = activity.distance / 1000;
-  return activity.type === "Run" && km >= 20.5 && km <= 22.7;
+  return isRunActivity(activity) && km >= 20.5 && km <= 22.7;
 }
 
 export function looksLikeRaceOrHalf(activity: StravaActivity) {

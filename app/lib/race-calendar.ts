@@ -35,14 +35,30 @@ export type MarathonCycleRace = {
   isGoal?: boolean;
 };
 
-export const BUENOS_AIRES_RACE_DATE = new Date("2026-09-20T12:00:00");
-export const MARATHON_CYCLE_START_DATE = new Date("2026-05-18T12:00:00");
-export const MARATHON_CYCLE_END_DATE = new Date("2026-09-20T12:00:00");
+export const BUENOS_AIRES_RACE_ISO = "2026-09-20T06:00:00-03:00";
+export const BUENOS_AIRES_RACE_DATE = new Date(BUENOS_AIRES_RACE_ISO);
+export const MARATHON_CYCLE_START_ISO = "2026-05-18T00:00:00-03:00";
+export const MARATHON_CYCLE_START_DATE = new Date(MARATHON_CYCLE_START_ISO);
+export const MARATHON_CYCLE_END_ISO = "2026-09-20T23:59:59-03:00";
+export const MARATHON_CYCLE_END_DATE = new Date(MARATHON_CYCLE_END_ISO);
 export const BUENOS_AIRES_GOAL_PACE_SEC_PER_KM = 320;
+export const BUENOS_AIRES_TARGET_WEEKLY_KM = 65;
+export const BUENOS_AIRES_TARGET_LONG_RUN_KM = 30;
+export const BUENOS_AIRES_MARATHON_DISTANCE_KM = 42.195;
+
+export const BUENOS_AIRES_GOAL = {
+  raceName: "Maratona de Buenos Aires",
+  date: BUENOS_AIRES_RACE_DATE,
+  dateIso: BUENOS_AIRES_RACE_ISO,
+  targetPaceSecondsPerKm: BUENOS_AIRES_GOAL_PACE_SEC_PER_KM,
+  targetWeeklyKm: BUENOS_AIRES_TARGET_WEEKLY_KM,
+  targetLongRunKm: BUENOS_AIRES_TARGET_LONG_RUN_KM,
+  distanceKm: BUENOS_AIRES_MARATHON_DISTANCE_KM,
+} as const;
 
 export const DASHBOARD_RACES: DashboardRace[] = [
   { name: "Circuito Serrano", date: "2026-05-16T07:00:00-03:00", location: "Brasil", distanceKm: 5.0, objective: "Treino", targetPaceSecPerKm: null },
-  { name: "Meia Maratona de Lima", date: "2026-05-24T07:00:00-05:00", location: "Lima, Peru", distanceKm: 21.1, objective: "Pace de maratona (5:20/km)", targetPaceSecPerKm: 320 },
+  { name: "Meia Maratona de Lima", date: "2026-05-24T07:00:00-05:00", location: "Lima, Peru", distanceKm: 21.1, objective: "Pace de maratona (5:20/km)", targetPaceSecPerKm: BUENOS_AIRES_GOAL_PACE_SEC_PER_KM },
   { name: "Maratona do Rio", date: "2026-06-06T07:00:00-03:00", location: "Rio de Janeiro, Brasil", distanceKm: 21.1, objective: "All-in — sub-1:45", targetPaceSecPerKm: 298 },
   { name: "Maratona Intl Praia Grande (10km)", date: "2026-06-20T07:00:00-03:00", location: "Praia Grande, Brasil", distanceKm: 10.0, objective: "Treino", targetPaceSecPerKm: null },
   { name: "Maratona Intl Praia Grande (5km)", date: "2026-06-21T07:00:00-03:00", location: "Praia Grande, Brasil", distanceKm: 5.0, objective: "Treino", targetPaceSecPerKm: null },
@@ -52,8 +68,8 @@ export const DASHBOARD_RACES: DashboardRace[] = [
   { name: "Meia Maratona da Polícia Federal", date: "2026-08-09T07:00:00-03:00", location: "Brasília, Brasil", distanceKm: 21.1, objective: "Treino", targetPaceSecPerKm: null },
   { name: "Track & Field Run Series Conjunto", date: "2026-08-16T07:00:00-03:00", location: "Brasília, Brasil", distanceKm: 15.0, objective: "Treino", targetPaceSecPerKm: null },
   { name: "Quatro Poderes Run", date: "2026-08-22T07:00:00-03:00", location: "Brasília, Brasil", distanceKm: 10.0, objective: "Treino", targetPaceSecPerKm: null },
-  { name: "Run The Bridge", date: "2026-08-30T07:00:00-03:00", location: "Brasil", distanceKm: 30.0, objective: "Simulado 30km (5:20/km)", targetPaceSecPerKm: 320 },
-  { name: "Maratona de Buenos Aires", date: "2026-09-20T06:00:00-03:00", location: "Buenos Aires, Argentina", distanceKm: 42.0, objective: "Sub-3:45 (5:20/km)", targetPaceSecPerKm: 320, href: "/buenos-aires" },
+  { name: "Run The Bridge", date: "2026-08-30T07:00:00-03:00", location: "Brasil", distanceKm: 30.0, objective: "Simulado 30km (5:20/km)", targetPaceSecPerKm: BUENOS_AIRES_GOAL_PACE_SEC_PER_KM },
+  { name: "Maratona de Buenos Aires", date: BUENOS_AIRES_RACE_ISO, location: "Buenos Aires, Argentina", distanceKm: BUENOS_AIRES_MARATHON_DISTANCE_KM, objective: "Sub-3:45 (5:20/km)", targetPaceSecPerKm: BUENOS_AIRES_GOAL_PACE_SEC_PER_KM, href: "/buenos-aires" },
 ];
 
 export const SEASON_RACE_MONTHS: SeasonMonth[] = [

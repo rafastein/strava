@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import Navbar from "../components/Navbar";
-import { getStravaActivities, type StravaActivitySummary } from "../lib/strava-client";
+import { getStravaActivities, isRunActivity, type StravaActivitySummary } from "../lib/strava-client";
 import {
   BUENOS_AIRES_GOAL_PACE_SEC_PER_KM,
   BUENOS_AIRES_RACE_DATE,
@@ -353,7 +353,7 @@ function findMatchingRun(
   const minDistanceToMatch = Math.max(6, plannedKm * 0.5);
 
   const candidates = activities
-    .filter((activity) => activity.type === "Run")
+    .filter(isRunActivity)
     .map((activity) => {
       const dateKey = getBRDateKey(activity.start_date_local ?? activity.start_date);
       const date = parseDateKey(dateKey);

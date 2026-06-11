@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import { getValidStravaAccessToken } from "../lib/strava-auth";
-import { fetchStravaApi, getStravaActivities } from "../lib/strava-client";
+import { fetchStravaApi, getStravaActivities, isRunActivity } from "../lib/strava-client";
 import { getLongRunsFromActivities } from "../lib/strava-long-runs";
 import QualityWorkoutsChart, {
   type QualityWorkout,
@@ -14,6 +14,7 @@ type StravaActivity = {
   id: number;
   name: string;
   type: string;
+  sport_type?: string;
   distance: number;
   moving_time: number;
   total_elevation_gain: number;
@@ -177,7 +178,7 @@ export default async function TreinosQualidadePage() {
   const token = await getValidStravaAccessToken();
   const activities = await getActivities();
 
-  const runs = activities.filter((a) => a.type === "Run");
+  const runs = activities.filter(isRunActivity);
 
   // Filter candidates: 5–16km, not races/longões/recovery
   const EXCLUDE_PATTERN = /prova|maratona|long[aã]o|regenerat|desaquec/i;

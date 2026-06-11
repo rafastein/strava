@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { BUENOS_AIRES_RACE_DATE } from "../lib/race-calendar";
 import {
   Chart,
   LineController,
@@ -115,7 +116,7 @@ function formatDeltaLabel(seconds: number, ok: boolean) {
   return ok ? `${normalized}s de sobra` : `faltam ~${normalized}s`;
 }
 
-const RACE_DATE = new Date("2026-09-20T06:00:00-03:00");
+const RACE_DATE = BUENOS_AIRES_RACE_DATE;
 
 export default function MarathonProjection({
   longRuns,

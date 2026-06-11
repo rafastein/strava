@@ -8,6 +8,7 @@ import TodayWorkoutCard from "../components/TodayWorkoutCard";
 import WeeklyGoalCard from "../components/WeeklyGoalCard";
 
 import { getValidStravaAccessToken } from "../lib/strava-auth";
+import { BUENOS_AIRES_GOAL } from "../lib/race-calendar";
 import { isLongRunActivityName } from "../lib/strava-long-runs";
 import { getDynamicAthleteProfile } from "../lib/strava-prs";
 import { trainingPacesFromVdot } from "../lib/vdot";
@@ -24,6 +25,7 @@ import {
   type SisrunWeek,
 } from "../lib/sisrun-utils";
 import { getBRDate, getActivityDate } from "../lib/date-utils";
+import { isRunActivity } from "../lib/strava-client";
 
 import BuenosAiresHero from "./_components/BuenosAiresHero";
 import CyclePhaseSection, {
@@ -70,13 +72,7 @@ export default async function BuenosAiresPage() {
   const sisrunWeek = getCurrentWeek(sisrunData) as SisrunWeek | null;
   const todaySisrunRow = getTodaySisrunRow(sisrunData);
 
-  const marathonGoal = {
-    raceName: "Maratona de Buenos Aires",
-    date: new Date("2026-09-20T06:00:00"),
-    targetPaceSecondsPerKm: 320,
-    targetWeeklyKm: 65,
-    targetLongRunKm: 30,
-  };
+  const marathonGoal = BUENOS_AIRES_GOAL;
 
   const daysToRace = daysUntil(marathonGoal.date);
   const weeksToRace = Math.max(1, Math.ceil(daysToRace / 7));
@@ -85,7 +81,7 @@ export default async function BuenosAiresPage() {
     weeksToRace,
   });
 
-  const runs = activities.filter((activity) => activity.type === "Run");
+  const runs = activities.filter(isRunActivity);
 
   const longestRun = runs.length
     ? runs.reduce((max, activity) =>
@@ -264,6 +260,7 @@ export default async function BuenosAiresPage() {
     todayStatus,
     marathonPaceMin: marathonPaces?.min ?? null,
     vdot,
+    goalPaceSecPerKm: marathonGoal.targetPaceSecondsPerKm,
   });
 
   const weeklyGoalAlerts = alerts.map((alert) => ({
@@ -338,6 +335,7 @@ export default async function BuenosAiresPage() {
           targetPaceLabel={targetPaceLabel}
           targetPredictionLabel={formatDurationShort(targetPredictionSeconds)}
           cyclePhaseName={marathonCycle.phase.label}
+          targetDateIso={marathonGoal.dateIso}
         />
 
         <CyclePhaseSection

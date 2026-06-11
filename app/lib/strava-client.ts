@@ -1,4 +1,6 @@
 import { getValidStravaAccessToken } from "./strava-auth";
+import { isRunActivity } from "./strava-activity";
+export { isRunActivity, STRAVA_RUN_SPORT_TYPES } from "./strava-activity";
 
 export const STRAVA_API_BASE_URL = "https://www.strava.com/api/v3";
 export const STRAVA_DEFAULT_PER_PAGE = 200;
@@ -7,7 +9,7 @@ export const STRAVA_2024_START_EPOCH = Math.floor(
   new Date("2024-01-01T00:00:00Z").getTime() / 1000,
 );
 
-export type StravaActivityType = "Run" | string;
+export type StravaActivityType = "Run" | "TrailRun" | "VirtualRun" | string;
 
 export type StravaLatLng = [number, number] | [] | null;
 
@@ -116,9 +118,6 @@ async function resolveAccessToken(accessToken?: string | null) {
   return getValidStravaAccessToken();
 }
 
-export function isRunActivity(activity: Pick<StravaActivitySummary, "type" | "sport_type">) {
-  return activity.type === "Run" || activity.sport_type === "Run";
-}
 
 export async function fetchStravaApi<T>(
   path: string,

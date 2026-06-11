@@ -1,5 +1,5 @@
-import path from "path";
 import { formatBRDate, getActivityDate } from "../lib/date-utils";
+import { readManualPredictions, type ManualPredictions } from "../lib/manual-predictions";
 import {
   getStravaActivities,
   getStravaActivityDetail as fetchStravaActivityDetail,
@@ -12,10 +12,6 @@ import {
 
 export type StravaActivity = StravaActivitySummary;
 export type Athlete = StravaAthlete;
-
-export type ManualPredictions = {
-  stravaMarathonPrediction: string;
-};
 
 export type HrZone = {
   name: string;
@@ -42,14 +38,8 @@ export async function getAthlete(): Promise<Athlete | null> {
 }
 
 export async function getManualPredictions(): Promise<ManualPredictions> {
-  const { default: fs } = await import("fs/promises");
-  const filePath = path.join(process.cwd(), "data", "manual-predictions.json");
-  try {
-    const content = await fs.readFile(filePath, "utf-8");
-    return JSON.parse(content);
-  } catch {
-    return { stravaMarathonPrediction: "03:49:00" };
-  }
+  const { data } = await readManualPredictions();
+  return data;
 }
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
@@ -323,6 +313,7 @@ export function buildMarathonAlerts(params: {
   todayStatus: string;
   marathonPaceMin: number | null;
   vdot: number | null;
+  goalPaceSecPerKm: number;
 }) {
   const alerts: { title: string; text: string; tone: string }[] = [];
   if (!params.hasPlan) {
@@ -373,7 +364,7 @@ export function buildMarathonAlerts(params: {
       tone: "bg-amber-50 text-amber-700",
     });
   if (params.marathonPaceMin && params.vdot) {
-    const gap = 320 - params.marathonPaceMin;
+    const gap = params.goalPaceSecPerKm - params.marathonPaceMin;
     if (gap > 20)
       alerts.push({
         title: "Pace-alvo conservador vs. VO2max",

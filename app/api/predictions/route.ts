@@ -1,28 +1,18 @@
 import { NextResponse } from "next/server";
 import { requireAdminRequest } from "../../lib/admin-auth";
-import fs from "fs/promises";
-import path from "path";
-
-const filePath = path.join(process.cwd(), "data", "manual-predictions.json");
-
-async function readPredictions() {
-  try {
-    const content = await fs.readFile(filePath, "utf-8");
-    return JSON.parse(content);
-  } catch {
-    return {
-      stravaMarathonPrediction: "03:49:00",
-    };
-  }
-}
+import {
+  MANUAL_PREDICTIONS_KEY,
+  readManualPredictions,
+  writeManualPredictions,
+} from "../../lib/manual-predictions";
 
 function isValidTime(value: string) {
   return /^\d{2}:\d{2}:\d{2}$/.test(value);
 }
 
 export async function GET() {
-  const data = await readPredictions();
-  return NextResponse.json(data);
+  const { data, source } = await readManualPredictions();
+  return NextResponse.json({ ...data, source, key: MANUAL_PREDICTIONS_KEY });
 }
 
 export async function POST(req: Request) {
@@ -44,14 +34,14 @@ export async function POST(req: Request) {
       );
     }
 
-    const data = {
-      stravaMarathonPrediction,
-    };
+    const result = await writeManualPredictions({ stravaMarathonPrediction });
 
-    await fs.mkdir(path.dirname(filePath), { recursive: true });
-    await fs.writeFile(filePath, JSON.stringify(data, null, 2), "utf-8");
-
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({
+      success: true,
+      data: result.data,
+      source: result.source,
+      key: MANUAL_PREDICTIONS_KEY,
+    });
   } catch (error) {
     console.error("Erro ao salvar previsão manual:", error);
     return NextResponse.json(
