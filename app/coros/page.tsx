@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import Navbar from "../components/Navbar";
+import CorosImportScheduleForm from "./CorosImportScheduleForm";
 import {
   buildSisrunFallbackWorkoutSummary,
   formatPlannedWorkoutDateLabel,
@@ -13,6 +14,9 @@ import {
   type StructuredPlannedWorkout,
 } from "../lib/planned-workout";
 import { getSisrunDataWithSource } from "../lib/sisrun-utils";
+import { getStravaActivities, getStravaAthlete, STRAVA_2024_START_EPOCH, type StravaGear } from "../lib/strava-client";
+import { buildGearRecommendationSummaries } from "../lib/equipment-strava-summary";
+import { getEquipmentWorkoutFromStructuredWorkout, pickRecommendedShoeForWorkout } from "../lib/equipment-recommendation";
 
 const SAMPLE_JSON = `{
   "date": "2026-06-11",
@@ -29,13 +33,25 @@ const SAMPLE_JSON = `{
 
 export default async function CorosPage() {
   const todayIso = getTodayIsoDate();
-  const [todayWorkoutResult, nextWorkouts, sisrunResult] = await Promise.all([
+  const [todayWorkoutResult, nextWorkouts, sisrunResult, activities, athlete] = await Promise.all([
     getStructuredPlannedWorkout(todayIso),
     getStructuredPlannedWorkoutsForRange(30),
     getSisrunDataWithSource(),
+    getStravaActivities({ after: STRAVA_2024_START_EPOCH, maxPages: 20 }),
+    getStravaAthlete(),
   ]);
 
   const sisrunSummary = buildSisrunFallbackWorkoutSummary(sisrunResult.data);
+  const gears = buildGearRecommendationSummaries(activities, Array.isArray(athlete?.shoes) ? athlete.shoes as StravaGear[] : []);
+  const recommendationByDate = new Map(
+    nextWorkouts
+      .filter((result) => result.data)
+      .map((result) => {
+        const workout = getEquipmentWorkoutFromStructuredWorkout(result.data!);
+        const recommendation = pickRecommendedShoeForWorkout(gears, workout);
+        return [result.data!.date, recommendation?.name ?? null] as const;
+      }),
+  );
 
   return (
     <div className="page">
@@ -111,6 +127,7 @@ export default async function CorosPage() {
                   <>
                     <p style={{ marginTop: 6, fontWeight: 700, color: "var(--text)", fontSize: 13 }}>{result.data.title}</p>
                     <p className="ba-muted" style={{ marginTop: 4, fontSize: 12 }}>{getStructuredWorkoutSourceLabel(result.data.source)} · {result.data.type}</p>
+                    <p className="ba-muted" style={{ marginTop: 4, fontSize: 12 }}>Tênis · {recommendationByDate.get(result.data.date) ?? "sem recomendação"}</p>
                   </>
                 ) : (
                   <p className="ba-muted" style={{ marginTop: 6, fontSize: 12 }}>Sem treino estruturado.</p>
@@ -121,10 +138,19 @@ export default async function CorosPage() {
         </section>
 
         <section className="ba-section ba-card" style={{ padding: "1.5rem" }}>
-          <p className="ba-eyebrow">Entrada provisória</p>
+          <p className="ba-eyebrow">Importação manual do MCP</p>
+          <h2 className="ba-title" style={{ fontSize: "1.7rem", marginTop: 4 }}>Colar agenda COROS e salvar no Upstash</h2>
+          <p className="ba-muted" style={{ marginTop: ".5rem" }}>
+            Quando você atualizar algo no COROS, consulte a agenda pelo MCP, cole o texto bruto aqui e importe. Use o modo teste primeiro; depois desmarque para gravar.
+          </p>
+          <CorosImportScheduleForm />
+        </section>
+
+        <section className="ba-section ba-card" style={{ padding: "1.5rem" }}>
+          <p className="ba-eyebrow">Entrada técnica</p>
           <h2 className="ba-title" style={{ fontSize: "1.7rem", marginTop: 4 }}>Como salvar um treino estruturado</h2>
           <p className="ba-muted" style={{ marginTop: ".5rem" }}>
-            Enquanto a automação pelo MCP não roda dentro da Vercel, a rota protegida abaixo permite gravar um treino ou importar a agenda COROS em lote no mesmo formato que a página vai consumir.
+            A rota protegida abaixo continua disponível para automações externas ou scripts locais.
           </p>
           <pre className="mt-4 overflow-auto rounded-2xl" style={{ background: "rgba(255,255,255,0.06)", color: "var(--text)", padding: "1rem", fontSize: 12, lineHeight: 1.6 }}>
 {`POST /api/planned-workout
@@ -141,9 +167,7 @@ Content-Type: application/json
 
 {
   "preferredTitlesByDate": { "2026-06-13": "Longão 23k" },
-  "entries": [
-    { "date": "2026-06-13", "title": "Longão 23k", "distanceKm": 23, "estimatedTime": "2:07:33", "loadTl": 203 }
-  ]
+  "text": "Training Schedule\n========================\n..."
 }`}
           </pre>
         </section>
