@@ -27,8 +27,9 @@ type StravaActivityDetailWithSplits = StravaActivitySummary & {
   laps?: StravaLap[] | null;
 };
 
-const HALF_MARATHON_MIN_M = 19_500;
-const HALF_MARATHON_MAX_M = 23_500;
+const HALF_MARATHON_MIN_M = 20_000;
+const HALF_MARATHON_MAX_M = 22_500;
+const OFFICIAL_RACE_NAME_TOKEN = "prova";
 
 async function getActivities(token: string): Promise<StravaActivity[]> {
   return getStravaActivities({
@@ -159,12 +160,27 @@ function cleanRaceName(name: string): string {
     .trim();
 }
 
+function normalizeText(value: string): string {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+function isHalfMarathonRaceCandidate(activity: StravaActivity): boolean {
+  const isHalfDistance = activity.distance >= HALF_MARATHON_MIN_M && activity.distance <= HALF_MARATHON_MAX_M;
+  const hasRaceName = normalizeText(activity.name ?? "").includes(OFFICIAL_RACE_NAME_TOKEN);
+
+  return isRunActivity(activity) && isHalfDistance && hasRaceName;
+}
+
 export default async function MeiasPage() {
   const token = await getValidStravaAccessToken();
   const activities = token ? await getActivities(token) : [];
 
   const halvesBase = activities
-    .filter((a) => isRunActivity(a) && a.distance >= HALF_MARATHON_MIN_M && a.distance <= HALF_MARATHON_MAX_M)
+    .filter(isHalfMarathonRaceCandidate)
     .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
 
   const halves: HalfMarathonEntry[] = [];
@@ -202,7 +218,7 @@ export default async function MeiasPage() {
             <p className="ba-eyebrow">Análise</p>
             <h1 className="ba-title">Comparativo de Meias</h1>
             <p className="ba-muted" style={{ marginTop: ".5rem" }}>
-              {halves.length} meias exibidas desde jan/2024 — {halvesBase.length} candidatas encontradas no Strava.
+              {halves.length} provas de meia exibidas desde jan/2024 — {halvesBase.length} candidatas oficiais encontradas no Strava.
             </p>
           </div>
           <Link href="/" className="ba-back">← Voltar ao dashboard</Link>
@@ -215,14 +231,14 @@ export default async function MeiasPage() {
                 ? "Não consegui autenticar no Strava. Confira as variáveis STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET e STRAVA_REFRESH_TOKEN na Vercel."
                 : halvesBase.length > 0
                   ? `Encontrei ${halvesBase.length} meia(s) candidata(s), mas o Strava não retornou splits/laps válidos para montar o gráfico.`
-                  : "Nenhuma meia maratona encontrada no intervalo de 19,5 km a 23,5 km desde jan/2024."}
+                  : "Nenhuma atividade com nome de Prova e distância de meia maratona foi encontrada desde jan/2024."}
             </p>
           </div>
         ) : (
           <>
             <section className="ba-grid-4 ba-section">
               <div className="ba-card" style={{ padding: "1.2rem", textAlign: "center" }}>
-                <p className="ba-label">Total de meias</p>
+                <p className="ba-label">Total de provas</p>
                 <p className="ba-value" style={{ fontSize: "2rem", marginTop: ".4rem" }}>{halves.length}</p>
                 <p className="ba-muted" style={{ marginTop: ".3rem" }}>desde jan/2024</p>
               </div>

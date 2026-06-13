@@ -496,8 +496,10 @@ function getCyclePlanStats(items: MarathonLongRunPlanItem[]) {
   const completedItems = validItems.filter((item) => item.status === "done");
   const partialItems = validItems.filter((item) => item.status === "partial");
   const nextLongRun = validItems.find((item) => item.status === "future" || item.status === "today") ?? null;
-  const biggestLongRun = validItems.length
-    ? validItems.reduce((best, item) => (item.plannedKm > best.plannedKm ? item : best))
+  const pendingItems = validItems.filter((item) => item.status !== "done");
+  const stimulusItems = validItems.filter((item) => !item.isRaceGoal);
+  const biggestLongRun = stimulusItems.length
+    ? stimulusItems.reduce((best, item) => (item.plannedKm > best.plannedKm ? item : best))
     : null;
 
   const plannedKm = validItems.reduce((sum, item) => sum + item.plannedKm, 0);
@@ -509,7 +511,7 @@ function getCyclePlanStats(items: MarathonLongRunPlanItem[]) {
     total: validItems.length,
     completed: completedItems.length,
     partial: partialItems.length,
-    remaining: validItems.filter((item) => item.status === "future" || item.status === "today").length,
+    remaining: pendingItems.length,
     plannedKm,
     duePlannedKm,
     executedKm,
