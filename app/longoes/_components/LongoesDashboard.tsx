@@ -11,6 +11,12 @@ import {
 import { formatBRDate, getBRDateKey } from "../../lib/date-utils";
 import { getSisrunData } from "../../lib/sisrun-utils";
 import {
+  getStructuredPlannedWorkoutsForRange,
+  getStructuredWorkoutSourceLabel,
+  isStructuredRunningWorkout,
+  type StructuredPlannedWorkout,
+} from "../../lib/planned-workout";
+import {
   formatEfficiency,
   formatLongRunDuration,
   formatLongRunPace,
@@ -179,6 +185,7 @@ type MarathonLongRunPlanItem = {
   raceName?: string;
   raceLocation?: string;
   needsReview: boolean;
+  sourceLabel: string;
 };
 
 function normalizeText(value: string) {
@@ -246,6 +253,21 @@ function formatShortPlanDate(date: Date) {
     day: "2-digit",
     month: "2-digit",
   }).format(date);
+}
+
+function formatPlanWeekday(date: Date) {
+  return new Intl.DateTimeFormat("pt-BR", { weekday: "short" })
+    .format(date)
+    .replace(".", "");
+}
+
+function getDaysInclusive(start: Date, end: Date) {
+  const dayMs = 1000 * 60 * 60 * 24;
+  return Math.max(0, Math.round((end.getTime() - start.getTime()) / dayMs) + 1);
+}
+
+function getLaterDate(a: Date, b: Date) {
+  return a.getTime() > b.getTime() ? a : b;
 }
 
 function formatKm(value: number | null | undefined, digits = 1) {
@@ -400,13 +422,79 @@ function getPlanStatus({
   return "missed";
 }
 
-function buildMarathonLongRunPlan(
+function getStructuredLongRunSourceLabel(workout: StructuredPlannedWorkout) {
+  return workout.source === "coros" ? "Upstash/COROS" : getStructuredWorkoutSourceLabel(workout.source);
+}
+
+function buildStructuredLongRunPlanItems(
+  structuredWorkouts: StructuredPlannedWorkout[],
+  activities: StravaActivity[],
+  seenDates: Set<string>,
+): MarathonLongRunPlanItem[] {
+  return structuredWorkouts
+    .filter((workout) => isStructuredRunningWorkout(workout))
+    .map((workout) => {
+      const plannedKm = Number(workout.distanceKm ?? 0);
+      const date = parseDateKey(workout.date);
+      if (!date || !Number.isFinite(plannedKm) || plannedKm <= 0) return null;
+      if (date < MARATHON_CYCLE_START_DATE || date > MARATHON_CYCLE_END_DATE) return null;
+
+      const isLongSignal = workout.type === "longao" || workout.type === "prova_longa" || plannedKm >= 16;
+      if (!isLongSignal) return null;
+
+      const dateKey = getDateKeyFromDate(date);
+      if (seenDates.has(dateKey)) return null;
+      seenDates.add(dateKey);
+
+      const race = findRaceForPlanDate(date, plannedKm);
+      const isRaceGoal = Boolean(race?.isGoal) || (Math.abs(daysBetween(date, BUENOS_AIRES_RACE_DATE)) <= 1 && plannedKm >= 40);
+      const isRace = Boolean(workout.type === "prova_longa" || workout.type === "prova_curta" || race) && !isRaceGoal;
+      const needsReview = plannedKm > MAX_REASONABLE_LONG_RUN_KM && !isRaceGoal;
+      const matchedActivity = findMatchingRun(date, plannedKm, activities);
+      const actualKm = matchedActivity ? matchedActivity.distance / 1000 : null;
+      const diffKm = actualKm !== null ? actualKm - plannedKm : null;
+      const status = getPlanStatus({ date, plannedKm, actualKm, needsReview });
+      const typeLabel = getLongRunTypeLabel(plannedKm, isRaceGoal, isRace);
+      const sourceLabel = getStructuredLongRunSourceLabel(workout);
+
+      const planItem: MarathonLongRunPlanItem = {
+        key: dateKey,
+        date,
+        dateLabel: formatPlanDate(date),
+        shortDateLabel: formatShortPlanDate(date),
+        weekday: formatPlanWeekday(date),
+        weekLabel: "Upstash/COROS",
+        plannedKm,
+        actualKm,
+        diffKm,
+        status,
+        title: isRaceGoal ? "Maratona de Buenos Aires" : workout.title,
+        typeLabel,
+        note: "",
+        matchedActivity,
+        isKeyWorkout: plannedKm >= 30 || isRaceGoal || isRace,
+        isRaceGoal,
+        isRace,
+        raceName: race?.name,
+        raceLocation: race?.location,
+        needsReview,
+        sourceLabel,
+      };
+
+      return {
+        ...planItem,
+        note: getLongRunNote(planItem),
+      };
+    })
+    .filter((item): item is MarathonLongRunPlanItem => Boolean(item));
+}
+
+function buildSisrunLongRunPlanItems(
   sisrunData: SisrunDataWithWorkouts | null,
   activities: StravaActivity[],
+  seenDates: Set<string>,
 ): MarathonLongRunPlanItem[] {
   if (!sisrunData?.weeks?.length) return [];
-
-  const seenDates = new Set<string>();
 
   const items = sisrunData.weeks.flatMap((week) => {
     const longRunKm = Number(week.longRunPlannedKm ?? 0);
@@ -478,6 +566,7 @@ function buildMarathonLongRunPlan(
         raceName: race?.name,
         raceLocation: race?.location,
         needsReview,
+        sourceLabel: "SisRUN",
       };
 
       return {
@@ -487,7 +576,19 @@ function buildMarathonLongRunPlan(
     }).filter((item): item is MarathonLongRunPlanItem => Boolean(item));
   });
 
-  return items.sort((a, b) => a.date.getTime() - b.date.getTime());
+  return items;
+}
+
+function buildMarathonLongRunPlan(
+  sisrunData: SisrunDataWithWorkouts | null,
+  activities: StravaActivity[],
+  structuredWorkouts: StructuredPlannedWorkout[] = [],
+): MarathonLongRunPlanItem[] {
+  const seenDates = new Set<string>();
+  const structuredItems = buildStructuredLongRunPlanItems(structuredWorkouts, activities, seenDates);
+  const sisrunItems = buildSisrunLongRunPlanItems(sisrunData, activities, seenDates);
+
+  return [...structuredItems, ...sisrunItems].sort((a, b) => a.date.getTime() - b.date.getTime());
 }
 
 function getCyclePlanStats(items: MarathonLongRunPlanItem[]) {
@@ -496,7 +597,7 @@ function getCyclePlanStats(items: MarathonLongRunPlanItem[]) {
   const completedItems = validItems.filter((item) => item.status === "done");
   const partialItems = validItems.filter((item) => item.status === "partial");
   const nextLongRun = validItems.find((item) => item.status === "future" || item.status === "today") ?? null;
-  const pendingItems = validItems.filter((item) => item.status !== "done");
+  const upcomingItems = validItems.filter((item) => item.status === "future" || item.status === "today");
   const stimulusItems = validItems.filter((item) => !item.isRaceGoal);
   const biggestLongRun = stimulusItems.length
     ? stimulusItems.reduce((best, item) => (item.plannedKm > best.plannedKm ? item : best))
@@ -511,7 +612,7 @@ function getCyclePlanStats(items: MarathonLongRunPlanItem[]) {
     total: validItems.length,
     completed: completedItems.length,
     partial: partialItems.length,
-    remaining: pendingItems.length,
+    remaining: upcomingItems.length,
     plannedKm,
     duePlannedKm,
     executedKm,
@@ -533,10 +634,19 @@ function PlanMetric({ label, value, sub }: { label: string; value: string; sub?:
 }
 
 export default async function LongoesPage() {
-  const [activities, sisrunData] = await Promise.all([getActivities(), getSisrunData()]);
+  const cyclePlanStart = getLaterDate(getTodayInBrazil(), MARATHON_CYCLE_START_DATE);
+  const cyclePlanDays = getDaysInclusive(cyclePlanStart, MARATHON_CYCLE_END_DATE);
+  const [activities, sisrunData, structuredPlanResults] = await Promise.all([
+    getActivities(),
+    getSisrunData(),
+    getStructuredPlannedWorkoutsForRange(cyclePlanDays, cyclePlanStart),
+  ]);
+  const structuredWorkouts = structuredPlanResults
+    .map((result) => result.data)
+    .filter((workout): workout is StructuredPlannedWorkout => Boolean(workout));
   const longRuns = await getLongRunsFromActivities(activities);
   const summary = getLongRunSummary(longRuns);
-  const marathonLongRunPlan = buildMarathonLongRunPlan(sisrunData, activities);
+  const marathonLongRunPlan = buildMarathonLongRunPlan(sisrunData, activities, structuredWorkouts);
   const cyclePlanStats = getCyclePlanStats(marathonLongRunPlan);
 
   const lastLongRun = longRuns[0] ?? null;
@@ -675,7 +785,7 @@ export default async function LongoesPage() {
                   Planejado × executado
                 </h2>
                 <p className="mt-1 text-sm text-white/45">
-                  Status por data, com alerta para placeholders fora do padrão.
+                  Status por data, priorizando Upstash/COROS e usando SisRUN apenas como fallback.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -685,7 +795,7 @@ export default async function LongoesPage() {
             </div>
 
             {marathonLongRunPlan.length === 0 ? (
-              <p className="text-sm text-white/50">Nenhum longão planejado foi encontrado no SisRUN para o ciclo específico.</p>
+              <p className="text-sm text-white/50">Nenhum longão planejado foi encontrado no Upstash/COROS nem no SisRUN para o ciclo específico.</p>
             ) : (
               <div className="longoes-plan-grid">
                 {marathonLongRunPlan.map((item) => {
@@ -711,6 +821,7 @@ export default async function LongoesPage() {
                           <span className={`badge ${item.isRaceGoal || item.isRace ? "badge--accent" : item.isKeyWorkout ? "badge--orange" : "badge--muted"}`}>
                             {item.typeLabel}
                           </span>
+                          <span className="badge badge--muted">{item.sourceLabel}</span>
                           {item.matchedActivity && <span className="badge badge--blue">Strava encontrado</span>}
                         </div>
                         <h3 className="mt-3 text-lg font-semibold leading-snug text-white/90">{item.title}</h3>

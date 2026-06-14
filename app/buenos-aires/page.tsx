@@ -4,7 +4,7 @@ import Navbar from "../components/Navbar";
 import MarathonProjection from "../components/MarathonProjection";
 import WeeklyPlanVsActualChart from "../components/WeeklyPlanVsActualChart";
 import ZonesAggregate from "../components/ZonesAggregate";
-import TodayWorkoutCard from "../components/TodayWorkoutCard";
+import TodayWorkoutCard, { getTodayWorkoutStatus } from "../components/TodayWorkoutCard";
 import WeeklyGoalCard from "../components/WeeklyGoalCard";
 
 import { getValidStravaAccessToken } from "../lib/strava-auth";
@@ -25,6 +25,7 @@ import {
   type SisrunWeek,
 } from "../lib/sisrun-utils";
 import { getBRDate, getActivityDate } from "../lib/date-utils";
+import { getStructuredPlannedWorkout } from "../lib/planned-workout";
 import { isRunActivity } from "../lib/strava-client";
 
 import BuenosAiresHero from "./_components/BuenosAiresHero";
@@ -59,7 +60,7 @@ import {
 export default async function BuenosAiresPage() {
   const accessToken = await getValidStravaAccessToken();
 
-  const [activities, manualPredictions, sisrunData, athleteProfile] =
+  const [activities, manualPredictions, sisrunData, athleteProfile, structuredWorkoutResult] =
     await Promise.all([
       getActivities(),
       getManualPredictions(),
@@ -67,6 +68,7 @@ export default async function BuenosAiresPage() {
       accessToken
         ? getDynamicAthleteProfile(accessToken)
         : Promise.resolve(null),
+      getStructuredPlannedWorkout(),
     ]);
 
   const sisrunWeek = getCurrentWeek(sisrunData) as SisrunWeek | null;
@@ -241,14 +243,7 @@ export default async function BuenosAiresPage() {
     projRunsEnriched,
   );
 
-  const todayStatus = !todaySisrunRow
-    ? "Sem treino previsto hoje"
-    : todayStravaKm <= 0
-      ? "Pendente"
-      : todaySisrunRow.plannedDistanceKm > 0 &&
-          todayStravaKm >= todaySisrunRow.plannedDistanceKm
-        ? "Concluído"
-        : "Parcial";
+  const todayStatus = getTodayWorkoutStatus(todaySisrunRow, todayStravaKm, structuredWorkoutResult.data);
 
   const alerts = buildMarathonAlerts({
     hasPlan: Boolean(sisrunWeek),
@@ -356,6 +351,8 @@ export default async function BuenosAiresPage() {
             <TodayWorkoutCard
               todaySisrunRow={todaySisrunRow}
               todayStravaKm={todayStravaKm}
+              structuredWorkout={structuredWorkoutResult.data}
+              structuredWorkoutSourceLabel={structuredWorkoutResult.sourceLabel}
             />
 
             <ReadinessSection

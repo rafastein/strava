@@ -51,6 +51,10 @@ export type PlannedWorkoutDataResult = {
   redisConfigured: boolean;
 };
 
+export type StructuredPlannedWorkoutRangeResult = PlannedWorkoutDataResult & {
+  date: string;
+};
+
 function normalizeText(value: string | null | undefined) {
   return String(value ?? "")
     .normalize("NFD")
@@ -247,11 +251,11 @@ export function normalizeStructuredWorkout(
   };
 }
 
-export async function getStructuredPlannedWorkout(
-  dateIso = getTodayIsoDate(),
+async function readStructuredPlannedWorkoutFromRedis(
+  redis: Awaited<ReturnType<typeof getRedisClient>>,
+  dateIso: string,
 ): Promise<PlannedWorkoutDataResult> {
   const key = getPlannedWorkoutKey(dateIso);
-  const redis = await getRedisClient();
 
   if (!redis) {
     return {
@@ -275,14 +279,22 @@ export async function getStructuredPlannedWorkout(
   }
 
   const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+  const workout = normalizeStructuredWorkout(parsed, dateIso);
 
   return {
-    data: normalizeStructuredWorkout(parsed, dateIso),
+    data: workout,
     source: "redis",
-    sourceLabel: "Upstash",
+    sourceLabel: workout.source === "coros" ? "Upstash/COROS" : "Upstash",
     key,
     redisConfigured: true,
   };
+}
+
+export async function getStructuredPlannedWorkout(
+  dateIso = getTodayIsoDate(),
+): Promise<PlannedWorkoutDataResult> {
+  const redis = await getRedisClient();
+  return readStructuredPlannedWorkoutFromRedis(redis, dateIso);
 }
 
 export async function saveStructuredPlannedWorkout(raw: unknown) {
@@ -311,15 +323,36 @@ export async function deleteStructuredPlannedWorkout(dateIso = getTodayIsoDate()
   return { key };
 }
 
-export async function getStructuredPlannedWorkoutsForRange(days = 7, startDate = new Date()) {
-  const dates = Array.from({ length: days }, (_, index) => {
+export function getIsoDatesForRange(days = 7, startDate = new Date()) {
+  return Array.from({ length: Math.max(0, days) }, (_, index) => {
     const date = new Date(startDate);
     date.setDate(date.getDate() + index);
     return getTodayIsoDate(date);
   });
+}
 
-  const results = await Promise.all(dates.map((date) => getStructuredPlannedWorkout(date)));
-  return results;
+export async function getStructuredPlannedWorkoutsForRange(
+  days = 7,
+  startDate = new Date(),
+): Promise<StructuredPlannedWorkoutRangeResult[]> {
+  const dates = getIsoDatesForRange(days, startDate);
+  const redis = await getRedisClient();
+  const results = await Promise.all(dates.map((date) => readStructuredPlannedWorkoutFromRedis(redis, date)));
+
+  return results.map((result, index) => ({
+    ...result,
+    date: dates[index],
+  }));
+}
+
+export function getStructuredWorkoutPlannedDistanceKm(workout: StructuredPlannedWorkout | null | undefined) {
+  if (!workout || workout.type === "descanso" || workout.type === "forca" || workout.type === "indefinido") return 0;
+  return typeof workout.distanceKm === "number" && Number.isFinite(workout.distanceKm) ? workout.distanceKm : null;
+}
+
+export function isStructuredRunningWorkout(workout: StructuredPlannedWorkout | null | undefined) {
+  if (!workout) return false;
+  return workout.type !== "descanso" && workout.type !== "forca" && workout.type !== "indefinido";
 }
 
 export function buildSisrunFallbackWorkoutSummary(data: SisrunParsedData | null) {

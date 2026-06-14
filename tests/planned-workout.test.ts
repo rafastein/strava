@@ -2,7 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   classifyStructuredWorkout,
+  getIsoDatesForRange,
   getPlannedWorkoutKey,
+  getStructuredWorkoutPlannedDistanceKm,
+  isStructuredRunningWorkout,
   normalizeStructuredWorkout,
   PLANNED_WORKOUT_KEY_PREFIX,
 } from "../app/lib/planned-workout";
@@ -58,4 +61,31 @@ test("equipamentos prioriza treino estruturado como fonte", () => {
   assert.equal(equipmentWorkout.status, "planned");
   assert.equal(equipmentWorkout.type, "intervalado");
   assert.equal(equipmentWorkout.label, "Intervalado");
+});
+
+
+test("range de treinos estruturados gera datas ISO em sequência", () => {
+  const dates = getIsoDatesForRange(3, new Date("2026-06-13T12:00:00-03:00"));
+
+  assert.deepEqual(dates, ["2026-06-13", "2026-06-14", "2026-06-15"]);
+});
+
+test("helpers de treino estruturado diferenciam corrida de descanso", () => {
+  const run = normalizeStructuredWorkout({
+    date: "2026-06-21",
+    source: "coros",
+    title: "Longo 25 km",
+    distanceKm: 25,
+  });
+  const rest = normalizeStructuredWorkout({
+    date: "2026-06-22",
+    source: "coros",
+    title: "Descanso",
+    type: "descanso",
+  });
+
+  assert.equal(isStructuredRunningWorkout(run), true);
+  assert.equal(getStructuredWorkoutPlannedDistanceKm(run), 25);
+  assert.equal(isStructuredRunningWorkout(rest), false);
+  assert.equal(getStructuredWorkoutPlannedDistanceKm(rest), 0);
 });

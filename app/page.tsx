@@ -7,6 +7,7 @@ import WeeklyComparisonChart from "./components/WeeklyComparisonChart";
 import NextRaceCard from "./components/NextRaceCard";
 import SeasonCalendar from "./SeasonCalendar";
 import RaceCountdown from "./components/RaceCountdown";
+import TodayWorkoutCard from "./components/TodayWorkoutCard";
 import {
   buildWeeklyComparison,
   getCurrentWeek,
@@ -33,6 +34,7 @@ import {
   getLongRunSummary,
   getLongRunsFromActivities,
 } from "./lib/strava-long-runs";
+import { getStructuredPlannedWorkout } from "./lib/planned-workout";
 
 type StravaActivity = StravaActivitySummary;
 type Athlete = StravaAthlete;
@@ -94,11 +96,12 @@ function buildAlerts(params: {
 
 export default async function Home() {
   const accessToken = await getValidStravaAccessToken();
-  const [athlete, activities, sisrunData, athleteProfile] = await Promise.all([
+  const [athlete, activities, sisrunData, athleteProfile, structuredWorkoutResult] = await Promise.all([
     getAthlete(),
     getActivities(),
     getSisrunData(),
     accessToken ? getDynamicAthleteProfile(accessToken) : Promise.resolve(null),
+    getStructuredPlannedWorkout(),
   ]);
 
   const sisrunWeek = getCurrentWeek(sisrunData) as SisrunWeek | null;
@@ -129,9 +132,6 @@ export default async function Home() {
   const longRuns = await getLongRunsFromActivities(activities);
   const longRunSummary = getLongRunSummary(longRuns);
 
-  const todayStatus = !todaySisrunRow ? "Sem treino" : todaySisrunRow.plannedDistanceKm === 0 ? "Descanso" : todayStravaKm <= 0 ? "Pendente" : todayStravaKm >= todaySisrunRow.plannedDistanceKm ? "Concluído ✓" : "Parcial";
-  const todayOk = todayStatus === "Concluído ✓" || todayStatus === "Descanso";
-
   const alerts = buildAlerts({
     hasSisrunWeek: Boolean(sisrunWeek),
     plannedWeekKm,
@@ -160,7 +160,7 @@ export default async function Home() {
               <span className="home-hero__title-accent">Cabral</span>
             </h1>
             <p className="home-hero__sub">
-              Dashboard de treinos, projeções e análise de corrida. Powered by Strava + SisRUN.
+              Dashboard de treinos, projeções e análise de corrida. Powered by Strava + COROS/Upstash + SisRUN.
             </p>
             <div className="home-hero__actions">
               <Link href="/buenos-aires" className="ba-cta">Modo maratona →</Link>
@@ -223,20 +223,12 @@ export default async function Home() {
 
         {/* ── HOJE + ALERTAS ── */}
         <section className="home-today-section">
-          <div className="ba-card" style={{ padding: "1.5rem" }}>
-            <p className="ba-label" style={{ marginBottom: "0.75rem" }}>Hoje</p>
-            {todaySisrunRow ? (
-              <>
-                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 4 }}>Planejado: {todaySisrunRow.plannedDistanceKm.toFixed(1)} km</p>
-                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 12 }}>Strava: {todayStravaKm.toFixed(1)} km</p>
-              </>
-            ) : (
-              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", marginBottom: 12 }}>Nenhum treino previsto.</p>
-            )}
-            <span style={{ display: "inline-block", padding: "4px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, background: todayOk ? "rgba(16,185,129,0.15)" : "rgba(245,166,35,0.15)", color: todayOk ? "#10b981" : "#f5a623", border: `1px solid ${todayOk ? "rgba(16,185,129,0.3)" : "rgba(245,166,35,0.3)"}` }}>
-              {todayStatus}
-            </span>
-          </div>
+          <TodayWorkoutCard
+            todaySisrunRow={todaySisrunRow}
+            todayStravaKm={todayStravaKm}
+            structuredWorkout={structuredWorkoutResult.data}
+            structuredWorkoutSourceLabel={structuredWorkoutResult.sourceLabel}
+          />
 
           <div className="ba-grid-2">
             {alerts.map((a, i) => (

@@ -243,7 +243,7 @@ export default async function EquipamentosPage() {
             <p className="ba-eyebrow">Strava + COROS/treino estruturado + SisRUN</p>
             <h1 className="ba-title">Equipamentos</h1>
             <p className="ba-muted" style={{ marginTop: ".5rem" }}>
-              Quilometragem, desgaste, eficiência e recomendação dinâmica de tênis a partir do treino estruturado, com SisRUN como fallback.
+              Quilometragem, desgaste, eficiência e recomendação dinâmica de tênis. O treino estruturado do Upstash/COROS tem prioridade; SisRUN entra como fallback.
             </p>
           </div>
           <Link href="/" className="ba-back">← Voltar ao dashboard</Link>
@@ -253,7 +253,7 @@ export default async function EquipamentosPage() {
           workout={todayWorkout}
           shoe={todayShoe}
           alternatives={todayAlternatives}
-          workoutSource={structuredWorkoutResult.data ? structuredWorkoutResult.data.source.toUpperCase() : sisrunResult.sourceLabel}
+          workoutSource={structuredWorkoutResult.data ? structuredWorkoutResult.sourceLabel : sisrunResult.sourceLabel}
         />
 
         {grouped.length === 0 ? (
