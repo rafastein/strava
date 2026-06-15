@@ -30,7 +30,7 @@ type ImportResponse = {
 export default function CorosImportScheduleForm() {
   const [adminSecret, setAdminSecret] = useState("");
   const [rawText, setRawText] = useState("");
-  const [preferredTitles, setPreferredTitles] = useState("2026-06-13=Longão 23k");
+  const [preferredTitles, setPreferredTitles] = useState("2026-06-13=Longão 23k\n2026-06-20=20/06 Sab - Corrida Prova 10,0\n2026-06-21=21/06 Dom - Corrida Longo 25,0");
   const [dryRun, setDryRun] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<ImportResponse | null>(null);
@@ -96,7 +96,7 @@ export default function CorosImportScheduleForm() {
             value={preferredTitles}
             onChange={(event) => setPreferredTitles(event.target.value)}
             rows={3}
-            placeholder="2026-06-13=Longão 23k"
+            placeholder={"2026-06-13=Longão 23k\n2026-06-21=21/06 Dom - Corrida Longo 25,0"}
             style={fieldStyle}
           />
         </label>

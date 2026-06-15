@@ -112,3 +112,45 @@ test("build da agenda COROS remove duplicidade do dia 13/06", () => {
   assert.equal(workouts[0].title, "Longão 23k");
   assert.equal(workouts[1].type, "regenerativo");
 });
+
+test("parse COROS por blocos sem deslocar distância entre datas", () => {
+  const text = `Training Schedule
+========================
+
+2026-06-20
+20/06 Sab - Corrida Prova 10,0
+Workout ID: abc
+Distance: 10.00 km
+Estimated Time: 51:20
+Load: 108 TL
+
+2026-06-21
+21/06 Dom - Corrida Longo 25,0
+Distance: 25.00 km
+Estimated Time: 2:12:35
+Load: 257 TL`;
+
+  const entries = parseCorosTrainingScheduleText(text);
+
+  assert.equal(entries.length, 2);
+  assert.equal(entries[0].date, "2026-06-20");
+  assert.equal(entries[0].title, "20/06 Sab - Corrida Prova 10,0");
+  assert.equal(entries[0].distanceKm, "10.00");
+  assert.equal(entries[1].date, "2026-06-21");
+  assert.equal(entries[1].title, "21/06 Dom - Corrida Longo 25,0");
+  assert.equal(entries[1].distanceKm, "25.00");
+});
+
+test("normalização COROS usa data do título quando o MCP vier deslocado", () => {
+  const workout = normalizeCorosScheduleEntry({
+    date: "2026-06-20",
+    title: "21/06 Dom - Corrida Longo 25,0",
+    distanceKm: 25,
+    estimatedTime: "2:12:35",
+    loadTl: 257,
+  });
+
+  assert.equal(workout.date, "2026-06-21");
+  assert.equal(workout.distanceKm, 25);
+  assert.equal(workout.type, "longao");
+});

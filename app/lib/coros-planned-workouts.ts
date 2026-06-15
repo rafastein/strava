@@ -68,6 +68,49 @@ function slugify(value: string) {
     .slice(0, 80);
 }
 
+function isScheduleDateLine(line: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(line.trim());
+}
+
+function parseDateFromTitle(title: string, fallbackDate: string) {
+  const match = title.trim().match(/^(\d{1,2})\/(\d{1,2})\b/);
+  if (!match) return fallbackDate;
+
+  const fallbackYear = Number(fallbackDate.match(/^(\d{4})-/)?.[1]);
+  if (!fallbackYear) return fallbackDate;
+
+  const [, day, month] = match;
+  const date = new Date(fallbackYear, Number(month) - 1, Number(day), 12, 0, 0);
+  if (!Number.isFinite(date.getTime())) return fallbackDate;
+
+  const iso = [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+
+  return iso;
+}
+
+function findFirstMatch(lines: string[], pattern: RegExp) {
+  for (const line of lines) {
+    const match = line.match(pattern);
+    if (match?.[1]) return match[1];
+  }
+
+  return null;
+}
+
+function getTitleFromCorosBlock(blockLines: string[]) {
+  const titleLine = blockLines.find((line) => {
+    if (/^(distance|estimated time|load)\s*:/i.test(line)) return false;
+    if (/^[-=]+$/.test(line)) return false;
+    return Boolean(line.trim());
+  });
+
+  return titleLine ?? "Treino COROS";
+}
+
 export function parseCorosTrainingScheduleText(text: string): CorosScheduleEntry[] {
   const lines = text
     .replace(/^"|"$/g, "")
@@ -81,20 +124,24 @@ export function parseCorosTrainingScheduleText(text: string): CorosScheduleEntry
 
   while (index < lines.length) {
     const dateLine = lines[index];
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateLine)) {
+    if (!isScheduleDateLine(dateLine)) {
       index += 1;
       continue;
     }
 
-    const date = dateLine;
-    const title = lines[index + 1] ?? "Treino COROS";
-    const distanceLine = lines[index + 2] ?? "";
-    const estimatedTimeLine = lines[index + 3] ?? "";
-    const loadLine = lines[index + 4] ?? "";
+    const block: string[] = [];
+    let cursor = index + 1;
 
-    const distanceKm = distanceLine.match(/Distance:\s*([\d.,]+)/i)?.[1] ?? null;
-    const estimatedTime = estimatedTimeLine.match(/Estimated Time:\s*([\d:]+)/i)?.[1] ?? null;
-    const loadTl = loadLine.match(/Load:\s*([\d.,]+)/i)?.[1] ?? null;
+    while (cursor < lines.length && !isScheduleDateLine(lines[cursor])) {
+      block.push(lines[cursor]);
+      cursor += 1;
+    }
+
+    const title = getTitleFromCorosBlock(block);
+    const date = parseDateFromTitle(title, dateLine);
+    const distanceKm = findFirstMatch(block, /Distance:\s*([\d.,]+)/i);
+    const estimatedTime = findFirstMatch(block, /Estimated Time:\s*([\d:]+)/i);
+    const loadTl = findFirstMatch(block, /Load:\s*([\d.,]+)/i);
 
     entries.push({
       date,
@@ -102,18 +149,19 @@ export function parseCorosTrainingScheduleText(text: string): CorosScheduleEntry
       distanceKm,
       estimatedTime,
       loadTl,
-      raw: { date, title, distanceLine, estimatedTimeLine, loadLine },
+      raw: { originalDate: dateLine, date, title, block },
     });
 
-    index += 5;
+    index = cursor;
   }
 
   return entries;
 }
 
 export function normalizeCorosScheduleEntry(entry: CorosScheduleEntry): StructuredPlannedWorkout {
-  const date = String(entry.date ?? "").trim();
+  const fallbackDate = String(entry.date ?? "").trim();
   const title = String(entry.title ?? "Treino COROS").trim();
+  const date = parseDateFromTitle(title, fallbackDate);
   const distanceKm = parseNumber(entry.distanceKm);
   const durationMin = parseCorosDurationToMinutes(entry.durationMin ?? entry.estimatedTime);
   const loadTl = parseNumber(entry.loadTl);
@@ -130,6 +178,8 @@ export function normalizeCorosScheduleEntry(entry: CorosScheduleEntry): Structur
     raw: {
       ...((entry.raw && typeof entry.raw === "object") ? entry.raw : {}),
       corosSchedule: {
+        originalDate: fallbackDate,
+        date,
         distanceKm,
         estimatedTime: entry.estimatedTime ?? null,
         durationMin,

@@ -29,6 +29,7 @@ import ActivitySplitsChart from "../../components/ActivitySplitsChart";
 type StravaActivity = StravaActivitySummary;
 
 const MAX_REASONABLE_LONG_RUN_KM = 45;
+const MIN_PLANNED_LONG_RUN_KM = 15;
 
 async function getActivities(): Promise<StravaActivity[]> {
   return getStravaActivities({ maxPages: 20 });
@@ -275,22 +276,33 @@ function formatKm(value: number | null | undefined, digits = 1) {
   return `${value.toFixed(digits).replace(".", ",")} km`;
 }
 
+function isRaceDistanceCompatible(plannedKm: number, raceDistanceKm: number) {
+  if (!Number.isFinite(plannedKm) || plannedKm <= 0) return false;
+  if (!Number.isFinite(raceDistanceKm) || raceDistanceKm <= 0) return false;
+
+  return plannedKm >= raceDistanceKm * 0.7 && plannedKm <= raceDistanceKm * 1.35;
+}
+
 function findRaceForPlanDate(date: Date, plannedKm: number) {
+  if (!Number.isFinite(plannedKm) || plannedKm <= 0) return null;
+
   const plannedDateKey = getDateKeyFromDate(date);
   const exactRace = MARATHON_CYCLE_RACES.find((race) => race.dateKey === plannedDateKey);
-  if (exactRace) return exactRace;
-
-  if (!Number.isFinite(plannedKm) || plannedKm <= 0) return null;
+  if (exactRace && (exactRace.isGoal || isRaceDistanceCompatible(plannedKm, exactRace.distanceKm))) {
+    return exactRace;
+  }
 
   return MARATHON_CYCLE_RACES.find((race) => {
     const raceDate = parseDateKey(race.dateKey);
     if (!raceDate) return false;
 
     const sameWeekend = Math.abs(daysBetween(date, raceDate)) <= 1;
-    const compatibleDistance = plannedKm >= race.distanceKm * 0.7 && plannedKm <= race.distanceKm * 1.35;
-
-    return sameWeekend && compatibleDistance;
+    return sameWeekend && isRaceDistanceCompatible(plannedKm, race.distanceKm);
   }) ?? null;
+}
+
+function isLongRunDistance(plannedKm: number) {
+  return Number.isFinite(plannedKm) && plannedKm >= MIN_PLANNED_LONG_RUN_KM;
 }
 
 function getPlanStatusMeta(status: PlanStatus) {
@@ -439,8 +451,10 @@ function buildStructuredLongRunPlanItems(
       if (!date || !Number.isFinite(plannedKm) || plannedKm <= 0) return null;
       if (date < MARATHON_CYCLE_START_DATE || date > MARATHON_CYCLE_END_DATE) return null;
 
-      const isLongSignal = workout.type === "longao" || workout.type === "prova_longa" || plannedKm >= 16;
-      if (!isLongSignal) return null;
+      const isExplicitLong = workout.type === "longao" || workout.type === "prova_longa";
+      const isShortOrQualityWorkout = ["prova_curta", "intervalado", "fartlek", "ritmo", "regenerativo"].includes(workout.type);
+      const isLongByDistance = isLongRunDistance(plannedKm) && !isShortOrQualityWorkout;
+      if (!isExplicitLong && !isLongByDistance) return null;
 
       const dateKey = getDateKeyFromDate(date);
       if (seenDates.has(dateKey)) return null;
@@ -508,13 +522,18 @@ function buildSisrunLongRunPlanItems(
       const type = normalizeText(workout.workoutType ?? "");
       const isLongType = type.includes("longo");
       const isWeekLongRun = Math.abs(plannedKm - longRunKm) < 0.05;
+      const race = parseBrDateLabel(workout.dateLabel) ? findRaceForPlanDate(parseBrDateLabel(workout.dateLabel)!, plannedKm) : null;
+      const isLongEnough = isLongRunDistance(plannedKm);
 
-      return isLongType || isWeekLongRun;
+      return (isLongType || isWeekLongRun || Boolean(workout.isRace && race)) && isLongEnough;
     });
 
     const sourceWorkouts = plannedWorkouts.length
       ? plannedWorkouts
-      : workouts.filter((workout) => Number(workout.plannedDistanceKm ?? 0) === longRunKm);
+      : workouts.filter((workout) => {
+        const plannedKm = Number(workout.plannedDistanceKm ?? 0);
+        return Math.abs(plannedKm - longRunKm) < 0.05 && isLongRunDistance(plannedKm);
+      });
 
     return sourceWorkouts.map((workout) => {
       const date = parseBrDateLabel(workout.dateLabel);
