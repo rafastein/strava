@@ -32,6 +32,8 @@ const MAX_REASONABLE_LONG_RUN_KM = 45;
 const MIN_PLANNED_LONG_RUN_KM = 15;
 const LONG_RUN_CYCLE_START_DATE = new Date("2026-06-13T12:00:00-03:00");
 const LONG_RUN_CYCLE_START_LABEL = "13/06";
+const LONG_RUN_CYCLE_START_KEY = "2026-06-13";
+const LONG_RUN_CYCLE_START_PLANNED_KM = 23;
 
 
 async function getActivities(): Promise<StravaActivity[]> {
@@ -498,6 +500,48 @@ function buildStructuredLongRunPlanItems(
     .filter((item): item is MarathonLongRunPlanItem => Boolean(item));
 }
 
+
+function buildCycleStartLongRunItem(
+  activities: StravaActivity[],
+  seenDates: Set<string>,
+): MarathonLongRunPlanItem[] {
+  const date = LONG_RUN_CYCLE_START_DATE;
+  const dateKey = LONG_RUN_CYCLE_START_KEY;
+
+  if (seenDates.has(dateKey)) return [];
+  seenDates.add(dateKey);
+
+  const plannedKm = LONG_RUN_CYCLE_START_PLANNED_KM;
+  const matchedActivity = findMatchingRun(date, plannedKm, activities);
+  const actualKm = matchedActivity ? matchedActivity.distance / 1000 : null;
+  const diffKm = actualKm !== null ? actualKm - plannedKm : null;
+  const status = getPlanStatus({ date, plannedKm, actualKm, needsReview: false });
+
+  const planItem: MarathonLongRunPlanItem = {
+    key: dateKey,
+    date,
+    dateLabel: formatPlanDate(date),
+    shortDateLabel: formatShortPlanDate(date),
+    weekday: formatPlanWeekday(date),
+    weekLabel: "Marco do ciclo",
+    plannedKm,
+    actualKm,
+    diffKm,
+    status,
+    title: "Longão controlado",
+    typeLabel: getLongRunTypeLabel(plannedKm, false, false),
+    note: "Longão que abre a contagem do ciclo específico de Buenos Aires.",
+    matchedActivity,
+    isKeyWorkout: true,
+    isRaceGoal: false,
+    isRace: false,
+    needsReview: false,
+    sourceLabel: "Marco do ciclo",
+  };
+
+  return [planItem];
+}
+
 function buildSisrunLongRunPlanItems(
   sisrunData: SisrunDataWithWorkouts | null,
   activities: StravaActivity[],
@@ -602,9 +646,10 @@ function buildMarathonLongRunPlan(
 ): MarathonLongRunPlanItem[] {
   const seenDates = new Set<string>();
   const structuredItems = buildStructuredLongRunPlanItems(structuredWorkouts, activities, seenDates, marathonCycleRaces);
+  const cycleStartItems = buildCycleStartLongRunItem(activities, seenDates);
   const sisrunItems = buildSisrunLongRunPlanItems(sisrunData, activities, seenDates, marathonCycleRaces);
 
-  return [...structuredItems, ...sisrunItems].sort((a, b) => a.date.getTime() - b.date.getTime());
+  return [...structuredItems, ...cycleStartItems, ...sisrunItems].sort((a, b) => a.date.getTime() - b.date.getTime());
 }
 
 function getCyclePlanStats(items: MarathonLongRunPlanItem[]) {
