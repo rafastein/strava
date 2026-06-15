@@ -11,7 +11,7 @@ import {
 import { formatBRDate, getBRDateKey } from "../../lib/date-utils";
 import { getSisrunData } from "../../lib/sisrun-utils";
 import {
-  getStructuredPlannedWorkoutsForRange,
+  getAllStructuredPlannedWorkouts,
   getStructuredWorkoutSourceLabel,
   isStructuredRunningWorkout,
   type StructuredPlannedWorkout,
@@ -263,11 +263,6 @@ function formatPlanWeekday(date: Date) {
   return new Intl.DateTimeFormat("pt-BR", { weekday: "short" })
     .format(date)
     .replace(".", "");
-}
-
-function getDaysInclusive(start: Date, end: Date) {
-  const dayMs = 1000 * 60 * 60 * 24;
-  return Math.max(0, Math.round((end.getTime() - start.getTime()) / dayMs) + 1);
 }
 
 function formatKm(value: number | null | undefined, digits = 1) {
@@ -655,17 +650,20 @@ function PlanMetric({ label, value, sub }: { label: string; value: string; sub?:
 }
 
 export default async function LongoesPage() {
-  const cyclePlanStart = LONG_RUN_CYCLE_START_DATE;
-  const cyclePlanDays = getDaysInclusive(cyclePlanStart, MARATHON_CYCLE_END_DATE);
   const [activities, sisrunData, structuredPlanResults, raceCalendarData] = await Promise.all([
     getActivities(),
     getSisrunData(),
-    getStructuredPlannedWorkoutsForRange(cyclePlanDays, cyclePlanStart),
+    getAllStructuredPlannedWorkouts(),
     getRaceCalendarData(),
   ]);
   const structuredWorkouts = structuredPlanResults
-    .map((result) => result.data)
-    .filter((workout): workout is StructuredPlannedWorkout => Boolean(workout));
+    .filter((result) => Boolean(result.data))
+    .map((result) => ({
+      ...result.data!,
+      // A data confiável é a data da chave do Upstash.
+      // Alguns treinos antigos podem ter sido salvos com a data interna deslocada pelo parser do COROS.
+      date: result.date,
+    } satisfies StructuredPlannedWorkout));
   const longRuns = await getLongRunsFromActivities(activities);
   const summary = getLongRunSummary(longRuns);
   const marathonLongRunPlan = buildMarathonLongRunPlan(sisrunData, activities, structuredWorkouts, raceCalendarData.marathonCycleRaces);
