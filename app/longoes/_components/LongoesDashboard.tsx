@@ -5,7 +5,6 @@ import {
   BUENOS_AIRES_GOAL_PACE_SEC_PER_KM,
   BUENOS_AIRES_RACE_DATE,
   MARATHON_CYCLE_END_DATE,
-  MARATHON_CYCLE_START_DATE,
   getRaceCalendarData,
   type MarathonCycleRace,
 } from "../../lib/race-calendar";
@@ -31,6 +30,9 @@ type StravaActivity = StravaActivitySummary;
 
 const MAX_REASONABLE_LONG_RUN_KM = 45;
 const MIN_PLANNED_LONG_RUN_KM = 15;
+const LONG_RUN_CYCLE_START_DATE = new Date("2026-06-13T12:00:00-03:00");
+const LONG_RUN_CYCLE_START_LABEL = "13/06";
+
 
 async function getActivities(): Promise<StravaActivity[]> {
   return getStravaActivities({ maxPages: 20 });
@@ -268,10 +270,6 @@ function getDaysInclusive(start: Date, end: Date) {
   return Math.max(0, Math.round((end.getTime() - start.getTime()) / dayMs) + 1);
 }
 
-function getLaterDate(a: Date, b: Date) {
-  return a.getTime() > b.getTime() ? a : b;
-}
-
 function formatKm(value: number | null | undefined, digits = 1) {
   if (typeof value !== "number" || !Number.isFinite(value)) return "—";
   return `${value.toFixed(digits).replace(".", ",")} km`;
@@ -451,7 +449,7 @@ function buildStructuredLongRunPlanItems(
       const plannedKm = Number(workout.distanceKm ?? 0);
       const date = parseDateKey(workout.date);
       if (!date || !Number.isFinite(plannedKm) || plannedKm <= 0) return null;
-      if (date < MARATHON_CYCLE_START_DATE || date > MARATHON_CYCLE_END_DATE) return null;
+      if (date < LONG_RUN_CYCLE_START_DATE || date > MARATHON_CYCLE_END_DATE) return null;
 
       const isExplicitLong = workout.type === "longao" || workout.type === "prova_longa";
       const isShortOrQualityWorkout = ["prova_curta", "intervalado", "fartlek", "ritmo", "regenerativo"].includes(workout.type);
@@ -543,7 +541,7 @@ function buildSisrunLongRunPlanItems(
       const plannedKm = Number(workout.plannedDistanceKm ?? longRunKm);
 
       if (!date || !Number.isFinite(plannedKm) || plannedKm <= 0) return null;
-      if (date < MARATHON_CYCLE_START_DATE || date > MARATHON_CYCLE_END_DATE) return null;
+      if (date < LONG_RUN_CYCLE_START_DATE || date > MARATHON_CYCLE_END_DATE) return null;
 
       const dateKey = getDateKeyFromDate(date);
       if (seenDates.has(dateKey)) return null;
@@ -657,7 +655,7 @@ function PlanMetric({ label, value, sub }: { label: string; value: string; sub?:
 }
 
 export default async function LongoesPage() {
-  const cyclePlanStart = getLaterDate(getTodayInBrazil(), MARATHON_CYCLE_START_DATE);
+  const cyclePlanStart = LONG_RUN_CYCLE_START_DATE;
   const cyclePlanDays = getDaysInclusive(cyclePlanStart, MARATHON_CYCLE_END_DATE);
   const [activities, sisrunData, structuredPlanResults, raceCalendarData] = await Promise.all([
     getActivities(),
@@ -751,7 +749,7 @@ export default async function LongoesPage() {
                   Central dos longões do ciclo específico
                 </h2>
                 <p className="mt-3 max-w-3xl text-sm leading-6 text-white/55">
-                  A timeline cruza o maior treino planejado de cada semana no SisRUN com a corrida registrada no Strava no mesmo dia ou no fim de semana próximo.
+                  A contagem começa no longão de 13/06, priorizando Upstash/COROS e usando o SisRUN apenas para completar lacunas do ciclo.
                 </p>
               </div>
 
@@ -809,7 +807,7 @@ export default async function LongoesPage() {
                   Planejado × executado
                 </h2>
                 <p className="mt-1 text-sm text-white/45">
-                  Status por data, priorizando Upstash/COROS e usando SisRUN apenas como fallback.
+                  Status por data a partir de {LONG_RUN_CYCLE_START_LABEL}, priorizando Upstash/COROS e usando SisRUN apenas como fallback.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
