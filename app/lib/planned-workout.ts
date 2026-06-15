@@ -102,6 +102,24 @@ export function formatPlannedWorkoutDateLabel(dateIso: string) {
   return `${d}/${m}/${y}`;
 }
 
+export function formatPlannedWorkoutDateWithWeekdayLabel(dateIso: string) {
+  const baseLabel = formatPlannedWorkoutDateLabel(dateIso);
+  const match = dateIso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return baseLabel;
+
+  const date = new Date(`${dateIso}T12:00:00-03:00`);
+  if (Number.isNaN(date.getTime())) return baseLabel;
+
+  const weekday = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    weekday: "short",
+  })
+    .format(date)
+    .replace(".", "");
+
+  return `${baseLabel} · ${weekday}`;
+}
+
 function getTextForClassification(input: {
   title?: string | null;
   description?: string | null;

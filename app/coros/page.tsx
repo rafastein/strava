@@ -5,12 +5,11 @@ import Navbar from "../components/Navbar";
 import CorosImportScheduleForm from "./CorosImportScheduleForm";
 import {
   buildSisrunFallbackWorkoutSummary,
-  formatPlannedWorkoutDateLabel,
+  formatPlannedWorkoutDateWithWeekdayLabel,
   getStructuredPlannedWorkout,
   getStructuredPlannedWorkoutsForRange,
   getStructuredWorkoutSourceLabel,
   getTodayIsoDate,
-  PLANNED_WORKOUT_KEY_PREFIX,
   type StructuredPlannedWorkout,
 } from "../lib/planned-workout";
 import { getSisrunDataWithSource } from "../lib/sisrun-utils";
@@ -42,15 +41,16 @@ export default async function CorosPage() {
   ]);
 
   const sisrunSummary = buildSisrunFallbackWorkoutSummary(sisrunResult.data);
+  const savedWorkouts = nextWorkouts.filter(
+    (result): result is typeof result & { data: StructuredPlannedWorkout } => Boolean(result.data),
+  );
   const gears = buildGearRecommendationSummaries(activities, Array.isArray(athlete?.shoes) ? athlete.shoes as StravaGear[] : []);
   const recommendationByDate = new Map(
-    nextWorkouts
-      .filter((result) => result.data)
-      .map((result) => {
-        const workout = getEquipmentWorkoutFromStructuredWorkout(result.data!);
-        const recommendation = pickRecommendedShoeForWorkout(gears, workout);
-        return [result.data!.date, recommendation?.name ?? null] as const;
-      }),
+    savedWorkouts.map((result) => {
+      const workout = getEquipmentWorkoutFromStructuredWorkout(result.data);
+      const recommendation = pickRecommendedShoeForWorkout(gears, workout);
+      return [result.data.date, recommendation?.name ?? null] as const;
+    }),
   );
 
   return (
@@ -119,22 +119,22 @@ export default async function CorosPage() {
         <section className="ba-section ba-card" style={{ padding: "1.5rem" }}>
           <p className="ba-eyebrow">Próximos 30 dias</p>
           <h2 className="ba-title" style={{ fontSize: "1.7rem", marginTop: 4 }}>Treinos estruturados salvos</h2>
-          <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-            {nextWorkouts.map((result) => (
-              <div key={result.key} className="ba-card-soft" style={{ padding: "1rem" }}>
-                <p className="ba-label">{formatPlannedWorkoutDateLabel(result.key.replace(PLANNED_WORKOUT_KEY_PREFIX, ""))}</p>
-                {result.data ? (
-                  <>
-                    <p style={{ marginTop: 6, fontWeight: 700, color: "var(--text)", fontSize: 13 }}>{result.data.title}</p>
-                    <p className="ba-muted" style={{ marginTop: 4, fontSize: 12 }}>{getStructuredWorkoutSourceLabel(result.data.source)} · {result.data.type}</p>
-                    <p className="ba-muted" style={{ marginTop: 4, fontSize: 12 }}>Tênis · {recommendationByDate.get(result.data.date) ?? "sem recomendação"}</p>
-                  </>
-                ) : (
-                  <p className="ba-muted" style={{ marginTop: 6, fontSize: 12 }}>Sem treino estruturado.</p>
-                )}
-              </div>
-            ))}
-          </div>
+          {savedWorkouts.length > 0 ? (
+            <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+              {savedWorkouts.map((result) => (
+                <div key={result.key} className="ba-card-soft" style={{ padding: "1rem" }}>
+                  <p className="ba-label">{formatPlannedWorkoutDateWithWeekdayLabel(result.data.date)}</p>
+                  <p style={{ marginTop: 6, fontWeight: 700, color: "var(--text)", fontSize: 13 }}>{result.data.title}</p>
+                  <p className="ba-muted" style={{ marginTop: 4, fontSize: 12 }}>{getStructuredWorkoutSourceLabel(result.data.source)} · {result.data.type}</p>
+                  <p className="ba-muted" style={{ marginTop: 4, fontSize: 12 }}>Tênis · {recommendationByDate.get(result.data.date) ?? "sem recomendação"}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="ba-muted" style={{ marginTop: "1rem", fontSize: 13 }}>
+              Nenhum treino estruturado salvo para os próximos 30 dias. Importe a agenda COROS abaixo para preencher esta lista.
+            </p>
+          )}
         </section>
 
         <section className="ba-section ba-card" style={{ padding: "1.5rem" }}>

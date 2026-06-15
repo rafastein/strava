@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   classifyStructuredWorkout,
+  formatPlannedWorkoutDateWithWeekdayLabel,
   getIsoDatesForRange,
   getPlannedWorkoutKey,
   getStructuredWorkoutPlannedDistanceKm,
@@ -88,4 +89,8 @@ test("helpers de treino estruturado diferenciam corrida de descanso", () => {
   assert.equal(getStructuredWorkoutPlannedDistanceKm(run), 25);
   assert.equal(isStructuredRunningWorkout(rest), false);
   assert.equal(getStructuredWorkoutPlannedDistanceKm(rest), 0);
+});
+
+test("formats planned workout labels with weekday", () => {
+  assert.equal(formatPlannedWorkoutDateWithWeekdayLabel("2026-06-21"), "21/06/2026 · dom");
 });
