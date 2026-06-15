@@ -9,6 +9,7 @@ const NAV_LINKS = [
   { href: "/longoes", label: "Longões" },
   { href: "/treinos-qualidade", label: "Qualidade" },
   { href: "/meias", label: "Meias" },
+  { href: "/provas", label: "Provas" },
   { href: "/27-capitais", label: "27 Capitais" },
   { href: "/corridas-brasil", label: "Brasil" },
   { href: "/corridas-mundo", label: "Mundo" },

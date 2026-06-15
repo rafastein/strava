@@ -19,7 +19,7 @@ import {
   type SisrunWeek,
 } from "./lib/sisrun-utils";
 import { getValidStravaAccessToken } from "./lib/strava-auth";
-import { BUENOS_AIRES_RACE_ISO, DASHBOARD_RACES } from "./lib/race-calendar";
+import { BUENOS_AIRES_RACE_ISO, getRaceCalendarData } from "./lib/race-calendar";
 import {
   getStravaActivities,
   getStravaAthlete,
@@ -96,12 +96,13 @@ function buildAlerts(params: {
 
 export default async function Home() {
   const accessToken = await getValidStravaAccessToken();
-  const [athlete, activities, sisrunData, athleteProfile, structuredWorkoutResult] = await Promise.all([
+  const [athlete, activities, sisrunData, athleteProfile, structuredWorkoutResult, raceCalendarData] = await Promise.all([
     getAthlete(),
     getActivities(),
     getSisrunData(),
     accessToken ? getDynamicAthleteProfile(accessToken) : Promise.resolve(null),
     getStructuredPlannedWorkout(),
+    getRaceCalendarData(),
   ]);
 
   const sisrunWeek = getCurrentWeek(sisrunData) as SisrunWeek | null;
@@ -198,7 +199,7 @@ export default async function Home() {
 
       <div className="home-content">
 
-        <SeasonCalendar activities={activities} prs={athleteProfile?.prs ?? null} />
+        <SeasonCalendar activities={activities} prs={athleteProfile?.prs ?? null} seasonMonths={raceCalendarData.seasonMonths} />
 
         {/* ── SEMANA ATUAL ── */}
         <section style={{ marginBottom: "1.75rem" }}>
@@ -243,7 +244,7 @@ export default async function Home() {
         {/* ── PRÓXIMA PROVA ── */}
         <section style={{ marginBottom: "1.75rem" }}>
           <p className="ba-label" style={{ marginBottom: "0.75rem" }}>Calendário de provas</p>
-          <NextRaceCard races={DASHBOARD_RACES} dark />
+          <NextRaceCard races={raceCalendarData.dashboardRaces} dark />
         </section>
 
         {/* ── LONGÕES ── */}

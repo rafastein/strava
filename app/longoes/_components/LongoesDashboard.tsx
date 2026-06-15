@@ -5,8 +5,9 @@ import {
   BUENOS_AIRES_GOAL_PACE_SEC_PER_KM,
   BUENOS_AIRES_RACE_DATE,
   MARATHON_CYCLE_END_DATE,
-  MARATHON_CYCLE_RACES,
   MARATHON_CYCLE_START_DATE,
+  getRaceCalendarData,
+  type MarathonCycleRace,
 } from "../../lib/race-calendar";
 import { formatBRDate, getBRDateKey } from "../../lib/date-utils";
 import { getSisrunData } from "../../lib/sisrun-utils";
@@ -283,16 +284,16 @@ function isRaceDistanceCompatible(plannedKm: number, raceDistanceKm: number) {
   return plannedKm >= raceDistanceKm * 0.7 && plannedKm <= raceDistanceKm * 1.35;
 }
 
-function findRaceForPlanDate(date: Date, plannedKm: number) {
+function findRaceForPlanDate(date: Date, plannedKm: number, marathonCycleRaces: MarathonCycleRace[]) {
   if (!Number.isFinite(plannedKm) || plannedKm <= 0) return null;
 
   const plannedDateKey = getDateKeyFromDate(date);
-  const exactRace = MARATHON_CYCLE_RACES.find((race) => race.dateKey === plannedDateKey);
+  const exactRace = marathonCycleRaces.find((race) => race.dateKey === plannedDateKey);
   if (exactRace && (exactRace.isGoal || isRaceDistanceCompatible(plannedKm, exactRace.distanceKm))) {
     return exactRace;
   }
 
-  return MARATHON_CYCLE_RACES.find((race) => {
+  return marathonCycleRaces.find((race) => {
     const raceDate = parseDateKey(race.dateKey);
     if (!raceDate) return false;
 
@@ -442,6 +443,7 @@ function buildStructuredLongRunPlanItems(
   structuredWorkouts: StructuredPlannedWorkout[],
   activities: StravaActivity[],
   seenDates: Set<string>,
+  marathonCycleRaces: MarathonCycleRace[],
 ): MarathonLongRunPlanItem[] {
   return structuredWorkouts
     .filter((workout) => isStructuredRunningWorkout(workout))
@@ -460,7 +462,7 @@ function buildStructuredLongRunPlanItems(
       if (seenDates.has(dateKey)) return null;
       seenDates.add(dateKey);
 
-      const race = findRaceForPlanDate(date, plannedKm);
+      const race = findRaceForPlanDate(date, plannedKm, marathonCycleRaces);
       const isRaceGoal = Boolean(race?.isGoal) || (Math.abs(daysBetween(date, BUENOS_AIRES_RACE_DATE)) <= 1 && plannedKm >= 40);
       const isRace = Boolean(workout.type === "prova_longa" || workout.type === "prova_curta" || race) && !isRaceGoal;
       const needsReview = plannedKm > MAX_REASONABLE_LONG_RUN_KM && !isRaceGoal;
@@ -507,6 +509,7 @@ function buildSisrunLongRunPlanItems(
   sisrunData: SisrunDataWithWorkouts | null,
   activities: StravaActivity[],
   seenDates: Set<string>,
+  marathonCycleRaces: MarathonCycleRace[],
 ): MarathonLongRunPlanItem[] {
   if (!sisrunData?.weeks?.length) return [];
 
@@ -522,7 +525,7 @@ function buildSisrunLongRunPlanItems(
       const type = normalizeText(workout.workoutType ?? "");
       const isLongType = type.includes("longo");
       const isWeekLongRun = Math.abs(plannedKm - longRunKm) < 0.05;
-      const race = parseBrDateLabel(workout.dateLabel) ? findRaceForPlanDate(parseBrDateLabel(workout.dateLabel)!, plannedKm) : null;
+      const race = parseBrDateLabel(workout.dateLabel) ? findRaceForPlanDate(parseBrDateLabel(workout.dateLabel)!, plannedKm, marathonCycleRaces) : null;
       const isLongEnough = isLongRunDistance(plannedKm);
 
       return (isLongType || isWeekLongRun || Boolean(workout.isRace && race)) && isLongEnough;
@@ -546,7 +549,7 @@ function buildSisrunLongRunPlanItems(
       if (seenDates.has(dateKey)) return null;
       seenDates.add(dateKey);
 
-      const race = findRaceForPlanDate(date, plannedKm);
+      const race = findRaceForPlanDate(date, plannedKm, marathonCycleRaces);
       const isRaceGoal = Boolean(race?.isGoal) || (Math.abs(daysBetween(date, BUENOS_AIRES_RACE_DATE)) <= 1 && plannedKm >= 40);
       const isRace = Boolean(workout.isRace || race) && !isRaceGoal;
       const needsReview = plannedKm > MAX_REASONABLE_LONG_RUN_KM && !isRaceGoal;
@@ -602,10 +605,11 @@ function buildMarathonLongRunPlan(
   sisrunData: SisrunDataWithWorkouts | null,
   activities: StravaActivity[],
   structuredWorkouts: StructuredPlannedWorkout[] = [],
+  marathonCycleRaces: MarathonCycleRace[] = [],
 ): MarathonLongRunPlanItem[] {
   const seenDates = new Set<string>();
-  const structuredItems = buildStructuredLongRunPlanItems(structuredWorkouts, activities, seenDates);
-  const sisrunItems = buildSisrunLongRunPlanItems(sisrunData, activities, seenDates);
+  const structuredItems = buildStructuredLongRunPlanItems(structuredWorkouts, activities, seenDates, marathonCycleRaces);
+  const sisrunItems = buildSisrunLongRunPlanItems(sisrunData, activities, seenDates, marathonCycleRaces);
 
   return [...structuredItems, ...sisrunItems].sort((a, b) => a.date.getTime() - b.date.getTime());
 }
@@ -655,17 +659,18 @@ function PlanMetric({ label, value, sub }: { label: string; value: string; sub?:
 export default async function LongoesPage() {
   const cyclePlanStart = getLaterDate(getTodayInBrazil(), MARATHON_CYCLE_START_DATE);
   const cyclePlanDays = getDaysInclusive(cyclePlanStart, MARATHON_CYCLE_END_DATE);
-  const [activities, sisrunData, structuredPlanResults] = await Promise.all([
+  const [activities, sisrunData, structuredPlanResults, raceCalendarData] = await Promise.all([
     getActivities(),
     getSisrunData(),
     getStructuredPlannedWorkoutsForRange(cyclePlanDays, cyclePlanStart),
+    getRaceCalendarData(),
   ]);
   const structuredWorkouts = structuredPlanResults
     .map((result) => result.data)
     .filter((workout): workout is StructuredPlannedWorkout => Boolean(workout));
   const longRuns = await getLongRunsFromActivities(activities);
   const summary = getLongRunSummary(longRuns);
-  const marathonLongRunPlan = buildMarathonLongRunPlan(sisrunData, activities, structuredWorkouts);
+  const marathonLongRunPlan = buildMarathonLongRunPlan(sisrunData, activities, structuredWorkouts, raceCalendarData.marathonCycleRaces);
   const cyclePlanStats = getCyclePlanStats(marathonLongRunPlan);
 
   const lastLongRun = longRuns[0] ?? null;

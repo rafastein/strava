@@ -1,4 +1,4 @@
-import { SEASON_RACE_MONTHS, type SeasonRaceDef, type SeasonRaceStatus } from "./lib/race-calendar";
+import { isFirstSemesterMonthLabel, type SeasonMonth, type SeasonRaceDef, type SeasonRaceStatus } from "./lib/race-calendar";
 
 type StravaActivity = {
   id: number;
@@ -26,7 +26,7 @@ type AthletePersonalRecords = {
 };
 
 // Semestres para dividir a timeline
-const S1_MONTHS = new Set(["JAN", "FEB", "MAR", "ABR", "MAI", "JUN"]);
+
 
 function formatTime(seconds: number) {
   const h = Math.floor(seconds / 3600);
@@ -76,17 +76,18 @@ type ResolvedEvent = {
 function resolveEvents(
   activities: StravaActivity[],
   prs: AthletePersonalRecords | null,
+  seasonMonths: SeasonMonth[],
 ): ResolvedEvent[] {
   const now = Date.now();
   const result: ResolvedEvent[] = [];
 
-  for (const m of SEASON_RACE_MONTHS) {
+  for (const m of seasonMonths) {
     for (const race of m.races) {
       if (race.fixedStatus) {
         result.push({
           number: race.number, name: race.name, date: race.date,
           location: race.location, month: m.label,
-          semester: S1_MONTHS.has(m.label) ? 1 : 2,
+          semester: isFirstSemesterMonthLabel(m.label) ? 1 : 2,
           status: race.fixedStatus, isPR: false, badge: race.badge,
         });
         continue;
@@ -103,7 +104,7 @@ function resolveEvents(
         result.push({
           number: race.number, name: race.name, date: race.date,
           location: race.location, month: m.label,
-          semester: S1_MONTHS.has(m.label) ? 1 : 2,
+          semester: isFirstSemesterMonthLabel(m.label) ? 1 : 2,
           status: "completed", result: formatTime(match.moving_time), isPR, badge: race.badge,
         });
         continue;
@@ -116,7 +117,7 @@ function resolveEvents(
       result.push({
         number: race.number, name: race.name, date: race.date,
         location: race.location, month: m.label,
-        semester: S1_MONTHS.has(m.label) ? 1 : 2,
+        semester: isFirstSemesterMonthLabel(m.label) ? 1 : 2,
         status: isPast ? "completed" : "next", isPR: false, badge: race.badge,
       });
     }
@@ -202,11 +203,13 @@ function Timeline({ events, label }: { events: ResolvedEvent[]; label: string })
 export default function SeasonCalendar({
   activities,
   prs,
+  seasonMonths,
 }: {
   activities: StravaActivity[];
   prs: AthletePersonalRecords | null;
+  seasonMonths: SeasonMonth[];
 }) {
-  const events = resolveEvents(activities, prs);
+  const events = resolveEvents(activities, prs, seasonMonths);
   const s1 = events.filter((e) => e.semester === 1);
   const s2 = events.filter((e) => e.semester === 2);
 
