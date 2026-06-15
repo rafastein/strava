@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import CorosImportScheduleForm from "./CorosImportScheduleForm";
+import CorosSavedWorkoutsList from "./CorosSavedWorkoutsList";
 import {
   buildSisrunFallbackWorkoutSummary,
   formatPlannedWorkoutDateWithWeekdayLabel,
@@ -119,22 +120,17 @@ export default async function CorosPage() {
         <section className="ba-section ba-card" style={{ padding: "1.5rem" }}>
           <p className="ba-eyebrow">Próximos 30 dias</p>
           <h2 className="ba-title" style={{ fontSize: "1.7rem", marginTop: 4 }}>Treinos estruturados salvos</h2>
-          {savedWorkouts.length > 0 ? (
-            <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-              {savedWorkouts.map((result) => (
-                <div key={result.key} className="ba-card-soft" style={{ padding: "1rem" }}>
-                  <p className="ba-label">{formatPlannedWorkoutDateWithWeekdayLabel(result.data.date)}</p>
-                  <p style={{ marginTop: 6, fontWeight: 700, color: "var(--text)", fontSize: 13 }}>{result.data.title}</p>
-                  <p className="ba-muted" style={{ marginTop: 4, fontSize: 12 }}>{getStructuredWorkoutSourceLabel(result.data.source)} · {result.data.type}</p>
-                  <p className="ba-muted" style={{ marginTop: 4, fontSize: 12 }}>Tênis · {recommendationByDate.get(result.data.date) ?? "sem recomendação"}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="ba-muted" style={{ marginTop: "1rem", fontSize: 13 }}>
-              Nenhum treino estruturado salvo para os próximos 30 dias. Importe a agenda COROS abaixo para preencher esta lista.
-            </p>
-          )}
+          <CorosSavedWorkoutsList
+            workouts={savedWorkouts.map((result) => ({
+              redisKey: result.key,
+              date: result.data.date,
+              dateLabel: formatPlannedWorkoutDateWithWeekdayLabel(result.data.date),
+              title: result.data.title,
+              sourceLabel: getStructuredWorkoutSourceLabel(result.data.source),
+              type: result.data.type,
+              shoeName: recommendationByDate.get(result.data.date) ?? null,
+            }))}
+          />
         </section>
 
         <section className="ba-section ba-card" style={{ padding: "1.5rem" }}>
