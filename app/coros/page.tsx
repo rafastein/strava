@@ -7,8 +7,8 @@ import CorosSavedWorkoutsList from "./CorosSavedWorkoutsList";
 import {
   buildSisrunFallbackWorkoutSummary,
   formatPlannedWorkoutDateWithWeekdayLabel,
+  getAllStructuredPlannedWorkouts,
   getStructuredPlannedWorkout,
-  getStructuredPlannedWorkoutsForRange,
   getStructuredWorkoutSourceLabel,
   getTodayIsoDate,
   type StructuredPlannedWorkout,
@@ -35,7 +35,7 @@ export default async function CorosPage() {
   const todayIso = getTodayIsoDate();
   const [todayWorkoutResult, nextWorkouts, sisrunResult, activities, athlete] = await Promise.all([
     getStructuredPlannedWorkout(todayIso),
-    getStructuredPlannedWorkoutsForRange(30),
+    getAllStructuredPlannedWorkouts(),
     getSisrunDataWithSource(),
     getStravaActivities({ after: STRAVA_2024_START_EPOCH, maxPages: 20 }),
     getStravaAthlete(),
@@ -69,7 +69,7 @@ export default async function CorosPage() {
           <Link href="/equipamentos" className="ba-back">Ver recomendação de tênis →</Link>
         </div>
 
-        <section className="grid gap-4 md:grid-cols-3">
+        <section className="grid gap-4 md:grid-cols-3" style={{ marginBottom: "2rem" }}>
           <StatusCard
             label="Fonte primária"
             value={todayWorkoutResult.data ? getStructuredWorkoutSourceLabel(todayWorkoutResult.data.source) : "Nenhum treino estruturado"}
@@ -118,7 +118,7 @@ export default async function CorosPage() {
         </section>
 
         <section className="ba-section ba-card" style={{ padding: "1.5rem" }}>
-          <p className="ba-eyebrow">Próximos 30 dias</p>
+          <p className="ba-eyebrow">Todos os treinos</p>
           <h2 className="ba-title" style={{ fontSize: "1.7rem", marginTop: 4 }}>Treinos estruturados salvos</h2>
           <CorosSavedWorkoutsList
             workouts={savedWorkouts.map((result) => ({

@@ -60,7 +60,7 @@ export default function CorosSavedWorkoutsList({ workouts }: { workouts: SavedWo
   if (items.length === 0) {
     return (
       <p className="ba-muted" style={{ marginTop: "1rem", fontSize: 13 }}>
-        Nenhum treino estruturado salvo para os próximos 30 dias. Importe a agenda COROS abaixo para preencher esta lista.
+        Nenhum treino estruturado salvo no Upstash. Importe a agenda COROS abaixo para preencher esta lista.
       </p>
     );
   }

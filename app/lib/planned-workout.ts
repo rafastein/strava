@@ -363,6 +363,27 @@ export async function getStructuredPlannedWorkoutsForRange(
   }));
 }
 
+export async function getAllStructuredPlannedWorkouts(): Promise<StructuredPlannedWorkoutRangeResult[]> {
+  const redis = await getRedisClient();
+
+  if (!redis) {
+    return [];
+  }
+
+  const keys = await redis.keys(`${PLANNED_WORKOUT_KEY_PREFIX}*`);
+  const dates = keys
+    .map((key) => String(key).replace(PLANNED_WORKOUT_KEY_PREFIX, ""))
+    .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
+    .sort((a, b) => a.localeCompare(b));
+
+  const results = await Promise.all(dates.map((date) => readStructuredPlannedWorkoutFromRedis(redis, date)));
+
+  return results.map((result, index) => ({
+    ...result,
+    date: dates[index],
+  }));
+}
+
 export function getStructuredWorkoutPlannedDistanceKm(workout: StructuredPlannedWorkout | null | undefined) {
   if (!workout || workout.type === "descanso" || workout.type === "forca" || workout.type === "indefinido") return 0;
   return typeof workout.distanceKm === "number" && Number.isFinite(workout.distanceKm) ? workout.distanceKm : null;
