@@ -192,30 +192,6 @@ export default function RaceManagerClient({ initialRaces }: Props) {
     }
   }
 
-  async function handleReset() {
-    const ok = window.confirm("Restaurar o calendário padrão e sobrescrever as provas salvas no Upstash?");
-    if (!ok) return;
-
-    setStatus("Restaurando calendário padrão...");
-    setBusyId("reset");
-
-    try {
-      const response = await fetchWithAdminRetry("/api/races?reset=true", { method: "DELETE" });
-      const body = await response.json();
-
-      if (!response.ok) {
-        setStatus(body.error || "Erro ao restaurar calendário.");
-        return;
-      }
-
-      setStatus("Calendário padrão restaurado.");
-      router.refresh();
-    } catch {
-      setStatus("Erro ao restaurar calendário.");
-    } finally {
-      setBusyId(null);
-    }
-  }
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.15fr) minmax(340px, .85fr)", gap: "1.25rem", alignItems: "start" }}>
@@ -226,9 +202,6 @@ export default function RaceManagerClient({ initialRaces }: Props) {
             <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.75rem", color: "#fff", marginTop: 4 }}>Provas cadastradas</h2>
             <p className="ba-muted" style={{ marginTop: ".35rem" }}>Essas provas alimentam Home, Longões e calendário da temporada.</p>
           </div>
-          <button type="button" onClick={handleReset} className="ba-pill ba-pill-dark" disabled={busyId === "reset"} style={{ opacity: busyId === "reset" ? .55 : 1 }}>
-            Restaurar padrão
-          </button>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
@@ -246,7 +219,6 @@ export default function RaceManagerClient({ initialRaces }: Props) {
                         {race.badge && <span className="badge badge--purple">{race.badge}</span>}
                         {race.fixedStatus && <span className="badge badge--blue">{race.fixedStatus}</span>}
                         {race.isGoal && <span className="badge badge--orange">prova-alvo</span>}
-                        <span className="badge badge--gray">pace {formatPace(race.targetPaceSecPerKm)}</span>
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
