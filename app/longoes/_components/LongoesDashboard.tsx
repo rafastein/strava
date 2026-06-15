@@ -459,8 +459,10 @@ function buildStructuredLongRunPlanItems(
 
       const race = findRaceForPlanDate(date, plannedKm, marathonCycleRaces);
       const isRaceGoal = Boolean(race?.isGoal) || (Math.abs(daysBetween(date, BUENOS_AIRES_RACE_DATE)) <= 1 && plannedKm >= 40);
-      const isRace = Boolean(workout.type === "prova_longa" || workout.type === "prova_curta" || race) && !isRaceGoal;
-      const needsReview = plannedKm > MAX_REASONABLE_LONG_RUN_KM && !isRaceGoal;
+      if (isRaceGoal) return null;
+
+      const isRace = Boolean(workout.type === "prova_longa" || workout.type === "prova_curta" || race);
+      const needsReview = plannedKm > MAX_REASONABLE_LONG_RUN_KM;
       const matchedActivity = findMatchingRun(date, plannedKm, activities);
       const actualKm = matchedActivity ? matchedActivity.distance / 1000 : null;
       const diffKm = actualKm !== null ? actualKm - plannedKm : null;
@@ -588,8 +590,10 @@ function buildSisrunLongRunPlanItems(
 
       const race = findRaceForPlanDate(date, plannedKm, marathonCycleRaces);
       const isRaceGoal = Boolean(race?.isGoal) || (Math.abs(daysBetween(date, BUENOS_AIRES_RACE_DATE)) <= 1 && plannedKm >= 40);
-      const isRace = Boolean(workout.isRace || race) && !isRaceGoal;
-      const needsReview = plannedKm > MAX_REASONABLE_LONG_RUN_KM && !isRaceGoal;
+      if (isRaceGoal) return null;
+
+      const isRace = Boolean(workout.isRace || race);
+      const needsReview = plannedKm > MAX_REASONABLE_LONG_RUN_KM;
       const matchedActivity = findMatchingRun(date, plannedKm, activities);
       const actualKm = matchedActivity ? matchedActivity.distance / 1000 : null;
       const diffKm = actualKm !== null ? actualKm - plannedKm : null;
