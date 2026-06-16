@@ -34,7 +34,11 @@ import {
   getLongRunSummary,
   getLongRunsFromActivities,
 } from "./lib/strava-long-runs";
-import { getStructuredPlannedWorkout } from "./lib/planned-workout";
+import { getAllStructuredPlannedWorkouts, getStructuredPlannedWorkout } from "./lib/planned-workout";
+import {
+  buildStructuredWeeklyComparison,
+  getStructuredCurrentWeekSummary,
+} from "./lib/planned-weekly-comparison";
 
 type StravaActivity = StravaActivitySummary;
 type Athlete = StravaAthlete;
@@ -64,7 +68,7 @@ function formatPace(distance: number, time: number) {
 }
 
 function buildAlerts(params: {
-  hasSisrunWeek: boolean;
+  hasPlannedWeek: boolean;
   plannedWeekKm: number;
   currentWeekKm: number;
   adherencePct: number;
@@ -72,8 +76,8 @@ function buildAlerts(params: {
   longRunDoneKm: number;
 }) {
   const alerts: { title: string; text: string; ok: boolean }[] = [];
-  if (!params.hasSisrunWeek) {
-    alerts.push({ title: "SisRUN ausente", text: "Carregue uma planilha para comparar planejamento e execução.", ok: false });
+  if (!params.hasPlannedWeek) {
+    alerts.push({ title: "Planejamento ausente", text: "Cadastre treinos no COROS/Upstash para comparar planejamento e execução.", ok: false });
     return alerts;
   }
   if (params.adherencePct < 70) {
@@ -96,12 +100,21 @@ function buildAlerts(params: {
 
 export default async function Home() {
   const accessToken = await getValidStravaAccessToken();
-  const [athlete, activities, sisrunData, athleteProfile, structuredWorkoutResult, raceCalendarData] = await Promise.all([
+  const [
+    athlete,
+    activities,
+    sisrunData,
+    athleteProfile,
+    structuredWorkoutResult,
+    allStructuredPlannedWorkouts,
+    raceCalendarData,
+  ] = await Promise.all([
     getAthlete(),
     getActivities(),
     getSisrunData(),
     accessToken ? getDynamicAthleteProfile(accessToken) : Promise.resolve(null),
     getStructuredPlannedWorkout(),
+    getAllStructuredPlannedWorkouts(),
     getRaceCalendarData(),
   ]);
 
@@ -127,18 +140,29 @@ export default async function Home() {
   const currentWeekKm = getCurrentWeekStravaKm(activities);
   const currentWeekLongestRunKm = getCurrentWeekLongestRunKm(activities);
   const todayStravaKm = getTodayStravaKm(activities);
-  const plannedWeekKm = sisrunWeek?.totalPlannedKm ?? 0;
+  const structuredCurrentWeekSummary = getStructuredCurrentWeekSummary(allStructuredPlannedWorkouts);
+  const hasStructuredCurrentWeekPlan = structuredCurrentWeekSummary.workoutCount > 0;
+  const plannedWeekKm = hasStructuredCurrentWeekPlan
+    ? structuredCurrentWeekSummary.plannedKm
+    : sisrunWeek?.totalPlannedKm ?? 0;
+  const weeklyPlanSourceLabel = hasStructuredCurrentWeekPlan ? "COROS/Upstash" : "SisRUN";
   const weeklyAdherencePct = plannedWeekKm > 0 ? Math.min((currentWeekKm / plannedWeekKm) * 100, 100) : 0;
-  const weeklyComparison = buildWeeklyComparison(sisrunData, activities, 6);
+  const structuredWeeklyComparison = buildStructuredWeeklyComparison(allStructuredPlannedWorkouts, activities, 6);
+  const weeklyComparison = structuredWeeklyComparison.length
+    ? structuredWeeklyComparison
+    : buildWeeklyComparison(sisrunData, activities, 6);
+  const weeklyComparisonSourceLabel = structuredWeeklyComparison.length ? "COROS/Upstash" : "SisRUN";
   const longRuns = await getLongRunsFromActivities(activities);
   const longRunSummary = getLongRunSummary(longRuns);
 
   const alerts = buildAlerts({
-    hasSisrunWeek: Boolean(sisrunWeek),
+    hasPlannedWeek: plannedWeekKm > 0,
     plannedWeekKm,
     currentWeekKm,
     adherencePct: weeklyAdherencePct,
-    longRunPlannedKm: sisrunWeek?.longRunPlannedKm ?? 0,
+    longRunPlannedKm: hasStructuredCurrentWeekPlan
+      ? structuredCurrentWeekSummary.longRunPlannedKm
+      : sisrunWeek?.longRunPlannedKm ?? 0,
     longRunDoneKm: currentWeekLongestRunKm,
   });
 
@@ -206,13 +230,13 @@ export default async function Home() {
           <p className="ba-label" style={{ marginBottom: "0.75rem" }}>Esta semana</p>
           <div className="ba-grid-4">
             {[
-              { label: "Planejado (SisRUN)", value: sisrunWeek ? `${plannedWeekKm.toFixed(1)} km` : "—", accent: false },
+              { label: `Planejado (${weeklyPlanSourceLabel})`, value: plannedWeekKm > 0 ? `${plannedWeekKm.toFixed(1)} km` : "—", accent: false },
               { label: "Executado (Strava)", value: `${currentWeekKm.toFixed(1)} km`, accent: true },
-              { label: "Aderência", value: sisrunWeek ? `${weeklyAdherencePct.toFixed(0)}%` : "—", accent: weeklyAdherencePct >= 90 },
+              { label: "Aderência", value: plannedWeekKm > 0 ? `${weeklyAdherencePct.toFixed(0)}%` : "—", accent: weeklyAdherencePct >= 90 },
               {
                 label: "Longão",
-                value: sisrunWeek
-                  ? `${currentWeekLongestRunKm.toFixed(1)} / ${(sisrunWeek.longRunPlannedKm ?? 0).toFixed(1)} km`
+                value: plannedWeekKm > 0
+                  ? `${currentWeekLongestRunKm.toFixed(1)} / ${(hasStructuredCurrentWeekPlan ? structuredCurrentWeekSummary.longRunPlannedKm : sisrunWeek?.longRunPlannedKm ?? 0).toFixed(1)} km`
                   : `${currentWeekLongestRunKm.toFixed(1)} km`,
                 accent: false,
               },
@@ -271,7 +295,7 @@ export default async function Home() {
           <WeeklyComparisonChart
             items={weeklyComparison}
             title="Planejado x executado por semana"
-            subtitle="Volume planejado no SisRUN comparado com o executado no Strava."
+            subtitle={`Volume planejado no ${weeklyComparisonSourceLabel} comparado com o executado no Strava.`}
             dark
           />
         </section>
@@ -286,7 +310,7 @@ export default async function Home() {
               { href: "/corridas-brasil", label: "Corridas pelo Brasil", desc: "Mapa com corridas por estado.", tag: "Mapas" },
               { href: "/corridas-mundo", label: "Corridas pelo mundo", desc: "Mapa-múndi com corridas por país.", tag: "Mapas" },
               { href: "/equipamentos", label: "Equipamentos", desc: "Km, desgaste e eficiência por tênis.", tag: "Strava" },
-              { href: "/sisrun", label: "SisRUN", desc: "Planejamento e aderência semanal.", tag: "Planejamento" },
+              { href: "/coros", label: "COROS", desc: "Treinos estruturados e calendário planejado.", tag: "Planejamento" },
             ].map((c) => (
               <Link key={c.href} href={c.href} className="ba-card-soft explore-card" style={{ padding: ".85rem 1rem", textDecoration: "none", display: "block" }}>
                 <p className="ba-eyebrow" style={{ marginBottom: "0.6rem", fontSize: 9 }}>{c.tag}</p>
