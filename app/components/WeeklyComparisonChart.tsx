@@ -27,6 +27,7 @@ type Props = {
   items: WeeklyItem[];
   title?: string;
   subtitle?: string;
+  orderLabel?: string;
   dark?: boolean;
 };
 
@@ -78,6 +79,7 @@ export default function WeeklyComparisonChart({
   items,
   title = "Planejado x executado por semana",
   subtitle = "Volume planejado no SisRUN comparado com o executado no Strava.",
+  orderLabel = "Da semana mais recente para a mais antiga",
 }: Props) {
   return (
     <section
@@ -126,7 +128,7 @@ export default function WeeklyComparisonChart({
             marginBottom: 0,
           }}
         >
-          Da semana mais recente para a mais antiga
+          {orderLabel}
         </p>
       </header>
 

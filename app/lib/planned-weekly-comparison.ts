@@ -72,14 +72,15 @@ export function buildStructuredWeeklyComparison(
   referenceDate = new Date(),
 ): WeeklyComparisonItem[] {
   const map = new Map<string, WeeklyComparisonItem>();
-  const currentWeekStartTime = getWeekStart(referenceDate).getTime();
+  const currentWeekStart = getWeekStart(referenceDate);
+  const currentWeekStartTime = currentWeekStart.getTime();
 
   workouts.forEach((result) => {
     const workoutDate = getDateFromIso(result.date);
     if (!workoutDate) return;
 
     const weekStart = getWeekStart(workoutDate);
-    if (weekStart.getTime() > currentWeekStartTime) return;
+    if (weekStart.getTime() < currentWeekStartTime) return;
 
     const plannedDistanceKm = getStructuredWorkoutDistanceKm(result);
     if (plannedDistanceKm <= 0) return;
@@ -104,7 +105,7 @@ export function buildStructuredWeeklyComparison(
     if (!activityDate) return;
 
     const weekStart = getWeekStart(activityDate);
-    if (weekStart.getTime() > currentWeekStartTime) return;
+    if (weekStart.getTime() !== currentWeekStartTime) return;
 
     const key = weekStart.toISOString();
     const existing =
@@ -123,7 +124,7 @@ export function buildStructuredWeeklyComparison(
 
   return Array.from(map.values())
     .sort((a, b) => a.key.localeCompare(b.key))
-    .slice(-limit)
+    .slice(0, limit)
     .map((item) => {
       const plannedKm = roundKm(item.plannedKm);
       const executedKm = roundKm(item.executedKm);

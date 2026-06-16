@@ -296,6 +296,7 @@ export default async function Home() {
             items={weeklyComparison}
             title="Planejado x executado por semana"
             subtitle={`Volume planejado no ${weeklyComparisonSourceLabel} comparado com o executado no Strava.`}
+            orderLabel={weeklyComparisonSourceLabel === "COROS/Upstash" ? "Da semana atual para as próximas" : "Da semana mais recente para a mais antiga"}
             dark
           />
         </section>
