@@ -713,7 +713,8 @@ export default async function LongoesPage() {
       // Alguns treinos antigos podem ter sido salvos com a data interna deslocada pelo parser do COROS.
       date: result.date,
     } satisfies StructuredPlannedWorkout));
-  const longRuns = await getLongRunsFromActivities(activities);
+  const allLongRuns = await getLongRunsFromActivities(activities);
+  const longRuns = allLongRuns.filter((run) => getBRDateKey(run.date) >= LONG_RUN_CYCLE_START_KEY);
   const summary = getLongRunSummary(longRuns);
   const marathonLongRunPlan = buildMarathonLongRunPlan(sisrunData, activities, structuredWorkouts, raceCalendarData.marathonCycleRaces);
   const cyclePlanStats = getCyclePlanStats(marathonLongRunPlan);
@@ -917,9 +918,9 @@ export default async function LongoesPage() {
         </section>
 
         <section className="longoes-section longoes-summary-section" style={{ marginBottom: "4rem" }}>
-          <p className="ba-eyebrow" style={{ marginBottom: ".75rem" }}>Resumo geral</p>
+          <p className="ba-eyebrow" style={{ marginBottom: ".75rem" }}>Resumo do ciclo</p>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5 longoes-summary-grid">
-            <InfoCard title="Total de longões" value={String(summary.totalLongRuns)} sub="desde jan/2024" />
+            <InfoCard title="Total de longões" value={String(summary.totalLongRuns)} sub={`desde ${LONG_RUN_CYCLE_START_LABEL}`} />
             <InfoCard
               title="Maior distância"
               value={`${summary.longestRunKm.toFixed(1)} km`}
@@ -964,7 +965,7 @@ export default async function LongoesPage() {
 
                 <div className="pt-4">
                   <PaceBar paceSecPerKm={lastLongRun.paceSecPerKm} best={bestPace} worst={worstPace} />
-                  <p className="mt-3 text-xs text-white/35">Posição relativa de ritmo no histórico.</p>
+                  <p className="mt-3 text-xs text-white/35">Posição relativa de ritmo no ciclo.</p>
                 </div>
               </div>
             ) : (
@@ -1008,19 +1009,19 @@ export default async function LongoesPage() {
         <section className="ba-card longoes-history-card" style={{ padding: "2rem", marginTop: "0" }}>
           <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="ba-eyebrow" style={{ marginBottom: ".75rem" }}>Histórico completo</p>
+              <p className="ba-eyebrow" style={{ marginBottom: ".75rem" }}>Histórico do ciclo</p>
               <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white/90">
-                Longões registrados
+                Longões registrados no ciclo
               </h2>
               <p className="mt-1 text-sm text-white/45">
-                Do mais recente ao mais antigo — distância, ritmo, FC, elevação, eficiência e splits.
+                Do mais recente ao mais antigo no ciclo — distância, ritmo, FC, elevação, eficiência e splits.
               </p>
             </div>
             <span className="badge badge--accent">{summary.totalLongRuns} longões</span>
           </div>
 
           {longRuns.length === 0 ? (
-            <p className="text-sm text-white/50">Nenhuma atividade com nome “Longão” foi encontrada.</p>
+            <p className="text-sm text-white/50">Nenhuma atividade com nome “Longão” foi encontrada no ciclo.</p>
           ) : (
             <div className="longoes-history-list" style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
               {longRuns.map((run, index) => {
