@@ -1,7 +1,8 @@
 import fs from "fs";
 import path from "path";
-import { getStravaActivities } from "./strava-client";
+import { getStravaActivities, getStravaAthlete } from "./strava-client";
 import { getActivityDate } from "./date-utils";
+import { KNOWN_GEAR_NAME_FALLBACKS } from "./equipment-recommendation";
 
 export type StravaRaceActivity = {
   id: number;
@@ -20,6 +21,7 @@ export type StravaRaceActivity = {
   location_city?: string | null;
   location_state?: string | null;
   location_country?: string | null;
+  gear_id?: string | null;
 };
 
 export type RaceLikeEntry = {
@@ -36,6 +38,8 @@ export type RaceLikeEntry = {
   elevationGain: number;
   averageHeartrate: number | null;
   maxHeartrate: number | null;
+  gearId: string | null;
+  gearName: string | null;
   paceSecPerKm: number | null;
   adjustedPaceSecPerKm: number | null;
   elevationFactor: number;
@@ -433,6 +437,18 @@ function cleanDisplayedRaceName(name: string) {
   return name.replace(/^prova\b[:\s-]*/i, "").trim();
 }
 
+function buildGearNameLookup(
+  athleteGear: { id: string; name: string }[] = [],
+): Record<string, string> {
+  const lookup: Record<string, string> = { ...KNOWN_GEAR_NAME_FALLBACKS };
+
+  athleteGear.forEach((gear) => {
+    lookup[gear.id] = KNOWN_GEAR_NAME_FALLBACKS[gear.id] ?? gear.name;
+  });
+
+  return lookup;
+}
+
 async function fetchAllStravaActivitiesSince2024(): Promise<StravaRaceActivity[]> {
   return getStravaActivities({
     after: STRAVA_AFTER_EPOCH,
@@ -442,7 +458,11 @@ async function fetchAllStravaActivitiesSince2024(): Promise<StravaRaceActivity[]
 }
 
 export async function getRaceLikeActivitiesFromStrava(): Promise<RaceLikeEntry[]> {
-  const activities = await fetchAllStravaActivitiesSince2024();
+  const [activities, athlete] = await Promise.all([
+    fetchAllStravaActivitiesSince2024(),
+    getStravaAthlete(),
+  ]);
+  const gearNameLookup = buildGearNameLookup(Array.isArray(athlete?.shoes) ? athlete.shoes : []);
   const filtered = activities.filter(isRaceLikeActivity);
 
   const enriched = await Promise.all(
@@ -531,6 +551,10 @@ export async function getRaceLikeActivitiesFromStrava(): Promise<RaceLikeEntry[]
         elevationGain,
         averageHeartrate,
         maxHeartrate,
+        gearId: activity.gear_id ?? null,
+        gearName: activity.gear_id
+          ? gearNameLookup[activity.gear_id] ?? activity.gear_id
+          : null,
         paceSecPerKm,
         adjustedPaceSecPerKm,
         elevationFactor,

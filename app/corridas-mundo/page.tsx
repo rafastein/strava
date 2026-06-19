@@ -29,6 +29,7 @@ type Race = {
   elevationGain?: number;
   averageHeartrate?: number | null;
   efficiency?: number | null;
+  gearName?: string | null;
 };
 
 function normalizeText(value: string) {
@@ -311,6 +312,10 @@ function getTrend(current?: number | null, previous?: number | null) {
   return diff > 0 ? "📈" : "📉";
 }
 
+function formatRaceGear(race: Race) {
+  return race.gearName?.trim() || "-";
+}
+
 function getTopRaceMedals(
   races: Array<{ id: number | string; time: string; distanceKm: number }>
 ) {
@@ -439,7 +444,7 @@ export default async function CorridasMundoPage() {
                               {/* Detalhes */}
                               <p className="world-race-card__details">
                                 {race.city || "Não identificado"}
-                                {race.state ? `, ${race.state}` : ""} · {formatBRDate(race.date)} · {race.distanceKm.toFixed(2)} km · {race.time} · {formatPaceFromRace(race)}
+                                {race.state ? `, ${race.state}` : ""} · {formatBRDate(race.date)} · {race.distanceKm.toFixed(2)} km · {race.time} · {formatPaceFromRace(race)} · Tênis: {formatRaceGear(race)}
                               </p>
 
                               {/* Stats */}
