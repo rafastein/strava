@@ -85,8 +85,12 @@ export default async function BuenosAiresPage() {
 
   const runs = activities.filter(isRunActivity);
 
-  const longestRun = runs.length
-    ? runs.reduce((max, activity) =>
+  const namedLongRuns = runs.filter((activity) =>
+    isLongRunActivityName(activity.name),
+  );
+
+  const longestRun = namedLongRuns.length
+    ? namedLongRuns.reduce((max, activity) =>
         activity.distance > max.distance ? activity : max,
       )
     : null;
