@@ -77,6 +77,7 @@ export const MARATHON_REFERENCE_LONG_RUN_KM = 32;
 export const MARATHON_REFERENCE_WEEKLY_KM = 64;
 export const RIEGEL_READY_EXPONENT = 1.06;
 export const RIEGEL_LOW_SPECIFICITY_EXPONENT = 1.16;
+export const LONG_RUN_LOW_SPECIFICITY_EXPONENT = 1.10;
 
 // ─── Business logic ───────────────────────────────────────────────────────────
 
@@ -173,24 +174,55 @@ export function predictFromHalf(half: StravaActivity | null) {
   );
 }
 
-export function predictFromLongRun(longestRun: StravaActivity | null) {
+export type LongRunPrediction = {
+  seconds: number;
+  exponent: number;
+  distanceKm: number;
+  sourcePaceSecondsPerKm: number;
+  projectedPaceSecondsPerKm: number;
+};
+
+export function getLongRunProjectionExponent(distanceKm: number) {
+  if (distanceKm < STRONG_LONG_RUN_MIN_KM) return null;
+
+  // Riegel usa uma lei de potência para prever tempo entre distâncias.
+  // Como longão é treino, não prova máxima, mantemos o expoente um pouco mais
+  // conservador quando o estímulo ainda está longe da referência clássica de 32 km.
+  const specificity = clamp01(
+    (distanceKm - STRONG_LONG_RUN_MIN_KM) /
+      (MARATHON_REFERENCE_LONG_RUN_KM - STRONG_LONG_RUN_MIN_KM),
+  );
+
+  return (
+    LONG_RUN_LOW_SPECIFICITY_EXPONENT -
+    specificity * (LONG_RUN_LOW_SPECIFICITY_EXPONENT - RIEGEL_READY_EXPONENT)
+  );
+}
+
+export function getLongRunPredictionDetails(
+  longestRun: StravaActivity | null,
+): LongRunPrediction | null {
   if (!longestRun) return null;
-  const km = longestRun.distance / 1000;
-  if (km < STRONG_LONG_RUN_MIN_KM) return null;
-  const pace = longestRun.moving_time / km;
 
-  // Longão não é prova. Esta projeção é uma âncora conservadora por pace observado:
-  // quanto mais perto dos 30-32 km típicos do ciclo específico, menor o acréscimo.
-  const adjusted =
-    km >= 32
-      ? pace + 8
-      : km >= 30
-        ? pace + 12
-        : km >= 28
-          ? pace + 16
-          : pace + 22;
+  const distanceKm = longestRun.distance / 1000;
+  const exponent = getLongRunProjectionExponent(distanceKm);
+  if (!exponent) return null;
 
-  return marathonTimeFromPace(adjusted);
+  const seconds = Math.round(
+    longestRun.moving_time * Math.pow(DIST_MARATHON / distanceKm, exponent),
+  );
+
+  return {
+    seconds,
+    exponent,
+    distanceKm,
+    sourcePaceSecondsPerKm: longestRun.moving_time / distanceKm,
+    projectedPaceSecondsPerKm: seconds / DIST_MARATHON,
+  };
+}
+
+export function predictFromLongRun(longestRun: StravaActivity | null) {
+  return getLongRunPredictionDetails(longestRun)?.seconds ?? null;
 }
 
 export type SitePredictionModel = {

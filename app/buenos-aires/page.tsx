@@ -39,6 +39,7 @@ import ReadinessSection from "./_components/ReadinessSection";
 import StrategicSummarySection from "./_components/StrategicSummarySection";
 import {
   PROJECTION_LONG_RUN_MIN_KM,
+  STRONG_LONG_RUN_MIN_KM,
   buildMarathonAlerts,
   buildProjectionLongRuns,
   daysUntil,
@@ -54,7 +55,7 @@ import {
   marathonTimeFromPace,
   predictBySiteModelDetails,
   predictFromHalf,
-  predictFromLongRun,
+  getLongRunPredictionDetails,
 } from "./_buenosAiresUtils";
 
 export default async function BuenosAiresPage() {
@@ -183,7 +184,8 @@ export default async function BuenosAiresPage() {
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const predictedFromHalf = predictFromHalf(bestHalf);
-  const predictedFromLongRun = predictFromLongRun(longestRun);
+  const longRunPrediction = getLongRunPredictionDetails(longestRun);
+  const predictedFromLongRun = longRunPrediction?.seconds ?? null;
   const sitePrediction = predictBySiteModelDetails({
     bestHalf,
     longestRun,
@@ -413,9 +415,11 @@ export default async function BuenosAiresPage() {
             }
             longRunCaption={
               longestRun
-                ? `${longestRunKm.toFixed(1)} km · ${formatSecondsPerKm(
-                    longestRun.moving_time / longestRunKm,
-                  )}`
+                ? longRunPrediction
+                  ? `${longestRunKm.toFixed(1)} km · ${formatSecondsPerKm(
+                      longRunPrediction.sourcePaceSecondsPerKm,
+                    )} · Riegel ${longRunPrediction.exponent.toFixed(3)}`
+                  : `${longestRunKm.toFixed(1)} km · abaixo do corte de ${STRONG_LONG_RUN_MIN_KM} km`
                 : "Sem longão identificado"
             }
             sitePredictionLabel={
