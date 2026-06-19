@@ -2545,6 +2545,15 @@ body {
   white-space: nowrap;
 }
 
+.world-race-card__gear {
+  min-width: 0;
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.62);
+  white-space: normal;
+}
+
 .world-race-card__stats {
   min-width: 0;
   margin-top: 3px;
@@ -2588,6 +2597,7 @@ body {
   }
 
   .world-race-card__details,
+  .world-race-card__gear,
   .world-race-card__stats {
     white-space: normal;
   }
@@ -2708,6 +2718,15 @@ body {
   white-space: nowrap;
 }
 
+.br-race-card__gear {
+  min-width: 0;
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.62);
+  white-space: normal;
+}
+
 .br-race-card__stats {
   min-width: 0;
   margin-top: 3px;
@@ -2759,6 +2778,7 @@ body {
   }
 
   .br-race-card__details,
+  .br-race-card__gear,
   .br-race-card__stats {
     white-space: normal;
   }

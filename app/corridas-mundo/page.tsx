@@ -444,7 +444,12 @@ export default async function CorridasMundoPage() {
                               {/* Detalhes */}
                               <p className="world-race-card__details">
                                 {race.city || "Não identificado"}
-                                {race.state ? `, ${race.state}` : ""} · {formatBRDate(race.date)} · {race.distanceKm.toFixed(2)} km · {race.time} · {formatPaceFromRace(race)} · Tênis: {formatRaceGear(race)}
+                                {race.state ? `, ${race.state}` : ""} · {formatBRDate(race.date)} · {race.distanceKm.toFixed(2)} km · {race.time} · {formatPaceFromRace(race)}
+                              </p>
+
+                              {/* Tênis */}
+                              <p className="world-race-card__gear">
+                                Tênis · {formatRaceGear(race)}
                               </p>
 
                               {/* Stats */}

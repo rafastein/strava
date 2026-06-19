@@ -213,7 +213,8 @@ export default async function CorridasBrasilPage() {
                         <div key={race.id} className="br-race-card">
                           <div style={{ minWidth: 0 }}>
                             <p className="br-race-card__name">{race.name}</p>
-                            <p className="br-race-card__details">{race.city || "Não identificado"}{race.state ? `, ${race.state}` : ""} · {formatBRDate(race.date)} · {race.distanceKm.toFixed(2)} km · {race.time} · {formatPaceFromRace(race)} · Tênis: {formatRaceGear(race)}</p>
+                            <p className="br-race-card__details">{race.city || "Não identificado"}{race.state ? `, ${race.state}` : ""} · {formatBRDate(race.date)} · {race.distanceKm.toFixed(2)} km · {race.time} · {formatPaceFromRace(race)}</p>
+                            <p className="br-race-card__gear">Tênis · {formatRaceGear(race)}</p>
                             <p className="br-race-card__stats">FC {race.averageHeartrate ? `${race.averageHeartrate.toFixed(0)} bpm` : "-"} · Alt {race.elevationGain ?? 0} m · Ef {formatRaceEfficiency(race.efficiency ?? null)} · {getTrend(race.efficiency, previous?.efficiency)}</p>
                           </div>
                           <ActivitySplitsChart
