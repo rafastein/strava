@@ -231,10 +231,9 @@ export type SitePredictionModel = {
   caption: string;
   avgWeeklyKm: number;
   longRunKm: number;
-  readinessScore: number;
-  riegelExponent: number;
-  longRunSpecificityScore: number;
-  volumeSpecificityScore: number;
+  longRunPenaltySeconds: number;
+  volumePenaltySeconds: number;
+  totalPenaltySeconds: number;
 };
 
 function clamp01(value: number) {
@@ -242,62 +241,40 @@ function clamp01(value: number) {
   return Math.min(Math.max(value, 0), 1);
 }
 
-export function getLongRunSpecificityScore(longRunKm: number) {
-  // 32 km é a referência clássica de longão máximo para muitos recreacionais;
-  // abaixo de 21 km ainda não há estímulo específico de maratona.
-  return clamp01((longRunKm - 21) / (MARATHON_REFERENCE_LONG_RUN_KM - 21));
+export function getLongRunPenaltySeconds(longestRun: StravaActivity | null) {
+  const km = longestRun ? longestRun.distance / 1000 : 0;
+
+  if (km >= 32) return 0;
+  if (km >= 30) return 3 * 60;
+  if (km >= 28) return 6 * 60;
+  if (km >= 26) return 10 * 60;
+  if (km >= STRONG_LONG_RUN_MIN_KM) return 14 * 60;
+  if (km >= 21) return 20 * 60;
+
+  return 25 * 60;
 }
 
-export function getVolumeSpecificityScore(avgWeeklyKm: number) {
-  // 64 km/semana é uma referência prática recorrente para preparo recreacional robusto;
-  // abaixo de 30 km/semana o volume ainda sustenta pouco a conversão meia → maratona.
-  return clamp01((avgWeeklyKm - 30) / (MARATHON_REFERENCE_WEEKLY_KM - 30));
+export function getVolumePenaltySeconds(avgWeeklyKm: number) {
+  if (avgWeeklyKm >= 65) return -3 * 60;
+  if (avgWeeklyKm >= 55) return 0;
+  if (avgWeeklyKm >= 45) return 5 * 60;
+  if (avgWeeklyKm >= 35) return 10 * 60;
+  if (avgWeeklyKm >= 25) return 16 * 60;
+
+  return 22 * 60;
 }
 
-export function getMarathonReadinessScore(params: {
-  longRunKm: number;
-  avgWeeklyKm: number;
-}) {
-  const longRunSpecificityScore = getLongRunSpecificityScore(params.longRunKm);
-  const volumeSpecificityScore = getVolumeSpecificityScore(params.avgWeeklyKm);
-
-  return {
-    longRunSpecificityScore,
-    volumeSpecificityScore,
-    readinessScore: clamp01(longRunSpecificityScore * 0.6 + volumeSpecificityScore * 0.4),
-  };
-}
-
-export function getAdjustedRiegelExponent(readinessScore: number) {
-  return (
-    RIEGEL_LOW_SPECIFICITY_EXPONENT -
-    clamp01(readinessScore) *
-      (RIEGEL_LOW_SPECIFICITY_EXPONENT - RIEGEL_READY_EXPONENT)
-  );
-}
-
-export function predictFromHalfWithReadiness(params: {
-  half: StravaActivity;
-  readinessScore: number;
-}) {
-  const exponent = getAdjustedRiegelExponent(params.readinessScore);
-  return {
-    seconds: Math.round(
-      params.half.moving_time *
-        Math.pow(DIST_MARATHON / DIST_HALF_MARATHON, exponent),
-    ),
-    exponent,
-  };
-}
-
-export function getProjectionConfidenceLabel(readinessScore: number) {
-  if (readinessScore >= 0.75) return "Alta" as const;
-  if (readinessScore >= 0.45) return "Média" as const;
+export function getProjectionConfidenceLabel(longRunKm: number, avgWeeklyKm: number) {
+  if (longRunKm >= 30 && avgWeeklyKm >= 50) return "Alta" as const;
+  if (longRunKm >= 26 && avgWeeklyKm >= 40) return "Média" as const;
   return "Baixa" as const;
 }
 
-function formatScorePercent(score: number) {
-  return `${Math.round(clamp01(score) * 100)}%`;
+function formatPenaltyMinutes(seconds: number) {
+  const minutes = Math.round(Math.abs(seconds) / 60);
+  if (seconds < 0) return `-${minutes} min`;
+  if (seconds > 0) return `+${minutes} min`;
+  return "0 min";
 }
 
 export function predictBySiteModelDetails(params: {
@@ -305,54 +282,53 @@ export function predictBySiteModelDetails(params: {
   longestRun: StravaActivity | null;
   weeklyData: { label: string; distanceKm: number }[];
 }): SitePredictionModel {
+  const halfP = predictFromHalf(params.bestHalf);
   const longRunP = predictFromLongRun(params.longestRun);
   const avgWeekly = params.weeklyData.length
     ? params.weeklyData.reduce((s, x) => s + x.distanceKm, 0) /
       params.weeklyData.length
     : 0;
   const longRunKm = params.longestRun ? params.longestRun.distance / 1000 : 0;
-  const readiness = getMarathonReadinessScore({
-    longRunKm,
-    avgWeeklyKm: avgWeekly,
-  });
-  const confidenceLabel = getProjectionConfidenceLabel(readiness.readinessScore);
+  const longRunPenaltySeconds = getLongRunPenaltySeconds(params.longestRun);
+  const volumePenaltySeconds = getVolumePenaltySeconds(avgWeekly);
+  const confidenceLabel = getProjectionConfidenceLabel(longRunKm, avgWeekly);
+
+  const rawPenaltySeconds = longRunPenaltySeconds + volumePenaltySeconds;
+  const totalPenaltySeconds = Math.min(
+    Math.max(rawPenaltySeconds, -3 * 60),
+    28 * 60,
+  );
+
   const longRunStatus =
     longRunKm >= STRONG_LONG_RUN_MIN_KM
       ? `longão ${longRunKm.toFixed(1)} km`
       : `sem longão acima de ${STRONG_LONG_RUN_MIN_KM} km`;
+  const caption = `confiança ${confidenceLabel.toLowerCase()} · ${longRunStatus} · ajuste ${formatPenaltyMinutes(totalPenaltySeconds)}`;
 
-  if (params.bestHalf) {
-    const halfModel = predictFromHalfWithReadiness({
-      half: params.bestHalf,
-      readinessScore: readiness.readinessScore,
-    });
-
+  if (halfP) {
     return {
-      seconds: halfModel.seconds,
+      seconds: halfP + totalPenaltySeconds,
       confidenceLabel,
-      caption: `confiança ${confidenceLabel.toLowerCase()} · ${longRunStatus} · expoente ${halfModel.exponent.toFixed(3)} · preparo ${formatScorePercent(readiness.readinessScore)}`,
+      caption,
       avgWeeklyKm: avgWeekly,
       longRunKm,
-      readinessScore: readiness.readinessScore,
-      riegelExponent: halfModel.exponent,
-      longRunSpecificityScore: readiness.longRunSpecificityScore,
-      volumeSpecificityScore: readiness.volumeSpecificityScore,
+      longRunPenaltySeconds,
+      volumePenaltySeconds,
+      totalPenaltySeconds,
     };
   }
 
-  const fallbackExponent = getAdjustedRiegelExponent(readiness.readinessScore);
-
   if (longRunP) {
+    const volumeOnlyPenalty = Math.min(Math.max(volumePenaltySeconds, 0), 12 * 60);
     return {
-      seconds: longRunP,
+      seconds: longRunP + volumeOnlyPenalty,
       confidenceLabel,
-      caption: `confiança ${confidenceLabel.toLowerCase()} · sem meia recente · ${longRunStatus} · preparo ${formatScorePercent(readiness.readinessScore)}`,
+      caption: `confiança ${confidenceLabel.toLowerCase()} · sem meia recente · ajuste ${formatPenaltyMinutes(volumeOnlyPenalty)}`,
       avgWeeklyKm: avgWeekly,
       longRunKm,
-      readinessScore: readiness.readinessScore,
-      riegelExponent: fallbackExponent,
-      longRunSpecificityScore: readiness.longRunSpecificityScore,
-      volumeSpecificityScore: readiness.volumeSpecificityScore,
+      longRunPenaltySeconds,
+      volumePenaltySeconds,
+      totalPenaltySeconds: volumeOnlyPenalty,
     };
   }
 
@@ -362,10 +338,9 @@ export function predictBySiteModelDetails(params: {
     caption: "aguardando meia ou longão válido",
     avgWeeklyKm: avgWeekly,
     longRunKm,
-    readinessScore: readiness.readinessScore,
-    riegelExponent: fallbackExponent,
-    longRunSpecificityScore: readiness.longRunSpecificityScore,
-    volumeSpecificityScore: readiness.volumeSpecificityScore,
+    longRunPenaltySeconds,
+    volumePenaltySeconds,
+    totalPenaltySeconds,
   };
 }
 

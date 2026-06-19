@@ -36,13 +36,13 @@ export default function ProjectionSection({
           <p className="ba-label">Projeções</p>
           <h2 className="ba-compact-title">Maratona</h2>
           <p className="ba-muted ba-compact-subtitle">
-            Modelos de tempo para Buenos Aires: Riegel, longão e volume do ciclo.
+            Modelos de tempo para Buenos Aires, com destaque para o cenário composto.
           </p>
         </div>
       </div>
 
       <div className="ba-projection-main">
-        <p>Modelo Riegel ajustado</p>
+        <p>Modelo realista atual</p>
         <strong>
           {sitePredictionLabel}
           {sitePredictionPaceLabel && (
