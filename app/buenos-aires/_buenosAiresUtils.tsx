@@ -71,6 +71,7 @@ export function formatSecondsPerKm(secondsPerKm: number) {
 
 export const DIST_MARATHON = 42.195;
 export const PROJECTION_LONG_RUN_MIN_KM = 14; // mínimo para entrar na calculadora
+export const STRONG_LONG_RUN_MIN_KM = 23; // marco inicial do ciclo Buenos Aires
 
 // ─── Business logic ───────────────────────────────────────────────────────────
 
@@ -168,7 +169,7 @@ export function predictFromHalf(half: StravaActivity | null) {
 export function predictFromLongRun(longestRun: StravaActivity | null) {
   if (!longestRun) return null;
   const km = longestRun.distance / 1000;
-  if (km < 24) return null;
+  if (km < STRONG_LONG_RUN_MIN_KM) return null;
   const pace = longestRun.moving_time / km;
   const adjusted = km >= 30 ? pace + 12 : km >= 28 ? pace + 16 : pace + 22;
   return marathonTimeFromPace(adjusted);
@@ -192,7 +193,7 @@ export function getLongRunPenaltySeconds(longestRun: StravaActivity | null) {
   if (km >= 30) return 3 * 60;
   if (km >= 28) return 6 * 60;
   if (km >= 26) return 10 * 60;
-  if (km >= 24) return 14 * 60;
+  if (km >= STRONG_LONG_RUN_MIN_KM) return 14 * 60;
   if (km >= 21) return 20 * 60;
 
   return 25 * 60;
@@ -244,9 +245,9 @@ export function predictBySiteModelDetails(params: {
   );
 
   const longRunStatus =
-    longRunKm >= 24
+    longRunKm >= STRONG_LONG_RUN_MIN_KM
       ? `longão ${longRunKm.toFixed(1)} km`
-      : "sem longão acima de 24 km";
+      : `sem longão acima de ${STRONG_LONG_RUN_MIN_KM} km`;
   const caption = `confiança ${confidenceLabel.toLowerCase()} · ${longRunStatus} · ajuste ${formatPenaltyMinutes(totalPenaltySeconds)}`;
 
   if (halfP) {
