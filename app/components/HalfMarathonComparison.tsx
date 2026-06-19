@@ -8,6 +8,7 @@ export type HalfMarathonEntry = {
   name: string;
   date: string;
   distanceKm: number;
+  gearName?: string | null;
   splitSource?: "splits_metric" | "laps" | "estimated";
   splits: { km: number; paceSecPerKm: number; heartrate: number | null; distanceM?: number }[];
 };
@@ -238,6 +239,7 @@ export default function HalfMarathonComparison({ races }: Props) {
           <thead>
             <tr style={{ borderBottom: "1px solid rgba(255,255,255,.05)" }}>
               <th style={{ paddingBottom: 8, textAlign: "left", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)" }}>Prova</th>
+              <th style={{ paddingBottom: 8, textAlign: "left", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)" }}>Tênis</th>
               <th style={{ paddingBottom: 8, textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)" }}>Data</th>
               <th style={{ paddingBottom: 8, textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)" }}>Dist</th>
               <th style={{ paddingBottom: 8, textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)" }}>Ritmo médio</th>
@@ -270,6 +272,9 @@ export default function HalfMarathonComparison({ races }: Props) {
                         {cleanRaceName(race.name)}{race.splitSource === "estimated" ? " · média" : ""}
                       </span>
                     </span>
+                  </td>
+                  <td style={{ padding: "8px 12px", textAlign: "left", color: "var(--text-muted)", fontSize: 12, whiteSpace: "nowrap" }}>
+                    {race.gearName ?? "-"}
                   </td>
                   <td style={{ padding: "8px 0", textAlign: "right", color: "var(--text-muted)", fontSize: 12 }}>{formatShortDate(race.date)}</td>
                   <td style={{ padding: "8px 0", textAlign: "right", color: "var(--text-muted)", fontSize: 12 }}>{formatDistanceKm(race.distanceKm)}</td>

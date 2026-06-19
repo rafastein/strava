@@ -7,12 +7,14 @@ import {
   getStravaActivities,
   getStravaActivityDetail,
   getStravaActivityLaps,
+  getStravaAthlete,
   isRunActivity,
   STRAVA_2024_START_EPOCH,
   type StravaActivitySummary,
   type StravaLap,
   type StravaSplit,
 } from "../lib/strava-client";
+import { KNOWN_GEAR_NAME_FALLBACKS } from "../lib/equipment-recommendation";
 import HalfMarathonComparison from "../components/HalfMarathonComparison";
 import type { HalfMarathonEntry } from "../components/HalfMarathonComparison";
 
@@ -160,6 +162,16 @@ function cleanRaceName(name: string): string {
     .trim();
 }
 
+function buildGearNameLookup(athleteGear: { id: string; name: string }[] = []): Record<string, string> {
+  const lookup: Record<string, string> = { ...KNOWN_GEAR_NAME_FALLBACKS };
+
+  athleteGear.forEach((gear) => {
+    lookup[gear.id] = KNOWN_GEAR_NAME_FALLBACKS[gear.id] ?? gear.name;
+  });
+
+  return lookup;
+}
+
 function normalizeText(value: string): string {
   return String(value ?? "")
     .normalize("NFD")
@@ -177,7 +189,10 @@ function isHalfMarathonRaceCandidate(activity: StravaActivity): boolean {
 
 export default async function MeiasPage() {
   const token = await getValidStravaAccessToken();
-  const activities = token ? await getActivities(token) : [];
+  const [activities, athlete] = token
+    ? await Promise.all([getActivities(token), getStravaAthlete(token)])
+    : [[], null] as const;
+  const gearNameLookup = buildGearNameLookup(Array.isArray(athlete?.shoes) ? athlete.shoes : []);
 
   const halvesBase = activities
     .filter(isHalfMarathonRaceCandidate)
@@ -195,6 +210,7 @@ export default async function MeiasPage() {
         name: cleanRaceName(activity.name),
         date: activity.start_date_local,
         distanceKm: Number((activity.distance / 1000).toFixed(2)),
+        gearName: activity.gear_id ? gearNameLookup[activity.gear_id] ?? activity.gear_id : null,
         splits: result.splits,
         splitSource: result.source,
       });
