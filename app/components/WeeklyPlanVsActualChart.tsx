@@ -277,27 +277,6 @@ export default function WeeklyPlanVsActualChart({
         />
       </div>
 
-      <div className="weekly-plan-card__badges mt-4 flex flex-wrap gap-2">
-        <span className="weekly-plan-badge weekly-plan-badge--actual rounded-full border border-orange-400/20 bg-orange-400/10 px-3 py-1.5 text-[11px] font-semibold text-orange-300">
-          {totalActual.toFixed(0)} km feitos
-        </span>
-
-        <span className="weekly-plan-badge weekly-plan-badge--planned rounded-full border border-white/10 bg-white/[.04] px-3 py-1.5 text-[11px] font-semibold text-white/70">
-          {totalPlanned.toFixed(0)} km planejados
-        </span>
-
-        <span
-          className={`weekly-plan-badge rounded-full px-3 py-1.5 text-[11px] font-semibold ${
-            avgAdherence >= 90
-              ? "weekly-plan-badge--success border border-emerald-400/20 bg-emerald-400/10 text-emerald-300"
-              : avgAdherence >= 70
-                ? "weekly-plan-badge--warning border border-amber-400/20 bg-amber-400/10 text-amber-300"
-                : "weekly-plan-badge--danger border border-red-400/20 bg-red-400/10 text-red-300"
-          }`}
-        >
-          {avgAdherence.toFixed(0)}% aderência média
-        </span>
-      </div>
 
       <div className="weekly-current-list mt-4">
         {decoratedWeeks.map((week) => (
