@@ -17,7 +17,9 @@ type WeeklyGoalCardProps = {
 
 function isDangerAlert(alert: WeeklyGoalAlert) {
   const title = alert.title.toLowerCase();
-  return alert.ok === false || title.includes("abaixo") || title.includes("não");
+  return (
+    alert.ok === false || title.includes("abaixo") || title.includes("não")
+  );
 }
 
 export default function WeeklyGoalCard({
@@ -36,7 +38,10 @@ export default function WeeklyGoalCard({
   const remainingKm = Math.max(plannedKm - currentKm, 0);
 
   return (
-    <div className={`ba-card ${className}`.trim()} style={{ padding: "1.2rem" }}>
+    <div
+      className={`ba-card ${className}`.trim()}
+      style={{ padding: "1.2rem" }}
+    >
       <div className="ba-card-head">
         <div>
           <p className="ba-label">{eyebrow}</p>
@@ -61,10 +66,15 @@ export default function WeeklyGoalCard({
 
       <div style={{ marginTop: "1rem" }}>
         <div className="ba-progress">
-          <div className="ba-progress-fill" style={{ width: `${safeProgress}%` }} />
+          <div
+            className="ba-progress-fill"
+            style={{ width: `${safeProgress}%` }}
+          />
         </div>
         <p className="ba-muted" style={{ marginTop: 10, fontSize: 13 }}>
-          Faltam {remainingKm.toFixed(1)} km para cumprir o planejado da semana.
+          {plannedKm > 0 && currentKm >= plannedKm
+            ? `Meta semanal cumprida. Excedente de ${(currentKm - plannedKm).toFixed(1)} km.`
+            : `Faltam ${remainingKm.toFixed(1)} km para cumprir o planejado da semana.`}
         </p>
       </div>
 

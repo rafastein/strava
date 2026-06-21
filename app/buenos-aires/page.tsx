@@ -4,7 +4,9 @@ import Navbar from "../components/Navbar";
 import MarathonProjection from "../components/MarathonProjection";
 import WeeklyPlanVsActualChart from "../components/WeeklyPlanVsActualChart";
 import ZonesAggregate from "../components/ZonesAggregate";
-import TodayWorkoutCard, { getTodayWorkoutStatus } from "../components/TodayWorkoutCard";
+import TodayWorkoutCard, {
+  getTodayWorkoutStatus,
+} from "../components/TodayWorkoutCard";
 import WeeklyGoalCard from "../components/WeeklyGoalCard";
 
 import { getValidStravaAccessToken } from "../lib/strava-auth";
@@ -25,8 +27,15 @@ import {
   type SisrunWeek,
 } from "../lib/sisrun-utils";
 import { getBRDate, getActivityDate } from "../lib/date-utils";
-import { getStructuredPlannedWorkout } from "../lib/planned-workout";
+import {
+  getAllStructuredPlannedWorkouts,
+  getStructuredPlannedWorkout,
+} from "../lib/planned-workout";
 import { isRunActivity } from "../lib/strava-client";
+import {
+  buildStructuredWeeklyComparison,
+  getStructuredCurrentWeekSummary,
+} from "../lib/planned-weekly-comparison";
 
 import BuenosAiresHero from "./_components/BuenosAiresHero";
 import CyclePhaseSection, {
@@ -61,16 +70,21 @@ import {
 export default async function BuenosAiresPage() {
   const accessToken = await getValidStravaAccessToken();
 
-  const [activities, manualPredictions, sisrunData, athleteProfile, structuredWorkoutResult] =
-    await Promise.all([
-      getActivities(),
-      getManualPredictions(),
-      getSisrunData(),
-      accessToken
-        ? getDynamicAthleteProfile(accessToken)
-        : Promise.resolve(null),
-      getStructuredPlannedWorkout(),
-    ]);
+  const [
+    activities,
+    manualPredictions,
+    sisrunData,
+    athleteProfile,
+    structuredWorkoutResult,
+    allStructuredPlannedWorkouts,
+  ] = await Promise.all([
+    getActivities(),
+    getManualPredictions(),
+    getSisrunData(),
+    accessToken ? getDynamicAthleteProfile(accessToken) : Promise.resolve(null),
+    getStructuredPlannedWorkout(),
+    getAllStructuredPlannedWorkouts(),
+  ]);
 
   const sisrunWeek = getCurrentWeek(sisrunData) as SisrunWeek | null;
   const todaySisrunRow = getTodaySisrunRow(sisrunData);
@@ -132,15 +146,30 @@ export default async function BuenosAiresPage() {
       distanceKm: Number(value.distanceKm.toFixed(1)),
     }));
 
-  const weeklyComparison = buildWeeklyComparison(sisrunData, activities, 16)
-    .slice()
-    .reverse();
+  const structuredWeeklyComparison = buildStructuredWeeklyComparison(
+    allStructuredPlannedWorkouts,
+    activities,
+    6,
+  );
+  const weeklyComparison = structuredWeeklyComparison.length
+    ? structuredWeeklyComparison
+    : buildWeeklyComparison(sisrunData, activities, 16).slice().reverse();
+  const weeklyPlanSourceLabel = structuredWeeklyComparison.length
+    ? "COROS/Upstash"
+    : "SisRUN";
 
   const currentWeekKm = getCurrentWeekStravaKm(activities);
   const currentWeekLongestRunKm = getCurrentWeekLongestRunKm(activities);
   const todayStravaKm = getTodayStravaKm(activities);
 
-  const plannedWeekKm = sisrunWeek?.totalPlannedKm ?? 0;
+  const structuredCurrentWeekSummary = getStructuredCurrentWeekSummary(
+    allStructuredPlannedWorkouts,
+  );
+  const hasStructuredCurrentWeekPlan =
+    structuredCurrentWeekSummary.workoutCount > 0;
+  const plannedWeekKm = hasStructuredCurrentWeekPlan
+    ? structuredCurrentWeekSummary.plannedKm
+    : (sisrunWeek?.totalPlannedKm ?? 0);
   const weeklyAdherencePct =
     plannedWeekKm > 0 ? (currentWeekKm / plannedWeekKm) * 100 : 0;
 
@@ -178,7 +207,9 @@ export default async function BuenosAiresPage() {
       date: activity.start_date_local,
       name: activity.name,
       distanceKm: activity.distance / 1000,
-      paceSeconds: Math.round(activity.moving_time / (activity.distance / 1000)),
+      paceSeconds: Math.round(
+        activity.moving_time / (activity.distance / 1000),
+      ),
     }))
     .filter((race) => race.paceSeconds > 200 && race.paceSeconds < 500)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -198,7 +229,10 @@ export default async function BuenosAiresPage() {
   const trainingPaces = vdot ? trainingPacesFromVdot(vdot) : null;
 
   const recentLongRunsBase = runs
-    .filter((activity) => activity.distance >= 14000 && isLongRunActivityName(activity.name))
+    .filter(
+      (activity) =>
+        activity.distance >= 14000 && isLongRunActivityName(activity.name),
+    )
     .sort(
       (a, b) =>
         new Date(getActivityDate(b)).getTime() -
@@ -249,19 +283,26 @@ export default async function BuenosAiresPage() {
     projRunsEnriched,
   );
 
-  const todayStatus = getTodayWorkoutStatus(todaySisrunRow, todayStravaKm, structuredWorkoutResult.data);
+  const todayStatus = getTodayWorkoutStatus(
+    todaySisrunRow,
+    todayStravaKm,
+    structuredWorkoutResult.data,
+  );
 
   const alerts = buildMarathonAlerts({
-    hasPlan: Boolean(sisrunWeek),
+    hasPlan: plannedWeekKm > 0,
     plannedWeekKm,
     currentWeekKm,
     adherencePct: weeklyAdherencePct,
-    plannedLongRunKm: sisrunWeek?.longRunPlannedKm ?? 0,
+    plannedLongRunKm: hasStructuredCurrentWeekPlan
+      ? structuredCurrentWeekSummary.longRunPlannedKm
+      : (sisrunWeek?.longRunPlannedKm ?? 0),
     currentWeekLongestRunKm,
     todayStatus,
     marathonPaceMin: marathonPaces?.min ?? null,
     vdot,
     goalPaceSecPerKm: marathonGoal.targetPaceSecondsPerKm,
+    planSourceLabel: weeklyPlanSourceLabel,
   });
 
   const weeklyGoalAlerts = alerts.map((alert) => ({
@@ -321,11 +362,12 @@ export default async function BuenosAiresPage() {
     };
   });
 
-  const weekSummaryText = sisrunWeek
-    ? `${currentWeekKm.toFixed(1)} km executados de ${plannedWeekKm.toFixed(
-        1,
-      )} km planejados.`
-    : "Sem SisRUN carregado para a semana.";
+  const weekSummaryText =
+    plannedWeekKm > 0
+      ? `${currentWeekKm.toFixed(1)} km executados de ${plannedWeekKm.toFixed(
+          1,
+        )} km planejados no ${weeklyPlanSourceLabel}.`
+      : "Sem planejamento carregado para a semana.";
 
   return (
     <>
@@ -351,7 +393,6 @@ export default async function BuenosAiresPage() {
           weeklyAdherencePct={weeklyAdherencePct}
         />
 
-
         <section className="ba-grid-2 ba-week-overview">
           <div className="ba-today-readiness-stack">
             <TodayWorkoutCard
@@ -375,7 +416,7 @@ export default async function BuenosAiresPage() {
             plannedKm={plannedWeekKm}
             progressPct={weeklyAdherenceForUi}
             alerts={weeklyGoalAlerts}
-            eyebrow="SisRUN x Strava"
+            eyebrow={`${weeklyPlanSourceLabel} x Strava`}
             title="Meta semanal"
             subtitle="Volume planejado contra execução real da semana."
           />
@@ -411,7 +452,9 @@ export default async function BuenosAiresPage() {
                 : "Sem meia identificada"
             }
             longRunPredictionLabel={
-              predictedFromLongRun ? formatFullDuration(predictedFromLongRun) : "—"
+              predictedFromLongRun
+                ? formatFullDuration(predictedFromLongRun)
+                : "—"
             }
             longRunCaption={
               longestRun
@@ -423,7 +466,9 @@ export default async function BuenosAiresPage() {
                 : "Sem longão identificado"
             }
             sitePredictionLabel={
-              sitePrediction.seconds ? formatFullDuration(sitePrediction.seconds) : "—"
+              sitePrediction.seconds
+                ? formatFullDuration(sitePrediction.seconds)
+                : "—"
             }
             sitePredictionCaption={sitePrediction.caption}
             sitePredictionPaceLabel={
@@ -453,7 +498,6 @@ export default async function BuenosAiresPage() {
           <section style={{ marginBottom: "1rem" }}>
             <MarathonProjection
               longRuns={projectionLongRuns}
-              
               races={racePointsForProjection}
             />
           </section>
@@ -468,6 +512,7 @@ export default async function BuenosAiresPage() {
                 actual: week.executedKm,
               }))}
               title="Volume semanal — planejado vs. executado"
+              subtitle={`Volume planejado no ${weeklyPlanSourceLabel} comparado com o executado no Strava.`}
             />
           </section>
         )}

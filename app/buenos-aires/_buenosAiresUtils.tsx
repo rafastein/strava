@@ -1,5 +1,8 @@
 import { formatBRDate, getActivityDate } from "../lib/date-utils";
-import { readManualPredictions, type ManualPredictions } from "../lib/manual-predictions";
+import {
+  readManualPredictions,
+  type ManualPredictions,
+} from "../lib/manual-predictions";
 import {
   getStravaActivities,
   getStravaActivityDetail as fetchStravaActivityDetail,
@@ -77,7 +80,7 @@ export const MARATHON_REFERENCE_LONG_RUN_KM = 32;
 export const MARATHON_REFERENCE_WEEKLY_KM = 64;
 export const RIEGEL_READY_EXPONENT = 1.06;
 export const RIEGEL_LOW_SPECIFICITY_EXPONENT = 1.16;
-export const LONG_RUN_LOW_SPECIFICITY_EXPONENT = 1.10;
+export const LONG_RUN_LOW_SPECIFICITY_EXPONENT = 1.1;
 
 // ─── Business logic ───────────────────────────────────────────────────────────
 
@@ -170,7 +173,8 @@ export function getReadinessStatus(params: {
 export function predictFromHalf(half: StravaActivity | null) {
   if (!half) return null;
   return Math.round(
-    half.moving_time * Math.pow(DIST_MARATHON / DIST_HALF_MARATHON, RIEGEL_READY_EXPONENT),
+    half.moving_time *
+      Math.pow(DIST_MARATHON / DIST_HALF_MARATHON, RIEGEL_READY_EXPONENT),
   );
 }
 
@@ -264,7 +268,10 @@ export function getVolumePenaltySeconds(avgWeeklyKm: number) {
   return 22 * 60;
 }
 
-export function getProjectionConfidenceLabel(longRunKm: number, avgWeeklyKm: number) {
+export function getProjectionConfidenceLabel(
+  longRunKm: number,
+  avgWeeklyKm: number,
+) {
   if (longRunKm >= 30 && avgWeeklyKm >= 50) return "Alta" as const;
   if (longRunKm >= 26 && avgWeeklyKm >= 40) return "Média" as const;
   return "Baixa" as const;
@@ -319,7 +326,10 @@ export function predictBySiteModelDetails(params: {
   }
 
   if (longRunP) {
-    const volumeOnlyPenalty = Math.min(Math.max(volumePenaltySeconds, 0), 12 * 60);
+    const volumeOnlyPenalty = Math.min(
+      Math.max(volumePenaltySeconds, 0),
+      12 * 60,
+    );
     return {
       seconds: longRunP + volumeOnlyPenalty,
       confidenceLabel,
@@ -370,12 +380,14 @@ export function buildMarathonAlerts(params: {
   marathonPaceMin: number | null;
   vdot: number | null;
   goalPaceSecPerKm: number;
+  planSourceLabel?: string;
 }) {
   const alerts: { title: string; text: string; tone: string }[] = [];
+  const planSourceLabel = params.planSourceLabel ?? "planejamento";
   if (!params.hasPlan) {
     alerts.push({
       title: "Planejamento ausente",
-      text: "Carregue uma planilha do SisRUN para comparar a semana atual.",
+      text: "Cadastre treinos no COROS/Upstash ou carregue uma planilha para comparar a semana atual.",
       tone: "bg-white/[0.03] text-white/60",
     });
     return alerts;
@@ -395,7 +407,7 @@ export function buildMarathonAlerts(params: {
   else
     alerts.push({
       title: "Volume da semana bem encaminhado",
-      text: "A execução está acompanhando bem o planejado do SisRUN.",
+      text: `A execução está acompanhando bem o planejado no ${planSourceLabel}.`,
       tone: "bg-emerald-50 text-emerald-700",
     });
   if (
@@ -556,4 +568,3 @@ export function HrZoneBadge({
     </div>
   );
 }
-
