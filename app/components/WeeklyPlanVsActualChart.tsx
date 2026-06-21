@@ -259,18 +259,16 @@ export default function WeeklyPlanVsActualChart({
 
   return (
     <div className="weekly-plan-card rounded-[22px] border border-white/10 bg-[#151515] p-5 shadow-[0_18px_60px_rgba(0,0,0,.20)]">
-      <div className="weekly-plan-card__header mb-5 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-        <div className="weekly-plan-card__heading">
-          <p className="ba-label">Planejado × executado</p>
-          <h2 className="mt-2 text-[22px] font-extrabold leading-tight text-white">
-            {title}
-          </h2>
-          <p className="mt-1 text-[12px] leading-relaxed text-white/45">
-            {subtitle}
-          </p>
+      <div className="weekly-plan-card__header mb-5">
+        <div className="ba-compact-head">
+          <div>
+            <p className="ba-label">Planejado × executado</p>
+            <h2 className="ba-compact-title">{title}</h2>
+            <p className="ba-muted ba-compact-subtitle">{subtitle}</p>
+          </div>
         </div>
 
-        <div className="weekly-plan-card__badges grid w-full grid-cols-1 gap-2 sm:grid-cols-3 xl:w-auto xl:min-w-[440px]">
+        <div className="weekly-plan-card__badges mt-4 grid w-full grid-cols-1 gap-2 sm:grid-cols-3">
           <span className="weekly-plan-badge weekly-plan-badge--actual rounded-2xl border border-orange-400/20 bg-orange-400/10 px-3 py-2 text-center text-[11px] font-semibold text-orange-300">
             {totalActual.toFixed(0)} km feitos
           </span>
