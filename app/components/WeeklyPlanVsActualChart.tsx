@@ -15,6 +15,15 @@ type Props = {
   subtitle?: string;
 };
 
+function getChartLabelParts(label: string) {
+  const normalized = label.replace(/[–—]/g, '-');
+  const [startRaw, endRaw] = normalized.split('-').map((part) => part.trim());
+
+  if (!startRaw || !endRaw) return [label];
+
+  return [startRaw, endRaw];
+}
+
 function getAdherence(week: WeekEntry) {
   if (week.planned <= 0) return 0;
   return (week.actual / week.planned) * 100;
@@ -89,6 +98,7 @@ export default function WeeklyPlanVsActualChart({
         isCurrent: index === 0 || isCurrentWeekLabel(week.label),
         statusClass: getWeekStatusClass(week),
         message: getWeekMessage(week),
+        chartLabel: getChartLabelParts(week.label),
       })),
     [weeks],
   );
@@ -128,7 +138,7 @@ export default function WeeklyPlanVsActualChart({
       const datasets: ChartDataset<any, any>[] = [
         {
           type: "bar" as const,
-          label: "Planejado (SisRUN)",
+          label: "Planejado",
           data: weeks.map((week) => week.planned),
           backgroundColor: "rgba(148,163,184,0.25)",
           borderColor: "rgba(148,163,184,0.5)",
@@ -173,7 +183,7 @@ export default function WeeklyPlanVsActualChart({
       chartInstance.current = new Chart(chartRef.current, {
         type: "bar",
         data: {
-          labels: weeks.map((week) => week.label),
+          labels: decoratedWeeks.map((week) => week.chartLabel),
           datasets,
         },
         options: {
@@ -198,16 +208,19 @@ export default function WeeklyPlanVsActualChart({
             x: {
               ticks: {
                 color: tickColor,
-                font: { size: 8 },
-                maxRotation: 35,
+                font: { size: 10 },
+                maxRotation: 0,
+                minRotation: 0,
                 autoSkip: false,
+                padding: 6,
               },
               grid: { color: gridColor },
             },
             y: {
               ticks: {
                 color: tickColor,
-                font: { size: 8 },
+                font: { size: 10 },
+                padding: 6,
                 callback: (value: unknown) => `${value} km`,
               },
               grid: { color: gridColor },
@@ -218,7 +231,8 @@ export default function WeeklyPlanVsActualChart({
               max: 130,
               ticks: {
                 color: "#6366f1",
-                font: { size: 8 },
+                font: { size: 10 },
+                padding: 6,
                 callback: (value: unknown) => `${value}%`,
               },
               grid: { display: false },
@@ -233,7 +247,7 @@ export default function WeeklyPlanVsActualChart({
     return () => {
       cancelled = true;
     };
-  }, [weeks]);
+  }, [decoratedWeeks, weeks]);
 
   useEffect(() => {
     return () => {
@@ -245,7 +259,7 @@ export default function WeeklyPlanVsActualChart({
 
   return (
     <div className="weekly-plan-card rounded-[22px] border border-white/10 bg-[#151515] p-5 shadow-[0_18px_60px_rgba(0,0,0,.20)]">
-      <div className="weekly-plan-card__header mb-4 flex flex-wrap items-start justify-between gap-3">
+      <div className="weekly-plan-card__header mb-5 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div className="weekly-plan-card__heading">
           <p className="ba-label">Planejado × executado</p>
           <h2 className="mt-2 text-[22px] font-extrabold leading-tight text-white">
@@ -256,17 +270,17 @@ export default function WeeklyPlanVsActualChart({
           </p>
         </div>
 
-        <div className="weekly-plan-card__badges flex flex-wrap justify-start gap-2 sm:justify-end">
-          <span className="weekly-plan-badge weekly-plan-badge--actual rounded-full border border-orange-400/20 bg-orange-400/10 px-2.5 py-1 text-[10px] font-semibold text-orange-300">
+        <div className="weekly-plan-card__badges grid w-full grid-cols-1 gap-2 sm:grid-cols-3 xl:w-auto xl:min-w-[440px]">
+          <span className="weekly-plan-badge weekly-plan-badge--actual rounded-2xl border border-orange-400/20 bg-orange-400/10 px-3 py-2 text-center text-[11px] font-semibold text-orange-300">
             {totalActual.toFixed(0)} km feitos
           </span>
 
-          <span className="weekly-plan-badge weekly-plan-badge--planned rounded-full border border-white/10 bg-white/[.04] px-2.5 py-1 text-[10px] font-semibold text-white/60">
+          <span className="weekly-plan-badge weekly-plan-badge--planned rounded-2xl border border-white/10 bg-white/[.04] px-3 py-2 text-center text-[11px] font-semibold text-white/70">
             {totalPlanned.toFixed(0)} km planejados
           </span>
 
           <span
-            className={`weekly-plan-badge rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+            className={`weekly-plan-badge rounded-2xl px-3 py-2 text-center text-[11px] font-semibold ${
               avgAdherence >= 90
                 ? "weekly-plan-badge--success border border-emerald-400/20 bg-emerald-400/10 text-emerald-300"
                 : avgAdherence >= 70
@@ -279,7 +293,7 @@ export default function WeeklyPlanVsActualChart({
         </div>
       </div>
 
-      <div className="weekly-chart-area relative h-56 rounded-2xl border border-white/5 bg-black/10 p-2">
+      <div className="weekly-chart-area relative h-[320px] rounded-2xl border border-white/5 bg-black/10 p-3 md:h-[360px]">
         <canvas
           ref={chartRef}
           role="img"
@@ -342,7 +356,7 @@ export default function WeeklyPlanVsActualChart({
         ))}
       </div>
 
-      <div className="weekly-plan-card__legend mt-3 flex flex-wrap justify-center gap-x-3 gap-y-1.5 text-[9.5px] text-white/32">
+      <div className="weekly-plan-card__legend mt-4 flex flex-wrap justify-center gap-x-3 gap-y-1.5 text-[10px] text-white/40">
         <span className="flex items-center gap-1">
           <i className="weekly-legend-square weekly-legend-square--actual inline-block h-2.5 w-2.5 rounded-sm bg-orange-400" />
           Executado ≥90%
@@ -371,7 +385,7 @@ export default function WeeklyPlanVsActualChart({
 
       {weeks.length > 0 && (
         <div className="weekly-plan-card__summary-grid mt-3 rounded-2xl border border-white/10 bg-white/[.03] p-3">
-          <div className="grid grid-cols-3 gap-3 text-center text-[11px]">
+          <div className="grid grid-cols-1 gap-3 text-center text-[11px] sm:grid-cols-3">
             <div>
               <p className="text-white/30">Semanas no alvo</p>
               <p className="mt-1 text-[12px] font-semibold text-white/88">
