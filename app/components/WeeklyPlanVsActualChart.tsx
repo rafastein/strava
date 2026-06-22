@@ -258,8 +258,8 @@ export default function WeeklyPlanVsActualChart({
   }, []);
 
   return (
-    <div className="weekly-plan-card rounded-[22px] border border-white/10 bg-[#151515] p-5 shadow-[0_18px_60px_rgba(0,0,0,.20)]">
-      <div className="weekly-plan-card__header mb-5">
+    <div className="weekly-plan-card">
+      <div className="weekly-plan-card__header">
         <div className="ba-compact-head">
           <div>
             <p className="ba-label">Planejado × executado</p>
@@ -269,7 +269,7 @@ export default function WeeklyPlanVsActualChart({
         </div>
       </div>
 
-      <div className="weekly-chart-area relative h-[320px] rounded-2xl border border-white/5 bg-black/10 p-3 md:h-[360px]">
+      <div className="weekly-chart-area">
         <canvas
           ref={chartRef}
           role="img"
@@ -278,7 +278,7 @@ export default function WeeklyPlanVsActualChart({
       </div>
 
 
-      <div className="weekly-current-list mt-4">
+      <div className="weekly-current-list">
         {decoratedWeeks.map((week) => (
           <article
             key={week.label}
@@ -361,7 +361,7 @@ export default function WeeklyPlanVsActualChart({
       </div>
 
       {weeks.length > 0 && (
-        <div className="weekly-plan-card__summary-grid mt-3 rounded-2xl border border-white/10 bg-white/[.03] p-3">
+        <div className="weekly-plan-card__summary-grid">
           <div className="grid grid-cols-1 gap-3 text-center text-[11px] sm:grid-cols-3">
             <div>
               <p className="text-white/30">Semanas no alvo</p>
