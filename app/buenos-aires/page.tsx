@@ -512,6 +512,10 @@ export default async function BuenosAiresPage() {
                 label: week.label,
                 planned: week.plannedKm,
                 actual: week.executedKm,
+                plannedSegments: (week.plannedSegments ?? []).map((segment) => ({
+                  dayLabel: segment.dayLabel,
+                  distance: segment.distanceKm,
+                })),
               }))}
               title="Volume semanal — planejado vs. executado"
               subtitle={`Volume planejado no ${weeklyPlanSourceLabel} comparado com o executado no Strava.`}

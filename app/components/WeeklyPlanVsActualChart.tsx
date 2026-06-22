@@ -7,6 +7,10 @@ export type WeekEntry = {
   label: string;
   planned: number;
   actual: number;
+  plannedSegments?: {
+    dayLabel: string;
+    distance: number;
+  }[];
 };
 
 type Props = {
@@ -22,6 +26,28 @@ function getChartLabelParts(label: string) {
   if (!startRaw || !endRaw) return [label];
 
   return [startRaw, endRaw];
+}
+
+const DAY_ORDER = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+const PLANNED_SEGMENT_COLORS = [
+  "rgba(148,163,184,0.18)",
+  "rgba(148,163,184,0.24)",
+  "rgba(148,163,184,0.30)",
+  "rgba(148,163,184,0.36)",
+  "rgba(148,163,184,0.42)",
+  "rgba(148,163,184,0.48)",
+  "rgba(148,163,184,0.54)",
+];
+
+function getOrderedWeekdays(weeks: WeekEntry[]) {
+  const set = new Set<string>();
+  weeks.forEach((week) => {
+    week.plannedSegments?.forEach((segment) => {
+      if (segment.distance > 0) set.add(segment.dayLabel);
+    });
+  });
+
+  return DAY_ORDER.filter((day) => set.has(day));
 }
 
 function getAdherence(week: WeekEntry) {
@@ -103,6 +129,8 @@ export default function WeeklyPlanVsActualChart({
     [weeks],
   );
 
+  const orderedWeekdays = useMemo(() => getOrderedWeekdays(weeks), [weeks]);
+
   const totalPlanned = weeks.reduce((sum, week) => sum + week.planned, 0);
   const totalActual = weeks.reduce((sum, week) => sum + week.actual, 0);
   const avgAdherence = totalPlanned > 0 ? (totalActual / totalPlanned) * 100 : 0;
@@ -135,17 +163,24 @@ export default function WeeklyPlanVsActualChart({
       const tickColor = "rgba(255,255,255,0.55)";
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const plannedDatasets: ChartDataset<any, any>[] = orderedWeekdays.map((day, index) => ({
+        type: "bar" as const,
+        label: `Planejado · ${day}`,
+        data: weeks.map((week) => {
+          const segment = week.plannedSegments?.find((item) => item.dayLabel === day);
+          return segment?.distance ?? 0;
+        }),
+        backgroundColor: PLANNED_SEGMENT_COLORS[index % PLANNED_SEGMENT_COLORS.length],
+        borderColor: "rgba(148,163,184,0.55)",
+        borderWidth: 1,
+        borderRadius: 4,
+        stack: "planned",
+        order: 2,
+      }));
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const datasets: ChartDataset<any, any>[] = [
-        {
-          type: "bar" as const,
-          label: "Planejado",
-          data: weeks.map((week) => week.planned),
-          backgroundColor: "rgba(148,163,184,0.25)",
-          borderColor: "rgba(148,163,184,0.5)",
-          borderWidth: 1,
-          borderRadius: 4,
-          order: 2,
-        },
+        ...plannedDatasets,
         {
           type: "bar" as const,
           label: "Executado (Strava)",
@@ -159,6 +194,7 @@ export default function WeeklyPlanVsActualChart({
             return "#f87171";
           }),
           borderRadius: 4,
+          stack: "actual",
           order: 1,
         },
         {
@@ -186,6 +222,46 @@ export default function WeeklyPlanVsActualChart({
           labels: decoratedWeeks.map((week) => week.chartLabel),
           datasets,
         },
+        plugins: [{
+          id: "planned-segment-labels",
+          afterDatasetsDraw(chart) {
+            const { ctx } = chart;
+            const datasets = chart.data.datasets;
+
+            ctx.save();
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            datasets.forEach((dataset, datasetIndex) => {
+              if (!String(dataset.label).startsWith("Planejado · ")) return;
+
+              const dayLabel = String(dataset.label).replace("Planejado · ", "");
+              const meta = chart.getDatasetMeta(datasetIndex);
+              meta.data.forEach((element, dataIndex) => {
+                const value = Number(dataset.data?.[dataIndex] ?? 0);
+                if (!Number.isFinite(value) || value <= 0) return;
+
+                const props = element.getProps(["x", "y", "base"], true) as { x: number; y: number; base: number };
+                const height = Math.abs(props.base - props.y);
+                if (height < 22) return;
+
+                const centerY = props.y + (props.base - props.y) / 2;
+                ctx.fillStyle = "rgba(255,255,255,0.85)";
+                if (height >= 34) {
+                  ctx.font = "600 10px Inter, sans-serif";
+                  ctx.fillText(dayLabel, props.x, centerY - 6);
+                  ctx.font = "500 9px Inter, sans-serif";
+                  ctx.fillText(`${value.toFixed(1)} km`, props.x, centerY + 7);
+                } else {
+                  ctx.font = "600 9px Inter, sans-serif";
+                  ctx.fillText(`${dayLabel} ${value.toFixed(1)}`, props.x, centerY);
+                }
+              });
+            });
+
+            ctx.restore();
+          },
+        }],
         options: {
           responsive: true,
           maintainAspectRatio: false,
@@ -199,6 +275,11 @@ export default function WeeklyPlanVsActualChart({
                     return `Aderência: ${value?.toFixed(0) ?? "-"}%`;
                   }
 
+                  if (String(ctx.dataset.label).startsWith("Planejado · ")) {
+                    const day = String(ctx.dataset.label).replace("Planejado · ", "");
+                    return `Planejado · ${day}: ${(ctx.raw as number).toFixed(1)} km`;
+                  }
+
                   return `${ctx.dataset.label}: ${(ctx.raw as number).toFixed(1)} km`;
                 },
               },
@@ -206,6 +287,7 @@ export default function WeeklyPlanVsActualChart({
           },
           scales: {
             x: {
+              stacked: true,
               ticks: {
                 color: tickColor,
                 font: { size: 10 },
@@ -217,6 +299,7 @@ export default function WeeklyPlanVsActualChart({
               grid: { color: gridColor },
             },
             y: {
+              stacked: true,
               ticks: {
                 color: tickColor,
                 font: { size: 10 },
@@ -247,7 +330,7 @@ export default function WeeklyPlanVsActualChart({
     return () => {
       cancelled = true;
     };
-  }, [decoratedWeeks, weeks]);
+  }, [decoratedWeeks, orderedWeekdays, weeks]);
 
   useEffect(() => {
     return () => {

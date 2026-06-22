@@ -96,12 +96,19 @@ export type SisrunDataQualityWarning = {
   description: string;
 };
 
+export type WeeklyPlannedSegment = {
+  date: string;
+  dayLabel: string;
+  distanceKm: number;
+};
+
 export type WeeklyComparisonItem = {
   key: string;
   label: string;
   plannedKm: number;
   executedKm: number;
   adherencePct: number | null;
+  plannedSegments?: WeeklyPlannedSegment[];
 };
 
 export type StravaActivitySummary = {

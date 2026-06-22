@@ -5,7 +5,7 @@ import {
   isStructuredRunningWorkout,
   type StructuredPlannedWorkoutRangeResult,
 } from "./planned-workout";
-import { formatWeekLabel, getWeekStart, type WeeklyComparisonItem } from "./sisrun-utils";
+import { formatWeekLabel, getWeekStart, type WeeklyComparisonItem, type WeeklyPlannedSegment } from "./sisrun-utils";
 import type { StravaActivitySummary } from "./strava-client";
 
 function getDateFromIso(dateIso: string) {
@@ -76,6 +76,19 @@ function getStructuredWorkoutDistanceKm(result: StructuredPlannedWorkoutRangeRes
   return typeof distance === "number" && Number.isFinite(distance) ? distance : 0;
 }
 
+const WEEKDAY_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+function getWeekdayShortLabel(date: Date) {
+  return WEEKDAY_LABELS[date.getDay()] ?? "";
+}
+
+function sortSegments(segments: WeeklyPlannedSegment[]) {
+  return [...segments].sort((a, b) => a.date.localeCompare(b.date)).map((segment) => ({
+    ...segment,
+    distanceKm: roundKm(segment.distanceKm),
+  }));
+}
+
 export function hasStructuredPlannedRunningWorkouts(workouts: StructuredPlannedWorkoutRangeResult[]) {
   return workouts.some((workout) => getStructuredWorkoutDistanceKm(workout) > 0);
 }
@@ -138,6 +151,7 @@ export function buildStructuredWeeklyComparison(
         plannedKm: 0,
         executedKm: 0,
         adherencePct: null,
+        plannedSegments: [],
       });
     });
   }
@@ -161,9 +175,26 @@ export function buildStructuredWeeklyComparison(
         plannedKm: 0,
         executedKm: 0,
         adherencePct: null,
+        plannedSegments: [],
       };
 
     existing.plannedKm += plannedDistanceKm;
+
+    const segmentDate = result.date;
+    const existingSegment = existing.plannedSegments?.find((segment) => segment.date === segmentDate);
+    if (existingSegment) {
+      existingSegment.distanceKm += plannedDistanceKm;
+    } else {
+      existing.plannedSegments = [
+        ...(existing.plannedSegments ?? []),
+        {
+          date: segmentDate,
+          dayLabel: getWeekdayShortLabel(workoutDate),
+          distanceKm: plannedDistanceKm,
+        },
+      ];
+    }
+
     map.set(key, existing);
   });
 
@@ -183,6 +214,7 @@ export function buildStructuredWeeklyComparison(
         plannedKm: 0,
         executedKm: 0,
         adherencePct: null,
+        plannedSegments: [],
       };
 
     existing.executedKm += activity.distance / 1000;
@@ -201,6 +233,7 @@ export function buildStructuredWeeklyComparison(
         plannedKm,
         executedKm,
         adherencePct: plannedKm > 0 ? Number(((executedKm / plannedKm) * 100).toFixed(1)) : null,
+        plannedSegments: sortSegments(item.plannedSegments ?? []),
       };
     });
 }
