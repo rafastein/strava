@@ -50,6 +50,14 @@ function getOrderedWeekdays(weeks: WeekEntry[]) {
   return DAY_ORDER.filter((day) => set.has(day));
 }
 
+function sortWeekSegments(segments?: { dayLabel: string; distance: number }[]) {
+  if (!segments?.length) return [];
+
+  return [...segments].sort(
+    (a, b) => DAY_ORDER.indexOf(a.dayLabel) - DAY_ORDER.indexOf(b.dayLabel),
+  );
+}
+
 function getAdherence(week: WeekEntry) {
   if (week.planned <= 0) return 0;
   return (week.actual / week.planned) * 100;
@@ -120,6 +128,7 @@ export default function WeeklyPlanVsActualChart({
     () =>
       weeks.map((week, index) => ({
         ...week,
+        plannedSegments: sortWeekSegments(week.plannedSegments),
         adherence: getAdherence(week),
         isCurrent: index === 0 || isCurrentWeekLabel(week.label),
         statusClass: getWeekStatusClass(week),
@@ -166,7 +175,7 @@ export default function WeeklyPlanVsActualChart({
       const plannedDatasets: ChartDataset<any, any>[] = orderedWeekdays.map((day, index) => ({
         type: "bar" as const,
         label: `Planejado · ${day}`,
-        data: weeks.map((week) => {
+        data: decoratedWeeks.map((week) => {
           const segment = week.plannedSegments?.find((item) => item.dayLabel === day);
           return segment?.distance ?? 0;
         }),
@@ -184,7 +193,7 @@ export default function WeeklyPlanVsActualChart({
         {
           type: "bar" as const,
           label: "Executado (Strava)",
-          data: weeks.map((week) => week.actual),
+          data: decoratedWeeks.map((week) => week.actual),
           backgroundColor: weeks.map((week) => {
             const ratio = week.planned > 0 ? week.actual / week.planned : 1;
 
@@ -200,7 +209,7 @@ export default function WeeklyPlanVsActualChart({
         {
           type: "line" as const,
           label: "Aderência %",
-          data: weeks.map((week) =>
+          data: decoratedWeeks.map((week) =>
             week.planned > 0
               ? Math.min((week.actual / week.planned) * 100, 130)
               : null,
@@ -330,7 +339,7 @@ export default function WeeklyPlanVsActualChart({
     return () => {
       cancelled = true;
     };
-  }, [decoratedWeeks, orderedWeekdays, weeks]);
+  }, [decoratedWeeks, orderedWeekdays]);
 
   useEffect(() => {
     return () => {

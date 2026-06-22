@@ -77,16 +77,25 @@ function getStructuredWorkoutDistanceKm(result: StructuredPlannedWorkoutRangeRes
 }
 
 const WEEKDAY_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const WEEKDAY_SORT_ORDER = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
 function getWeekdayShortLabel(date: Date) {
   return WEEKDAY_LABELS[date.getDay()] ?? "";
 }
 
 function sortSegments(segments: WeeklyPlannedSegment[]) {
-  return [...segments].sort((a, b) => a.date.localeCompare(b.date)).map((segment) => ({
-    ...segment,
-    distanceKm: roundKm(segment.distanceKm),
-  }));
+  return [...segments]
+    .sort((a, b) => {
+      const dayOrderA = WEEKDAY_SORT_ORDER.indexOf(a.dayLabel);
+      const dayOrderB = WEEKDAY_SORT_ORDER.indexOf(b.dayLabel);
+
+      if (dayOrderA !== dayOrderB) return dayOrderA - dayOrderB;
+      return a.date.localeCompare(b.date);
+    })
+    .map((segment) => ({
+      ...segment,
+      distanceKm: roundKm(segment.distanceKm),
+    }));
 }
 
 export function hasStructuredPlannedRunningWorkouts(workouts: StructuredPlannedWorkoutRangeResult[]) {
