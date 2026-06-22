@@ -759,7 +759,7 @@ export default async function LongoesPage() {
     ? longRuns.reduce((acc, run) => acc + run.distanceKm, 0) / summary.totalLongRuns
     : 0;
 
-  const chartData = longRuns.map((r) => ({
+  const chartData = allLongRuns.map((r) => ({
     id: r.id,
     date: r.date,
     distanceKm: r.distanceKm,
