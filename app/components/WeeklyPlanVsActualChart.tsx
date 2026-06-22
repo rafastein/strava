@@ -139,6 +139,7 @@ export default function WeeklyPlanVsActualChart({
   );
 
   const orderedWeekdays = useMemo(() => getOrderedWeekdays(weeks), [weeks]);
+  const stackedWeekdays = useMemo(() => [...orderedWeekdays].reverse(), [orderedWeekdays]);
 
   const totalPlanned = weeks.reduce((sum, week) => sum + week.planned, 0);
   const totalActual = weeks.reduce((sum, week) => sum + week.actual, 0);
@@ -172,7 +173,7 @@ export default function WeeklyPlanVsActualChart({
       const tickColor = "rgba(255,255,255,0.55)";
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const plannedDatasets: ChartDataset<any, any>[] = orderedWeekdays.map((day, index) => ({
+      const plannedDatasets: ChartDataset<any, any>[] = stackedWeekdays.map((day, index) => ({
         type: "bar" as const,
         label: `Planejado · ${day}`,
         data: decoratedWeeks.map((week) => {
@@ -339,7 +340,7 @@ export default function WeeklyPlanVsActualChart({
     return () => {
       cancelled = true;
     };
-  }, [decoratedWeeks, orderedWeekdays]);
+  }, [decoratedWeeks, orderedWeekdays, stackedWeekdays]);
 
   useEffect(() => {
     return () => {
