@@ -52,6 +52,19 @@ function weekTouchesMonth(weekStart: Date, monthReference: Date) {
   return weekStart <= getMonthEnd(monthReference) && weekEnd >= getMonthStart(monthReference);
 }
 
+function getWeekStartsTouchingMonth(monthReference: Date) {
+  const monthStart = getMonthStart(monthReference);
+  const monthEnd = getMonthEnd(monthReference);
+  const firstWeekStart = getWeekStart(monthStart);
+  const weeks: Date[] = [];
+
+  for (let cursor = new Date(firstWeekStart); cursor <= monthEnd; cursor.setDate(cursor.getDate() + 7)) {
+    weeks.push(new Date(cursor));
+  }
+
+  return weeks;
+}
+
 type StructuredWeeklyComparisonOptions = {
   onlyWeeksTouchingReferenceMonth?: boolean;
 };
@@ -109,13 +122,24 @@ export function buildStructuredWeeklyComparison(
   const currentWeekStartTime = currentWeekStart.getTime();
 
   function shouldShowWeek(weekStart: Date) {
-    if (weekStart.getTime() < currentWeekStartTime) return false;
-
     if (options.onlyWeeksTouchingReferenceMonth) {
       return weekTouchesMonth(weekStart, brazilReferenceDate);
     }
 
-    return true;
+    return weekStart.getTime() >= currentWeekStartTime;
+  }
+
+  if (options.onlyWeeksTouchingReferenceMonth) {
+    getWeekStartsTouchingMonth(brazilReferenceDate).forEach((weekStart) => {
+      const key = weekStart.toISOString();
+      map.set(key, {
+        key,
+        label: formatWeekLabel(weekStart),
+        plannedKm: 0,
+        executedKm: 0,
+        adherencePct: null,
+      });
+    });
   }
 
   workouts.forEach((result) => {
