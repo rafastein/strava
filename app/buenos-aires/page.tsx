@@ -150,6 +150,8 @@ export default async function BuenosAiresPage() {
     allStructuredPlannedWorkouts,
     activities,
     6,
+    new Date(),
+    { onlyWeeksTouchingReferenceMonth: true },
   );
   const weeklyComparison = structuredWeeklyComparison.length
     ? structuredWeeklyComparison

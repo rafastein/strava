@@ -64,3 +64,45 @@ test("buildStructuredWeeklyComparison mostra semana atual primeiro e próximas a
   assert.equal(result[1].plannedKm, 17.9);
   assert.equal(result[1].executedKm, 0);
 });
+
+
+test("buildStructuredWeeklyComparison filtra semanas que não tocam o mês de referência", () => {
+  const result = buildStructuredWeeklyComparison(
+    [
+      workout("2026-06-16", 10.5),
+      workout("2026-06-18", 9),
+      workout("2026-06-28", 17.9),
+      workout("2026-07-05", 23),
+      workout("2026-07-07", 12),
+    ],
+    [run("2026-06-16", 11), run("2026-06-20", 39.2)],
+    6,
+    new Date("2026-06-21T23:30:00-03:00"),
+    { onlyWeeksTouchingReferenceMonth: true },
+  );
+
+  assert.deepEqual(result.map((item) => item.label), [
+    "15/06–21/06",
+    "22/06–28/06",
+    "29/06–05/07",
+  ]);
+  assert.equal(result[0].plannedKm, 19.5);
+  assert.equal(result[0].executedKm, 50.2);
+});
+
+test("buildStructuredWeeklyComparison usa data do Brasil para definir semana atual", () => {
+  const result = buildStructuredWeeklyComparison(
+    [
+      workout("2026-06-16", 10.5),
+      workout("2026-06-18", 9),
+      workout("2026-06-23", 10.5),
+    ],
+    [run("2026-06-16", 11)],
+    6,
+    new Date("2026-06-22T02:30:00.000Z"),
+    { onlyWeeksTouchingReferenceMonth: true },
+  );
+
+  assert.equal(result[0].label, "15/06–21/06");
+  assert.equal(result[0].executedKm, 11);
+});

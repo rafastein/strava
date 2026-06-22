@@ -25,6 +25,37 @@ function roundKm(value: number) {
   return Number(value.toFixed(1));
 }
 
+function getBrazilCalendarDate(referenceDate = new Date()) {
+  const dateKey = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(referenceDate);
+
+  return getDateFromIso(dateKey) ?? referenceDate;
+}
+
+function getMonthStart(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0);
+}
+
+function getMonthEnd(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+}
+
+function weekTouchesMonth(weekStart: Date, monthReference: Date) {
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  weekEnd.setHours(23, 59, 59, 999);
+
+  return weekStart <= getMonthEnd(monthReference) && weekEnd >= getMonthStart(monthReference);
+}
+
+type StructuredWeeklyComparisonOptions = {
+  onlyWeeksTouchingReferenceMonth?: boolean;
+};
+
 function getStructuredWorkoutDistanceKm(result: StructuredPlannedWorkoutRangeResult) {
   if (!result.data || !isStructuredRunningWorkout(result.data)) return 0;
 
@@ -70,17 +101,29 @@ export function buildStructuredWeeklyComparison(
   activities: StravaActivitySummary[],
   limit = 6,
   referenceDate = new Date(),
+  options: StructuredWeeklyComparisonOptions = {},
 ): WeeklyComparisonItem[] {
   const map = new Map<string, WeeklyComparisonItem>();
-  const currentWeekStart = getWeekStart(referenceDate);
+  const brazilReferenceDate = getBrazilCalendarDate(referenceDate);
+  const currentWeekStart = getWeekStart(brazilReferenceDate);
   const currentWeekStartTime = currentWeekStart.getTime();
+
+  function shouldShowWeek(weekStart: Date) {
+    if (weekStart.getTime() < currentWeekStartTime) return false;
+
+    if (options.onlyWeeksTouchingReferenceMonth) {
+      return weekTouchesMonth(weekStart, brazilReferenceDate);
+    }
+
+    return true;
+  }
 
   workouts.forEach((result) => {
     const workoutDate = getDateFromIso(result.date);
     if (!workoutDate) return;
 
     const weekStart = getWeekStart(workoutDate);
-    if (weekStart.getTime() < currentWeekStartTime) return;
+    if (!shouldShowWeek(weekStart)) return;
 
     const plannedDistanceKm = getStructuredWorkoutDistanceKm(result);
     if (plannedDistanceKm <= 0) return;
@@ -105,7 +148,7 @@ export function buildStructuredWeeklyComparison(
     if (!activityDate) return;
 
     const weekStart = getWeekStart(activityDate);
-    if (weekStart.getTime() !== currentWeekStartTime) return;
+    if (!shouldShowWeek(weekStart)) return;
 
     const key = weekStart.toISOString();
     const existing =
