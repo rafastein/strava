@@ -14,7 +14,7 @@ import {
   type StructuredPlannedWorkout,
 } from "../lib/planned-workout";
 import { getSisrunDataWithSource } from "../lib/sisrun-utils";
-import { getStravaActivities, getStravaAthlete, STRAVA_2024_START_EPOCH, type StravaGear } from "../lib/strava-client";
+import { getStravaActivities, getStravaAthlete, STRAVA_2024_START_EPOCH, isRunActivity, type StravaGear } from "../lib/strava-client";
 import { buildGearRecommendationSummaries } from "../lib/equipment-strava-summary";
 import { getEquipmentWorkoutFromStructuredWorkout, pickRecommendedShoeForWorkout } from "../lib/equipment-recommendation";
 
@@ -46,6 +46,14 @@ export default async function CorosPage() {
     (result): result is typeof result & { data: StructuredPlannedWorkout } => Boolean(result.data),
   );
   const gears = buildGearRecommendationSummaries(activities, Array.isArray(athlete?.shoes) ? athlete.shoes as StravaGear[] : []);
+  const completedWorkoutDates = new Set(
+    activities
+      .filter((activity) => isRunActivity(activity))
+      .map((activity) => (activity.start_date_local ?? activity.start_date ?? "").slice(0, 10))
+      .filter(Boolean),
+  );
+  const todayCompleted = completedWorkoutDates.has(todayIso);
+
   const recommendationByDate = new Map(
     savedWorkouts.map((result) => {
       const workout = getEquipmentWorkoutFromStructuredWorkout(result.data);
@@ -92,10 +100,14 @@ export default async function CorosPage() {
           style={{
             padding: "1.5rem",
             background: todayWorkoutResult.data
-              ? "linear-gradient(180deg, rgba(16,185,129,0.12), rgba(255,255,255,0.025))"
+              ? (todayCompleted
+                  ? "linear-gradient(180deg, rgba(16,185,129,0.12), rgba(255,255,255,0.025))"
+                  : "linear-gradient(180deg, rgba(59,130,246,0.14), rgba(255,255,255,0.025))")
               : undefined,
             border: todayWorkoutResult.data
-              ? "1px solid rgba(16,185,129,0.24)"
+              ? (todayCompleted
+                  ? "1px solid rgba(16,185,129,0.24)"
+                  : "1px solid rgba(59,130,246,0.28)")
               : undefined,
           }}
         >
@@ -142,6 +154,7 @@ export default async function CorosPage() {
               type: result.data.type,
               shoeName: recommendationByDate.get(result.data.date) ?? null,
               distanceKm: result.data.distanceKm ?? null,
+              completed: completedWorkoutDates.has(result.data.date),
             }))}
           />
         </section>

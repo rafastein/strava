@@ -11,6 +11,7 @@ type SavedWorkoutCard = {
   type: string;
   shoeName: string | null;
   distanceKm?: number | null;
+  completed?: boolean;
 };
 
 type DeleteResponse = {
@@ -199,7 +200,14 @@ export default function CorosSavedWorkoutsList({ workouts, todayDate }: { workou
               <div key={cell.isoDate} style={getDayCellStyle(cell)}>
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="ba-label" style={cell.isToday ? { color: "#86efac" } : cell.inCurrentMonth ? undefined : fadedLabelStyle}>
+                    <p
+                      className="ba-label"
+                      style={cell.isToday
+                        ? { color: cell.isCompleted ? "#86efac" : "#93c5fd" }
+                        : cell.inCurrentMonth
+                          ? undefined
+                          : fadedLabelStyle}
+                    >
                       {cell.dayNumber}
                       {cell.isToday ? " · Hoje" : ""}
                     </p>
@@ -253,6 +261,8 @@ type CalendarCell = {
   shortDateLabel: string;
   inCurrentMonth: boolean;
   isToday: boolean;
+  isCompleted: boolean;
+  isPending: boolean;
   workout?: SavedWorkoutCard;
 };
 
@@ -315,13 +325,19 @@ function buildCalendarCells(
   const cells: CalendarCell[] = [];
   for (const date = new Date(gridStart); date <= gridEnd; date.setDate(date.getDate() + 1)) {
     const isoDate = formatIsoDate(date);
+    const workout = workoutByDate.get(isoDate);
+    const isToday = todayDate === isoDate;
+    const isCompleted = Boolean(workout?.completed);
+    const isPending = Boolean(workout) && !isCompleted;
     cells.push({
       isoDate,
       dayNumber: date.getDate(),
       shortDateLabel: `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}`,
       inCurrentMonth: date.getMonth() === monthIndex,
-      isToday: todayDate === isoDate,
-      workout: workoutByDate.get(isoDate),
+      isToday,
+      isCompleted,
+      isPending,
+      workout,
     });
   }
 
@@ -341,10 +357,24 @@ function getDayCellStyle(cell: CalendarCell): CSSProperties {
     boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
   };
 
-  if (cell.isToday) {
-    base.background = "linear-gradient(180deg, rgba(16,185,129,0.14), rgba(255,255,255,0.035))";
-    base.border = "1px solid rgba(16,185,129,0.24)";
+  if (cell.isCompleted) {
+    base.background = "linear-gradient(180deg, rgba(16,185,129,0.16), rgba(255,255,255,0.035))";
+    base.border = "1px solid rgba(16,185,129,0.28)";
     base.boxShadow = "0 0 0 1px rgba(16,185,129,0.08) inset";
+    return base;
+  }
+
+  if (cell.isToday && cell.workout) {
+    base.background = "linear-gradient(180deg, rgba(59,130,246,0.16), rgba(255,255,255,0.035))";
+    base.border = "1px solid rgba(59,130,246,0.28)";
+    base.boxShadow = "0 0 0 1px rgba(59,130,246,0.08) inset";
+    return base;
+  }
+
+  if (cell.isPending) {
+    base.background = "linear-gradient(180deg, rgba(239,68,68,0.12), rgba(255,255,255,0.03))";
+    base.border = "1px solid rgba(239,68,68,0.24)";
+    base.boxShadow = "0 0 0 1px rgba(239,68,68,0.06) inset";
   }
 
   return base;
