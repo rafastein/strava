@@ -141,6 +141,7 @@ export default async function CorosPage() {
               sourceLabel: getStructuredWorkoutSourceLabel(result.data.source),
               type: result.data.type,
               shoeName: recommendationByDate.get(result.data.date) ?? null,
+              distanceKm: result.data.distanceKm ?? null,
             }))}
           />
         </section>
