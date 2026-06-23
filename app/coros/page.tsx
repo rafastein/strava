@@ -87,7 +87,18 @@ export default async function CorosPage() {
           />
         </section>
 
-        <section className="ba-section ba-card" style={{ padding: "1.5rem" }}>
+        <section
+          className="ba-section ba-card"
+          style={{
+            padding: "1.5rem",
+            background: todayWorkoutResult.data
+              ? "linear-gradient(180deg, rgba(16,185,129,0.12), rgba(255,255,255,0.025))"
+              : undefined,
+            border: todayWorkoutResult.data
+              ? "1px solid rgba(16,185,129,0.24)"
+              : undefined,
+          }}
+        >
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <p className="ba-eyebrow">Treino estruturado de hoje</p>
