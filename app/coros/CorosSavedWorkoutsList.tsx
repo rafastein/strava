@@ -224,6 +224,9 @@ export default function CorosSavedWorkoutsList({ workouts, todayDate }: { workou
                       {getCompactWorkoutTitle(workout.title)}
                     </p>
                     <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
+                      {workout.type}
+                    </p>
+                    <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
                       Distância · {formatDistance(workout.distanceKm)}
                     </p>
                     <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
