@@ -221,9 +221,6 @@ export default function CorosSavedWorkoutsList({ workouts, todayDate }: { workou
                 {workout ? (
                   <div style={{ marginTop: 10 }}>
                     <p style={{ fontWeight: 800, color: "var(--text)", fontSize: 13, lineHeight: 1.3 }}>
-                      {getCompactWorkoutTitle(workout.title)}
-                    </p>
-                    <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
                       {workout.type}
                     </p>
                     <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
@@ -249,12 +246,6 @@ export default function CorosSavedWorkoutsList({ workouts, todayDate }: { workou
   );
 }
 
-function getCompactWorkoutTitle(title: string) {
-  return title
-    .replace(/^\d{2}\/\d{2}\s+[A-Za-zÀ-ÿ]{2,4}\s*-\s*/u, "")
-    .replace(/^Corrida\s+/iu, "")
-    .trim();
-}
 
 type CalendarCell = {
   isoDate: string;
