@@ -18,7 +18,7 @@ type DeleteResponse = {
   error?: string;
 };
 
-export default function CorosSavedWorkoutsList({ workouts }: { workouts: SavedWorkoutCard[] }) {
+export default function CorosSavedWorkoutsList({ workouts, todayDate }: { workouts: SavedWorkoutCard[]; todayDate?: string }) {
   const [items, setItems] = useState(workouts);
   const [adminSecret, setAdminSecret] = useState("");
   const [deletingDate, setDeletingDate] = useState<string | null>(null);
@@ -94,12 +94,22 @@ export default function CorosSavedWorkoutsList({ workouts }: { workouts: SavedWo
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
         {items.map((workout) => {
           const isDeleting = deletingDate === workout.date;
+          const isToday = todayDate === workout.date;
 
           return (
-            <div key={workout.redisKey} className="ba-card-soft" style={{ padding: "1rem" }}>
+            <div
+              key={workout.redisKey}
+              className="ba-card-soft"
+              style={{
+                padding: "1rem",
+                background: isToday ? "linear-gradient(180deg, rgba(16,185,129,0.12), rgba(255,255,255,0.04))" : undefined,
+                border: isToday ? "1px solid rgba(16,185,129,0.24)" : undefined,
+                boxShadow: isToday ? "0 0 0 1px rgba(16,185,129,0.08) inset" : undefined,
+              }}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="ba-label">{workout.dateLabel}</p>
+                  <p className="ba-label" style={isToday ? { color: "#86efac" } : undefined}>{workout.dateLabel}</p>
                   <p style={{ marginTop: 6, fontWeight: 700, color: "var(--text)", fontSize: 13 }}>{workout.title}</p>
                 </div>
                 <button

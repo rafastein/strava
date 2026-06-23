@@ -132,6 +132,7 @@ export default async function CorosPage() {
           <p className="ba-eyebrow">Todos os treinos</p>
           <h2 className="ba-title" style={{ fontSize: "1.7rem", marginTop: 4 }}>Treinos estruturados salvos</h2>
           <CorosSavedWorkoutsList
+            todayDate={todayIso}
             workouts={savedWorkouts.map((result) => ({
               redisKey: result.key,
               date: result.data.date,
