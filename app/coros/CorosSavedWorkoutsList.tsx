@@ -2,6 +2,8 @@
 
 import { useMemo, useState, type CSSProperties } from "react";
 
+type WorkoutCompletionStatus = "done" | "off_target" | "today" | "missed" | "future";
+
 type SavedWorkoutCard = {
   redisKey: string;
   date: string;
@@ -11,7 +13,8 @@ type SavedWorkoutCard = {
   type: string;
   shoeName: string | null;
   distanceKm?: number | null;
-  completed?: boolean;
+  actualKm?: number | null;
+  status: WorkoutCompletionStatus;
 };
 
 type DeleteResponse = {
@@ -204,11 +207,7 @@ export default function CorosSavedWorkoutsList({ workouts, todayDate }: { workou
                     <div>
                       <p
                         className="ba-label"
-                        style={cell.isToday
-                          ? { color: cell.isCompleted ? "#86efac" : "#93c5fd" }
-                          : cell.inCurrentMonth
-                            ? undefined
-                            : fadedLabelStyle}
+                        style={getDateLabelStyle(cell)}
                       >
                         {cell.dayNumber}
                         {cell.isToday ? " · Hoje" : ""}
@@ -234,8 +233,13 @@ export default function CorosSavedWorkoutsList({ workouts, todayDate }: { workou
                         {workout.type}
                       </p>
                       <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
-                        Distância · {formatDistance(workout.distanceKm)}
+                        Planejado · {formatDistance(workout.distanceKm)}
                       </p>
+                      {workout.actualKm && workout.actualKm > 0 && (
+                        <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
+                          Feito · {formatDistance(workout.actualKm)}{formatCompletionRatio(workout)}
+                        </p>
+                      )}
                       <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
                         Tênis · {workout.shoeName ?? "sem recomendação"}
                       </p>
@@ -263,7 +267,7 @@ export default function CorosSavedWorkoutsList({ workouts, todayDate }: { workou
               <div key={cell.isoDate} style={getMobileDayCellStyle(cell)}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="ba-label" style={cell.isToday ? { color: cell.isCompleted ? "#86efac" : "#93c5fd" } : undefined}>
+                    <p className="ba-label" style={getDateLabelStyle(cell)}>
                       {weekday} · {cell.dayNumber}
                       {cell.isToday ? " · Hoje" : ""}
                     </p>
@@ -287,7 +291,10 @@ export default function CorosSavedWorkoutsList({ workouts, todayDate }: { workou
 
                 {workout ? (
                   <div style={{ marginTop: 10, display: "grid", gap: 6 }}>
-                    <p className="ba-muted" style={{ fontSize: 13 }}>Distância · {formatDistance(workout.distanceKm)}</p>
+                    <p className="ba-muted" style={{ fontSize: 13 }}>Planejado · {formatDistance(workout.distanceKm)}</p>
+                    {workout.actualKm && workout.actualKm > 0 && (
+                      <p className="ba-muted" style={{ fontSize: 13 }}>Feito · {formatDistance(workout.actualKm)}{formatCompletionRatio(workout)}</p>
+                    )}
                     <p className="ba-muted" style={{ fontSize: 13 }}>Tênis · {workout.shoeName ?? "sem recomendação"}</p>
                   </div>
                 ) : (
@@ -309,8 +316,7 @@ type CalendarCell = {
   shortDateLabel: string;
   inCurrentMonth: boolean;
   isToday: boolean;
-  isCompleted: boolean;
-  isPending: boolean;
+  status: WorkoutCompletionStatus | "empty";
   workout?: SavedWorkoutCard;
 };
 
@@ -375,16 +381,13 @@ function buildCalendarCells(
     const isoDate = formatIsoDate(date);
     const workout = workoutByDate.get(isoDate);
     const isToday = todayDate === isoDate;
-    const isCompleted = Boolean(workout?.completed);
-    const isPending = Boolean(workout) && !isCompleted;
     cells.push({
       isoDate,
       dayNumber: date.getDate(),
       shortDateLabel: `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}`,
       inCurrentMonth: date.getMonth() === monthIndex,
       isToday,
-      isCompleted,
-      isPending,
+      status: workout?.status ?? "empty",
       workout,
     });
   }
@@ -405,21 +408,28 @@ function getDayCellStyle(cell: CalendarCell): CSSProperties {
     boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
   };
 
-  if (cell.isCompleted) {
+  if (cell.status === "done") {
     base.background = "linear-gradient(180deg, rgba(16,185,129,0.16), rgba(255,255,255,0.035))";
     base.border = "1px solid rgba(16,185,129,0.28)";
     base.boxShadow = "0 0 0 1px rgba(16,185,129,0.08) inset";
     return base;
   }
 
-  if (cell.isToday && cell.workout) {
+  if (cell.status === "off_target") {
+    base.background = "linear-gradient(180deg, rgba(245,158,11,0.16), rgba(255,255,255,0.035))";
+    base.border = "1px solid rgba(245,158,11,0.32)";
+    base.boxShadow = "0 0 0 1px rgba(245,158,11,0.08) inset";
+    return base;
+  }
+
+  if (cell.status === "today") {
     base.background = "linear-gradient(180deg, rgba(59,130,246,0.16), rgba(255,255,255,0.035))";
     base.border = "1px solid rgba(59,130,246,0.28)";
     base.boxShadow = "0 0 0 1px rgba(59,130,246,0.08) inset";
     return base;
   }
 
-  if (cell.isPending) {
+  if (cell.status === "missed") {
     base.background = "linear-gradient(180deg, rgba(239,68,68,0.12), rgba(255,255,255,0.03))";
     base.border = "1px solid rgba(239,68,68,0.24)";
     base.boxShadow = "0 0 0 1px rgba(239,68,68,0.06) inset";
@@ -435,6 +445,33 @@ function getMobileDayCellStyle(cell: CalendarCell): CSSProperties {
     minHeight: "auto",
     padding: "1rem",
   };
+}
+
+function getDateLabelStyle(cell: CalendarCell): CSSProperties | undefined {
+  if (cell.status === "done") return { color: "#86efac" };
+  if (cell.status === "off_target") return { color: "#fbbf24" };
+  if (cell.status === "today") return { color: "#93c5fd" };
+  if (cell.status === "missed") return { color: "#fca5a5" };
+  if (!cell.inCurrentMonth) return fadedLabelStyle;
+  return undefined;
+}
+
+function formatCompletionRatio(workout: SavedWorkoutCard) {
+  const plannedKm = workout.distanceKm;
+  const actualKm = workout.actualKm;
+
+  if (
+    typeof plannedKm !== "number" ||
+    !Number.isFinite(plannedKm) ||
+    plannedKm <= 0 ||
+    typeof actualKm !== "number" ||
+    !Number.isFinite(actualKm) ||
+    actualKm <= 0
+  ) {
+    return "";
+  }
+
+  return ` · ${Math.round((actualKm / plannedKm) * 100)}%`;
 }
 
 const fadedLabelStyle: CSSProperties = {

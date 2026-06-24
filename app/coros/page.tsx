@@ -14,9 +14,76 @@ import {
   type StructuredPlannedWorkout,
 } from "../lib/planned-workout";
 import { getSisrunDataWithSource } from "../lib/sisrun-utils";
-import { getStravaActivities, getStravaAthlete, STRAVA_2024_START_EPOCH, isRunActivity, type StravaGear } from "../lib/strava-client";
+import { getStravaActivities, getStravaAthlete, STRAVA_2024_START_EPOCH, isRunActivity, type StravaActivitySummary, type StravaGear } from "../lib/strava-client";
 import { buildGearRecommendationSummaries } from "../lib/equipment-strava-summary";
 import { getEquipmentWorkoutFromStructuredWorkout, pickRecommendedShoeForWorkout } from "../lib/equipment-recommendation";
+
+type WorkoutCompletionStatus = "done" | "off_target" | "today" | "missed" | "future";
+
+function buildActualRunKmByDate(activities: StravaActivitySummary[]) {
+  const byDate = new Map<string, number>();
+
+  activities.filter(isRunActivity).forEach((activity) => {
+    const dateKey = (activity.start_date_local ?? activity.start_date ?? "").slice(0, 10);
+    if (!dateKey) return;
+
+    byDate.set(dateKey, (byDate.get(dateKey) ?? 0) + activity.distance / 1000);
+  });
+
+  return byDate;
+}
+
+function getWorkoutCompletionStatus({
+  date,
+  plannedDistanceKm,
+  actualKm,
+  todayIso,
+}: {
+  date: string;
+  plannedDistanceKm?: number | null;
+  actualKm: number;
+  todayIso: string;
+}): WorkoutCompletionStatus {
+  if (actualKm > 0) {
+    const hasPlannedDistance = typeof plannedDistanceKm === "number" && Number.isFinite(plannedDistanceKm) && plannedDistanceKm > 0;
+    const ratio = hasPlannedDistance ? actualKm / plannedDistanceKm : null;
+
+    if (ratio !== null && (ratio < 0.8 || ratio > 1.2)) return "off_target";
+    return "done";
+  }
+
+  if (date === todayIso) return "today";
+  if (date < todayIso) return "missed";
+  return "future";
+}
+
+function getWorkoutStatusCardStyle(status: WorkoutCompletionStatus) {
+  if (status === "done") {
+    return {
+      background: "linear-gradient(180deg, rgba(16,185,129,0.12), rgba(255,255,255,0.025))",
+      border: "1px solid rgba(16,185,129,0.24)",
+    };
+  }
+
+  if (status === "off_target") {
+    return {
+      background: "linear-gradient(180deg, rgba(245,158,11,0.15), rgba(255,255,255,0.025))",
+      border: "1px solid rgba(245,158,11,0.30)",
+    };
+  }
+
+  if (status === "missed") {
+    return {
+      background: "linear-gradient(180deg, rgba(239,68,68,0.12), rgba(255,255,255,0.025))",
+      border: "1px solid rgba(239,68,68,0.24)",
+    };
+  }
+
+  return {
+    background: "linear-gradient(180deg, rgba(59,130,246,0.14), rgba(255,255,255,0.025))",
+    border: "1px solid rgba(59,130,246,0.28)",
+  };
+}
 
 const SAMPLE_JSON = `{
   "date": "2026-06-11",
@@ -46,13 +113,15 @@ export default async function CorosPage() {
     (result): result is typeof result & { data: StructuredPlannedWorkout } => Boolean(result.data),
   );
   const gears = buildGearRecommendationSummaries(activities, Array.isArray(athlete?.shoes) ? athlete.shoes as StravaGear[] : []);
-  const completedWorkoutDates = new Set(
-    activities
-      .filter((activity) => isRunActivity(activity))
-      .map((activity) => (activity.start_date_local ?? activity.start_date ?? "").slice(0, 10))
-      .filter(Boolean),
-  );
-  const todayCompleted = completedWorkoutDates.has(todayIso);
+  const actualRunKmByDate = buildActualRunKmByDate(activities);
+  const todayActualKm = actualRunKmByDate.get(todayIso) ?? 0;
+  const todayStatus = getWorkoutCompletionStatus({
+    date: todayIso,
+    plannedDistanceKm: todayWorkoutResult.data?.distanceKm ?? null,
+    actualKm: todayActualKm,
+    todayIso,
+  });
+  const todayStatusStyle = getWorkoutStatusCardStyle(todayStatus);
 
   const recommendationByDate = new Map(
     savedWorkouts.map((result) => {
@@ -99,16 +168,8 @@ export default async function CorosPage() {
           className="ba-section ba-card"
           style={{
             padding: "1.5rem",
-            background: todayWorkoutResult.data
-              ? (todayCompleted
-                  ? "linear-gradient(180deg, rgba(16,185,129,0.12), rgba(255,255,255,0.025))"
-                  : "linear-gradient(180deg, rgba(59,130,246,0.14), rgba(255,255,255,0.025))")
-              : undefined,
-            border: todayWorkoutResult.data
-              ? (todayCompleted
-                  ? "1px solid rgba(16,185,129,0.24)"
-                  : "1px solid rgba(59,130,246,0.28)")
-              : undefined,
+            background: todayWorkoutResult.data ? todayStatusStyle.background : undefined,
+            border: todayWorkoutResult.data ? todayStatusStyle.border : undefined,
           }}
         >
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -154,7 +215,13 @@ export default async function CorosPage() {
               type: result.data.type,
               shoeName: recommendationByDate.get(result.data.date) ?? null,
               distanceKm: result.data.distanceKm ?? null,
-              completed: completedWorkoutDates.has(result.data.date),
+              actualKm: actualRunKmByDate.get(result.data.date) ?? 0,
+              status: getWorkoutCompletionStatus({
+                date: result.data.date,
+                plannedDistanceKm: result.data.distanceKm ?? null,
+                actualKm: actualRunKmByDate.get(result.data.date) ?? 0,
+                todayIso,
+              }),
             }))}
           />
         </section>

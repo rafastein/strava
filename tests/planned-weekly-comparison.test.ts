@@ -110,7 +110,6 @@ test("buildStructuredWeeklyComparison usa data do Brasil para definir semana atu
     [run("2026-06-16", 11)],
     6,
     new Date("2026-06-22T02:30:00.000Z"),
-    { onlyWeeksTouchingReferenceMonth: true },
   );
 
   assert.equal(result[0].label, "15/06–21/06");
