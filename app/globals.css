@@ -3010,3 +3010,34 @@ body {
   }
 }
 
+
+
+/* COROS calendar mobile responsiveness */
+.coros-calendar-mobile {
+  display: none;
+}
+
+.coros-calendar-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@media (max-width: 820px) {
+  .coros-calendar-desktop {
+    display: none;
+  }
+
+  .coros-calendar-mobile {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  .coros-calendar-controls {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    gap: 0.5rem;
+  }
+}
