@@ -36,6 +36,8 @@ export type StructuredPlannedWorkout = {
   type: PlannedWorkoutType;
   distanceKm: number | null;
   durationMin: number | null;
+  estimatedTime?: string | null;
+  loadTl?: number | null;
   description?: string | null;
   steps: PlannedWorkoutStep[];
   externalId?: string | null;
@@ -80,6 +82,35 @@ function toNumberOrNull(value: unknown) {
 function toPositiveNumberOrNull(value: unknown) {
   const parsed = toNumberOrNull(value);
   return parsed && parsed > 0 ? parsed : null;
+}
+
+function toEstimatedTimeOrNull(value: unknown) {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim();
+  return /^\d{1,2}:\d{2}(?::\d{2})?$/.test(normalized) ? normalized : null;
+}
+
+function durationLabelToMinutes(value: string | null) {
+  if (!value) return null;
+  const parts = value.split(":").map(Number);
+  if (parts.some((part) => !Number.isFinite(part))) return null;
+
+  if (parts.length === 2) {
+    const [minutes, seconds] = parts;
+    return Math.round(minutes + seconds / 60);
+  }
+
+  if (parts.length === 3) {
+    const [hours, minutes, seconds] = parts;
+    return Math.round(hours * 60 + minutes + seconds / 60);
+  }
+
+  return null;
+}
+
+function getNestedRecord(input: Record<string, unknown>, key: string) {
+  const value = input[key];
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
 }
 
 export function getTodayIsoDate(date = new Date()) {
@@ -246,8 +277,13 @@ export function normalizeStructuredWorkout(
     "indefinido",
   ];
 
+  const rawRecord = getNestedRecord(input, "raw");
+  const corosSchedule = rawRecord ? getNestedRecord(rawRecord, "corosSchedule") : null;
+  const estimatedTime = toEstimatedTimeOrNull(input.estimatedTime ?? corosSchedule?.estimatedTime);
   const distanceKm = toPositiveNumberOrNull(input.distanceKm ?? input.distance);
-  const durationMin = toPositiveNumberOrNull(input.durationMin ?? input.duration);
+  const durationMin =
+    toPositiveNumberOrNull(input.durationMin ?? input.duration) ?? durationLabelToMinutes(estimatedTime);
+  const loadTl = toPositiveNumberOrNull(input.loadTl ?? corosSchedule?.loadTl);
   const description = typeof input.description === "string" ? input.description : null;
   const inferredType = classifyStructuredWorkout({ title, description, distanceKm, durationMin, steps });
   const type = allowedTypes.includes(explicitType as PlannedWorkoutType)
@@ -261,6 +297,8 @@ export function normalizeStructuredWorkout(
     type,
     distanceKm,
     durationMin,
+    estimatedTime,
+    loadTl,
     description,
     steps,
     externalId: typeof input.externalId === "string" ? input.externalId : null,

@@ -3,11 +3,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminRequest } from "../../lib/admin-auth";
 
 const PATHS = [
-  "/treinos-qualidade",
+  "/",
+  "/buenos-aires",
+  "/coros",
+  "/provas",
+  "/equipamentos",
+  "/carga",
+  "/sisrun",
   "/longoes",
   "/meias",
   "/corridas-brasil",
   "/corridas-mundo",
+  "/treinos-qualidade",
 ];
 
 export async function POST(req: NextRequest) {

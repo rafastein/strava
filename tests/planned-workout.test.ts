@@ -36,7 +36,8 @@ test("normaliza payload vindo do COROS/manual", () => {
     source: "coros",
     title: "7x 500m",
     distanceKm: "9",
-    durationMin: "60",
+    estimatedTime: "1:00:00",
+    loadTl: "97",
     steps: [{ label: "500m Z2", repeat: 7, distanceKm: 0.5, intensity: "Z2" }],
   });
 
@@ -45,7 +46,29 @@ test("normaliza payload vindo do COROS/manual", () => {
   assert.equal(workout.type, "intervalado");
   assert.equal(workout.distanceKm, 9);
   assert.equal(workout.durationMin, 60);
+  assert.equal(workout.estimatedTime, "1:00:00");
+  assert.equal(workout.loadTl, 97);
   assert.equal(workout.steps.length, 1);
+});
+
+
+test("normaliza campos oficiais do COROS salvos dentro de raw", () => {
+  const workout = normalizeStructuredWorkout({
+    date: "2026-06-25",
+    source: "coros",
+    title: "25/06 Qui - Corrida Fartlek 10",
+    distanceKm: 10,
+    raw: {
+      corosSchedule: {
+        estimatedTime: "1:02:36",
+        loadTl: 104,
+      },
+    },
+  });
+
+  assert.equal(workout.estimatedTime, "1:02:36");
+  assert.equal(workout.durationMin, 63);
+  assert.equal(workout.loadTl, 104);
 });
 
 test("equipamentos prioriza treino estruturado como fonte", () => {

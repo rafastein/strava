@@ -22,6 +22,8 @@ type ImportResponse = {
     type: string;
     distanceKm: number | null;
     durationMin: number | null;
+    estimatedTime?: string | null;
+    loadTl?: number | null;
     source: string;
   }>;
   error?: string;
@@ -145,7 +147,12 @@ export default function CorosImportScheduleForm() {
                 {(result.workouts ?? []).map((workout) => (
                   <div key={`${workout.key}-${workout.title}`} className="ba-card-soft" style={{ padding: ".8rem" }}>
                     <p style={{ color: "var(--text)", fontWeight: 700, fontSize: 13 }}>{workout.date} · {workout.title}</p>
-                    <p className="ba-muted" style={{ fontSize: 12 }}>{workout.source} · {workout.type}</p>
+                    <p className="ba-muted" style={{ fontSize: 12 }}>
+                      {workout.source} · {workout.type}
+                      {workout.distanceKm ? ` · ${workout.distanceKm.toFixed(1)} km` : ""}
+                      {workout.loadTl ? ` · ${Math.round(workout.loadTl)} TL` : ""}
+                      {workout.estimatedTime ? ` · ${workout.estimatedTime}` : ""}
+                    </p>
                   </div>
                 ))}
               </div>

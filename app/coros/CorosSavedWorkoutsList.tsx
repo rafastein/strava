@@ -13,6 +13,8 @@ type SavedWorkoutCard = {
   type: string;
   shoeName: string | null;
   distanceKm?: number | null;
+  estimatedTime?: string | null;
+  loadTl?: number | null;
   actualKm?: number | null;
   status: WorkoutCompletionStatus;
 };
@@ -187,6 +189,8 @@ export default function CorosSavedWorkoutsList({ workouts, todayDate }: { workou
           </div>
         </div>
 
+        <StatusLegend />
+
         <div className="coros-calendar-desktop">
           <div style={weekdayHeaderGridStyle}>
             {WEEKDAY_HEADERS.map((weekday) => (
@@ -233,7 +237,7 @@ export default function CorosSavedWorkoutsList({ workouts, todayDate }: { workou
                         {workout.type}
                       </p>
                       <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
-                        Planejado · {formatDistance(workout.distanceKm)}
+                        Planejado · {formatPlannedWorkoutSummary(workout)}
                       </p>
                       {workout.actualKm && workout.actualKm > 0 && (
                         <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
@@ -291,7 +295,7 @@ export default function CorosSavedWorkoutsList({ workouts, todayDate }: { workou
 
                 {workout ? (
                   <div style={{ marginTop: 10, display: "grid", gap: 6 }}>
-                    <p className="ba-muted" style={{ fontSize: 13 }}>Planejado · {formatDistance(workout.distanceKm)}</p>
+                    <p className="ba-muted" style={{ fontSize: 13 }}>Planejado · {formatPlannedWorkoutSummary(workout)}</p>
                     {workout.actualKm && workout.actualKm > 0 && (
                       <p className="ba-muted" style={{ fontSize: 13 }}>Feito · {formatDistance(workout.actualKm)}{formatCompletionRatio(workout)}</p>
                     )}
@@ -309,6 +313,70 @@ export default function CorosSavedWorkoutsList({ workouts, todayDate }: { workou
   );
 }
 
+
+function StatusLegend() {
+  const items: Array<{ label: string; detail: string; color: string; background: string; border: string }> = [
+    {
+      label: "Feito",
+      detail: "80–120% do planejado",
+      color: "#86efac",
+      background: "rgba(16,185,129,0.10)",
+      border: "rgba(16,185,129,0.24)",
+    },
+    {
+      label: "Fora da margem",
+      detail: "abaixo de 80% ou acima de 120%",
+      color: "#fbbf24",
+      background: "rgba(245,158,11,0.11)",
+      border: "rgba(245,158,11,0.28)",
+    },
+    {
+      label: "Hoje",
+      detail: "pendente no dia atual",
+      color: "#93c5fd",
+      background: "rgba(59,130,246,0.10)",
+      border: "rgba(59,130,246,0.24)",
+    },
+    {
+      label: "Não feito",
+      detail: "treino passado sem corrida",
+      color: "#fca5a5",
+      background: "rgba(239,68,68,0.10)",
+      border: "rgba(239,68,68,0.24)",
+    },
+    {
+      label: "Futuro",
+      detail: "treino ainda por vir",
+      color: "rgba(255,255,255,0.58)",
+      background: "rgba(255,255,255,0.045)",
+      border: "rgba(255,255,255,0.10)",
+    },
+  ];
+
+  return (
+    <div className="coros-calendar-legend">
+      {items.map((item) => (
+        <div
+          key={item.label}
+          style={{
+            border: `1px solid ${item.border}`,
+            background: item.background,
+            borderRadius: 999,
+            padding: ".45rem .7rem",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: ".45rem",
+            minWidth: 0,
+          }}
+        >
+          <span style={{ width: 8, height: 8, borderRadius: 999, background: item.color, flex: "0 0 auto" }} />
+          <span style={{ color: item.color, fontSize: 11, fontWeight: 800 }}>{item.label}</span>
+          <span className="ba-muted" style={{ fontSize: 11 }}>{item.detail}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 type CalendarCell = {
   isoDate: string;
@@ -361,6 +429,16 @@ function formatIsoDate(date: Date) {
 function formatDistance(distanceKm?: number | null) {
   if (typeof distanceKm !== "number" || !Number.isFinite(distanceKm)) return "não informada";
   return `${distanceKm.toFixed(1)} km`;
+}
+
+function formatPlannedWorkoutSummary(workout: SavedWorkoutCard) {
+  return [
+    formatDistance(workout.distanceKm),
+    workout.loadTl ? `${Math.round(workout.loadTl)} TL` : null,
+    workout.estimatedTime ?? null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 function buildCalendarCells(

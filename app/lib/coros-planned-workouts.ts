@@ -172,6 +172,8 @@ export function normalizeCorosScheduleEntry(entry: CorosScheduleEntry): Structur
     title,
     distanceKm,
     durationMin,
+    estimatedTime: entry.estimatedTime ?? null,
+    loadTl,
     description: loadTl ? `Carga COROS: ${Math.round(loadTl)} TL` : null,
     externalId: `coros-schedule-${date}-${slugify(title)}`,
     importedAt: new Date().toISOString(),

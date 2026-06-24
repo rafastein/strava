@@ -27,6 +27,8 @@ test("normaliza entrada COROS como treino estruturado", () => {
   assert.equal(workout.type, "intervalado");
   assert.equal(workout.distanceKm, 9);
   assert.equal(workout.durationMin, 54);
+  assert.equal(workout.estimatedTime, "54:00");
+  assert.equal(workout.loadTl, 73);
   assert.equal(workout.description, "Carga COROS: 73 TL");
 });
 
@@ -53,6 +55,8 @@ test("deduplica agenda COROS respeitando preferência por data", () => {
   assert.equal(deduped.length, 1);
   assert.equal(deduped[0].title, "Longão 23k");
   assert.equal(deduped[0].durationMin, 128);
+  assert.equal(deduped[0].estimatedTime, "2:07:33");
+  assert.equal(deduped[0].loadTl, 203);
 });
 
 test("parseia texto bruto do MCP COROS", () => {
@@ -153,4 +157,6 @@ test("normalização COROS usa data do título quando o MCP vier deslocado", () 
   assert.equal(workout.date, "2026-06-21");
   assert.equal(workout.distanceKm, 25);
   assert.equal(workout.type, "longao");
+  assert.equal(workout.estimatedTime, "2:12:35");
+  assert.equal(workout.loadTl, 257);
 });

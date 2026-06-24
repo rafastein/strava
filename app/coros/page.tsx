@@ -90,6 +90,8 @@ const SAMPLE_JSON = `{
   "source": "coros",
   "title": "2 km Z1 + 7x 500m Z2 / 500m Z1",
   "distanceKm": 9,
+  "estimatedTime": "1:00:00",
+  "loadTl": 97,
   "durationMin": 60,
   "steps": [
     { "label": "Aquecimento", "distanceKm": 2, "intensity": "Z1", "kind": "aquecimento" },
@@ -215,6 +217,8 @@ export default async function CorosPage() {
               type: result.data.type,
               shoeName: recommendationByDate.get(result.data.date) ?? null,
               distanceKm: result.data.distanceKm ?? null,
+              estimatedTime: result.data.estimatedTime ?? null,
+              loadTl: result.data.loadTl ?? null,
               actualKm: actualRunKmByDate.get(result.data.date) ?? 0,
               status: getWorkoutCompletionStatus({
                 date: result.data.date,
@@ -283,7 +287,8 @@ function WorkoutPreview({ workout }: { workout: StructuredPlannedWorkout }) {
       <p className="ba-muted" style={{ marginTop: ".5rem" }}>
         {getStructuredWorkoutSourceLabel(workout.source)} · {workout.type}
         {workout.distanceKm ? ` · ${workout.distanceKm.toFixed(1)} km` : ""}
-        {workout.durationMin ? ` · ${workout.durationMin} min` : ""}
+        {workout.loadTl ? ` · ${Math.round(workout.loadTl)} TL` : ""}
+        {workout.estimatedTime ? ` · ${workout.estimatedTime}` : workout.durationMin ? ` · ${workout.durationMin} min` : ""}
       </p>
       {workout.description && <p className="ba-muted" style={{ marginTop: ".5rem" }}>{workout.description}</p>}
       {workout.steps.length > 0 && (

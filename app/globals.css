@@ -3041,3 +3041,18 @@ body {
     gap: 0.5rem;
   }
 }
+
+
+.coros-calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 820px) {
+  .coros-calendar-legend {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}

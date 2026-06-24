@@ -21,6 +21,8 @@ export async function POST(req: Request) {
         type: workout.type,
         distanceKm: workout.distanceKm,
         durationMin: workout.durationMin,
+        estimatedTime: workout.estimatedTime ?? null,
+        loadTl: workout.loadTl ?? null,
         source: workout.source,
       })),
     });
