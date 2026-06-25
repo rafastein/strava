@@ -6,6 +6,7 @@ import {
   getTodayIsoDate,
   saveStructuredPlannedWorkout,
 } from "../../lib/planned-workout";
+import { clearQualityWorkoutsSnapshot } from "../../lib/quality-workouts-cache";
 
 function getDateFromRequest(req: Request) {
   const url = new URL(req.url);
@@ -25,6 +26,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const result = await saveStructuredPlannedWorkout(body);
+    await clearQualityWorkoutsSnapshot();
     return NextResponse.json({ success: true, ...result });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Falha ao salvar treino estruturado.";
@@ -39,6 +41,7 @@ export async function DELETE(req: Request) {
   try {
     const date = getDateFromRequest(req);
     const result = await deleteStructuredPlannedWorkout(date);
+    await clearQualityWorkoutsSnapshot();
     return NextResponse.json({ success: true, ...result });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Falha ao apagar treino estruturado.";

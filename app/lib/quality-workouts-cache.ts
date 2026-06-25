@@ -1,11 +1,11 @@
 import type { QualityWorkout } from "../components/QualityWorkoutsChart";
 import { getRedisClient } from "./redis-client";
 
-const QUALITY_WORKOUTS_SNAPSHOT_KEY = "quality-workouts:snapshot:v2:2026";
+const QUALITY_WORKOUTS_SNAPSHOT_KEY = "quality-workouts:snapshot:v3:2026";
 const QUALITY_WORKOUTS_SNAPSHOT_TTL_SECONDS = 12 * 3600;
 
 export type QualityWorkoutsSnapshot = {
-  version: 2;
+  version: 3;
   cachedAt: number;
   sourceLabel: string;
   workouts: QualityWorkout[];
@@ -34,7 +34,7 @@ export async function setQualityWorkoutsSnapshot(workouts: QualityWorkout[], sou
   if (!redis) return;
 
   const snapshot: QualityWorkoutsSnapshot = {
-    version: 2,
+    version: 3,
     cachedAt: Date.now(),
     sourceLabel,
     workouts,

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminRequest } from "../../../lib/admin-auth";
 import { importCorosSchedule } from "../../../lib/coros-planned-workouts";
+import { clearQualityWorkoutsSnapshot } from "../../../lib/quality-workouts-cache";
 
 export async function POST(req: Request) {
   const unauthorized = requireAdminRequest(req);
@@ -9,6 +10,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const result = await importCorosSchedule(body);
+    if (!result.dryRun) await clearQualityWorkoutsSnapshot();
 
     return NextResponse.json({
       success: true,

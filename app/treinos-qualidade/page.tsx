@@ -6,6 +6,7 @@ import { getValidStravaAccessToken } from "../lib/strava-auth";
 import { fetchStravaApi, getStravaActivities, isRunActivity } from "../lib/strava-client";
 import { getRedisClient } from "../lib/redis-client";
 import { getQualityWorkoutsSnapshot, setQualityWorkoutsSnapshot } from "../lib/quality-workouts-cache";
+import { getAllStructuredPlannedWorkouts, type StructuredPlannedWorkout } from "../lib/planned-workout";
 import QualityWorkoutsChart, {
   type QualityWorkout,
 } from "../components/QualityWorkoutsChart";
@@ -201,6 +202,51 @@ const QUALITY_TYPES = new Set([
   "Intervalado", "Fartlek", "Progressivo", "Tempo Run", "Rodagem",
 ]);
 
+type PlannedWorkoutQualityHint = {
+  label: string;
+  title: string;
+  type: string;
+};
+
+function normalizeText(value: string | null | undefined) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function labelFromPlannedWorkout(workout: StructuredPlannedWorkout): string | null {
+  const text = normalizeText(`${workout.type} ${workout.title} ${workout.description ?? ""}`);
+
+  if (text.includes("interval") || text.includes("tiro") || text.includes("pista")) return "Intervalado";
+  if (text.includes("fartlek") || text.includes("variacao") || text.includes("variacao")) return "Fartlek";
+  if (text.includes("progressiv")) return "Progressivo";
+  if (text.includes("ritmo") || text.includes("tempo") || text.includes("limiar") || text.includes("z3") || text.includes("z4")) return "Tempo Run";
+  if (text.includes("rodagem")) return "Rodagem";
+
+  return null;
+}
+
+async function getPlannedWorkoutHintsByDate() {
+  const plannedResults = await getAllStructuredPlannedWorkouts();
+  const hints = new Map<string, PlannedWorkoutQualityHint>();
+
+  for (const result of plannedResults) {
+    if (!result.data) continue;
+    const label = labelFromPlannedWorkout(result.data);
+    if (!label) continue;
+
+    hints.set(result.data.date, {
+      label,
+      title: result.data.title,
+      type: result.data.type,
+    });
+  }
+
+  return hints;
+}
+
 function formatBRDate(iso: string): string {
   try {
     return new Date(iso).toLocaleDateString("pt-BR", {
@@ -229,11 +275,14 @@ async function buildAndCacheQualityWorkouts() {
     return result;
   }
 
-  const activities = await getActivities();
+  const [activities, plannedHintsByDate] = await Promise.all([
+    getActivities(),
+    getPlannedWorkoutHintsByDate(),
+  ]);
   const runs = activities.filter(isRunActivity);
 
-  // Filter candidates: 5–16km, not races/longões/recovery
-  const EXCLUDE_PATTERN = /prova|maratona|long[aã]o|regenerat|desaquec/i;
+  // Filter candidates: 5–16km, not races/longões. O tipo principal vem do COROS quando houver treino cadastrado na mesma data.
+  const EXCLUDE_PATTERN = /prova|maratona|long[aã]o/i;
   const candidates = runs.filter((a) => {
     const km = a.distance / 1000;
     return km >= 5 && km <= 16 && !EXCLUDE_PATTERN.test(a.name);
@@ -251,9 +300,13 @@ async function buildAndCacheQualityWorkouts() {
       const { detail, laps } = payloads[idx];
       const splits = detail?.splits_metric ?? [];
 
-      // Classify: laps first (more accurate), fallback to splits
+      // Classify: COROS planned workout for that date first; then laps/splits as fallback.
+      const activityDate = activity.start_date_local.slice(0, 10);
+      const plannedHint = plannedHintsByDate.get(activityDate);
       const lapClass = classifyByLaps(laps, activity.name);
-      const { label, confidence } = lapClass ?? classifyBySplits(splits, activity.name);
+      const autoClass = lapClass ?? classifyBySplits(splits, activity.name);
+      const label = plannedHint?.label ?? autoClass.label;
+      const confidence = plannedHint ? 1 : autoClass.confidence;
 
       const kmSplits = splits.map((s) => {
         const paceMinPerKm =
@@ -285,11 +338,14 @@ async function buildAndCacheQualityWorkouts() {
 
       workouts.push({
         id: String(activity.id),
-        date: activity.start_date_local.slice(0, 10),
+        date: activityDate,
         name: activity.name,
         distKm: parseFloat((activity.distance / 1000).toFixed(2)),
         label,
         confidence,
+        classificationSource: plannedHint ? "coros" : "auto",
+        plannedWorkoutTitle: plannedHint?.title ?? null,
+        plannedWorkoutType: plannedHint?.type ?? null,
         fcAvg: activity.average_heartrate
           ? Math.round(activity.average_heartrate)
           : null,
@@ -304,7 +360,8 @@ async function buildAndCacheQualityWorkouts() {
     });
   }
 
-  const sourceLabel = `Strava atualizado agora · ${workouts.length} treinos analisados`;
+  const corosClassifiedCount = workouts.filter((workout) => workout.classificationSource === "coros").length;
+  const sourceLabel = `Strava atualizado agora · ${workouts.length} treinos analisados · ${corosClassifiedCount} com tipo do COROS`;
   await setQualityWorkoutsSnapshot(workouts, sourceLabel);
   return { workouts, sourceLabel };
 }

@@ -10,6 +10,9 @@ export type QualityWorkout = {
   distKm: number;
   label: string;
   confidence: number;
+  classificationSource?: "coros" | "auto";
+  plannedWorkoutTitle?: string | null;
+  plannedWorkoutType?: string | null;
   fcAvg: number | null;
   fcMax: number | null;
   elev: number;
@@ -492,13 +495,22 @@ export default function QualityWorkoutsChart({ workouts }: Props) {
                         >
                           {TYPE_LABELS[w.label] || w.label}
                         </span>
-                        {w.confidence < 0.85 && (
+                        {w.classificationSource === "coros" ? (
+                          <span className="ba-pill ba-pill-orange" style={{ fontSize: 10, padding: "2px 8px" }}>
+                            COROS
+                          </span>
+                        ) : w.confidence < 0.85 && (
                           <span className="ba-pill ba-pill-dark" style={{ fontSize: 10, padding: "2px 8px" }}>
                             auto-detectado
                           </span>
                         )}
                       </div>
                       <p style={{ marginTop: 2, fontSize: 11, color: "rgba(255,255,255,.4)" }}>{formatDate(w.date)}</p>
+                      {w.plannedWorkoutTitle && (
+                        <p style={{ marginTop: 2, fontSize: 11, color: "rgba(255,255,255,.35)" }}>
+                          Planejado COROS · {w.plannedWorkoutTitle}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div style={{ display: "flex", flexShrink: 0, flexWrap: "wrap", gap: 6, fontSize: 11, color: "rgba(255,255,255,.4)" }}>
