@@ -1,52 +1,24 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties } from "react";
-
-type WorkoutCompletionStatus = "done" | "off_target" | "today" | "missed" | "future";
-
-type SavedWorkoutCard = {
-  redisKey: string;
-  date: string;
-  dateLabel: string;
-  title: string;
-  sourceLabel: string;
-  type: string;
-  shoeName: string | null;
-  distanceKm?: number | null;
-  estimatedTime?: string | null;
-  loadTl?: number | null;
-  actualKm?: number | null;
-  status: WorkoutCompletionStatus;
-};
+import { useMemo, useState } from "react";
+import CorosCalendarDesktop from "./CorosCalendarDesktop";
+import CorosCalendarLegend from "./CorosCalendarLegend";
+import CorosCalendarMobile from "./CorosCalendarMobile";
+import type { CalendarCell, SavedWorkoutCard } from "./types";
+import {
+  buildCalendarCells,
+  buildMonthOptions,
+  fieldStyle,
+  getInitialMonthKey,
+  navButtonStyle,
+  selectStyle,
+} from "./coros-calendar-utils";
 
 type DeleteResponse = {
   success?: boolean;
   key?: string;
   error?: string;
 };
-
-type MonthOption = {
-  key: string;
-  label: string;
-  year: number;
-  monthIndex: number;
-};
-
-const WEEKDAY_HEADERS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
-const MONTH_NAMES = [
-  "Janeiro",
-  "Fevereiro",
-  "Março",
-  "Abril",
-  "Maio",
-  "Junho",
-  "Julho",
-  "Agosto",
-  "Setembro",
-  "Outubro",
-  "Novembro",
-  "Dezembro",
-];
 
 export default function CorosSavedWorkoutsList({ workouts, todayDate }: { workouts: SavedWorkoutCard[]; todayDate?: string }) {
   const [items, setItems] = useState(workouts);
@@ -122,21 +94,7 @@ export default function CorosSavedWorkoutsList({ workouts, todayDate }: { workou
 
   return (
     <div className="mt-4 grid gap-4">
-      <div className="ba-card-soft" style={{ padding: "1rem" }}>
-        <label className="grid gap-2 md:max-w-md">
-          <span className="ba-label">ADMIN_SECRET para excluir treinos</span>
-          <input
-            value={adminSecret}
-            onChange={(event) => setAdminSecret(event.target.value)}
-            type="password"
-            placeholder="Senha administrativa da Vercel"
-            style={fieldStyle}
-          />
-        </label>
-        <p className="ba-muted" style={{ marginTop: ".6rem", fontSize: 12 }}>
-          A exclusão remove a chave <strong>planned-workout:AAAA-MM-DD</strong> do Upstash.
-        </p>
-      </div>
+      <AdminSecretCard adminSecret={adminSecret} onAdminSecretChange={setAdminSecret} />
 
       {feedback && (
         <div className="ba-card-soft" style={{ padding: ".9rem 1rem" }}>
@@ -189,440 +147,30 @@ export default function CorosSavedWorkoutsList({ workouts, todayDate }: { workou
           </div>
         </div>
 
-        <StatusLegend />
-
-        <div className="coros-calendar-desktop">
-          <div style={weekdayHeaderGridStyle}>
-            {WEEKDAY_HEADERS.map((weekday) => (
-              <div key={weekday} style={weekdayHeaderStyle}>
-                {weekday}
-              </div>
-            ))}
-          </div>
-
-          <div style={calendarGridStyle}>
-            {calendarCells.map((cell) => {
-              const workout = cell.workout;
-              const isDeleting = deletingDate === workout?.date;
-
-              return (
-                <div key={cell.isoDate} style={getDayCellStyle(cell)}>
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p
-                        className="ba-label"
-                        style={getDateLabelStyle(cell)}
-                      >
-                        {cell.dayNumber}
-                        {cell.isToday ? " · Hoje" : ""}
-                      </p>
-                    </div>
-
-                    {workout && (
-                      <button
-                        type="button"
-                        disabled={!adminSecret || isDeleting}
-                        onClick={() => handleDelete(workout)}
-                        title={!adminSecret ? "Informe o ADMIN_SECRET para excluir" : `Excluir ${workout.dateLabel}`}
-                        style={deleteButtonStyle}
-                      >
-                        {isDeleting ? "..." : "Excluir"}
-                      </button>
-                    )}
-                  </div>
-
-                  {workout ? (
-                    <div style={{ marginTop: 10 }}>
-                      <p style={{ fontWeight: 800, color: "var(--text)", fontSize: 13, lineHeight: 1.3 }}>
-                        {workout.type}
-                      </p>
-                      <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
-                        Planejado · {formatPlannedWorkoutSummary(workout)}
-                      </p>
-                      {workout.actualKm && workout.actualKm > 0 && (
-                        <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
-                          Feito · {formatDistance(workout.actualKm)}{formatCompletionRatio(workout)}
-                        </p>
-                      )}
-                      <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
-                        Tênis · {workout.shoeName ?? "sem recomendação"}
-                      </p>
-                    </div>
-                  ) : (
-                    <div style={{ marginTop: 10 }}>
-                      <p className="ba-muted" style={{ fontSize: 12, color: cell.inCurrentMonth ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.2)" }}>
-                        Sem treino estruturado.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="coros-calendar-mobile">
-          {monthVisibleCells.map((cell) => {
-            const workout = cell.workout;
-            const isDeleting = deletingDate === workout?.date;
-            const weekday = WEEKDAY_HEADERS[(parseIsoDate(cell.isoDate).getDay() + 6) % 7];
-
-            return (
-              <div key={cell.isoDate} style={getMobileDayCellStyle(cell)}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="ba-label" style={getDateLabelStyle(cell)}>
-                      {weekday} · {cell.dayNumber}
-                      {cell.isToday ? " · Hoje" : ""}
-                    </p>
-                    <p style={{ marginTop: 6, fontWeight: 800, color: "var(--text)", fontSize: 15, lineHeight: 1.3 }}>
-                      {workout?.type ?? "Sem treino estruturado"}
-                    </p>
-                  </div>
-
-                  {workout && (
-                    <button
-                      type="button"
-                      disabled={!adminSecret || isDeleting}
-                      onClick={() => handleDelete(workout)}
-                      title={!adminSecret ? "Informe o ADMIN_SECRET para excluir" : `Excluir ${workout.dateLabel}`}
-                      style={deleteButtonStyle}
-                    >
-                      {isDeleting ? "..." : "Excluir"}
-                    </button>
-                  )}
-                </div>
-
-                {workout ? (
-                  <div style={{ marginTop: 10, display: "grid", gap: 6 }}>
-                    <p className="ba-muted" style={{ fontSize: 13 }}>Planejado · {formatPlannedWorkoutSummary(workout)}</p>
-                    {workout.actualKm && workout.actualKm > 0 && (
-                      <p className="ba-muted" style={{ fontSize: 13 }}>Feito · {formatDistance(workout.actualKm)}{formatCompletionRatio(workout)}</p>
-                    )}
-                    <p className="ba-muted" style={{ fontSize: 13 }}>Tênis · {workout.shoeName ?? "sem recomendação"}</p>
-                  </div>
-                ) : (
-                  <p className="ba-muted" style={{ marginTop: 10, fontSize: 13 }}>Dia sem treino estruturado.</p>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        <CorosCalendarLegend />
+        <CorosCalendarDesktop cells={calendarCells} adminSecret={adminSecret} deletingDate={deletingDate} onDelete={handleDelete} />
+        <CorosCalendarMobile cells={monthVisibleCells} adminSecret={adminSecret} deletingDate={deletingDate} onDelete={handleDelete} />
       </div>
     </div>
   );
 }
 
-
-function StatusLegend() {
-  const items: Array<{ label: string; detail: string; color: string; background: string; border: string }> = [
-    {
-      label: "Feito",
-      detail: "80–120% do planejado",
-      color: "#86efac",
-      background: "rgba(16,185,129,0.10)",
-      border: "rgba(16,185,129,0.24)",
-    },
-    {
-      label: "Fora da margem",
-      detail: "abaixo de 80% ou acima de 120%",
-      color: "#fbbf24",
-      background: "rgba(245,158,11,0.11)",
-      border: "rgba(245,158,11,0.28)",
-    },
-    {
-      label: "Hoje",
-      detail: "pendente no dia atual",
-      color: "#93c5fd",
-      background: "rgba(59,130,246,0.10)",
-      border: "rgba(59,130,246,0.24)",
-    },
-    {
-      label: "Não feito",
-      detail: "treino passado sem corrida",
-      color: "#fca5a5",
-      background: "rgba(239,68,68,0.10)",
-      border: "rgba(239,68,68,0.24)",
-    },
-    {
-      label: "Futuro",
-      detail: "treino ainda por vir",
-      color: "rgba(255,255,255,0.58)",
-      background: "rgba(255,255,255,0.045)",
-      border: "rgba(255,255,255,0.10)",
-    },
-  ];
-
+function AdminSecretCard({ adminSecret, onAdminSecretChange }: { adminSecret: string; onAdminSecretChange: (value: string) => void }) {
   return (
-    <div className="coros-calendar-legend">
-      {items.map((item) => (
-        <div
-          key={item.label}
-          style={{
-            border: `1px solid ${item.border}`,
-            background: item.background,
-            borderRadius: 999,
-            padding: ".45rem .7rem",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: ".45rem",
-            minWidth: 0,
-          }}
-        >
-          <span style={{ width: 8, height: 8, borderRadius: 999, background: item.color, flex: "0 0 auto" }} />
-          <span style={{ color: item.color, fontSize: 11, fontWeight: 800 }}>{item.label}</span>
-          <span className="ba-muted" style={{ fontSize: 11 }}>{item.detail}</span>
-        </div>
-      ))}
+    <div className="ba-card-soft" style={{ padding: "1rem" }}>
+      <label className="grid gap-2 md:max-w-md">
+        <span className="ba-label">ADMIN_SECRET para excluir treinos</span>
+        <input
+          value={adminSecret}
+          onChange={(event) => onAdminSecretChange(event.target.value)}
+          type="password"
+          placeholder="Senha administrativa da Vercel"
+          style={fieldStyle}
+        />
+      </label>
+      <p className="ba-muted" style={{ marginTop: ".6rem", fontSize: 12 }}>
+        A exclusão remove a chave <strong>planned-workout:AAAA-MM-DD</strong> do Upstash.
+      </p>
     </div>
   );
 }
-
-type CalendarCell = {
-  isoDate: string;
-  dayNumber: number;
-  shortDateLabel: string;
-  inCurrentMonth: boolean;
-  isToday: boolean;
-  status: WorkoutCompletionStatus | "empty";
-  workout?: SavedWorkoutCard;
-};
-
-function buildMonthOptions(items: SavedWorkoutCard[]): MonthOption[] {
-  const unique = Array.from(new Set(items.map((item) => item.date.slice(0, 7)))).sort();
-
-  return unique.map((key) => {
-    const [yearRaw, monthRaw] = key.split("-");
-    const year = Number(yearRaw);
-    const monthIndex = Number(monthRaw) - 1;
-
-    return {
-      key,
-      year,
-      monthIndex,
-      label: `${MONTH_NAMES[monthIndex]} ${year}`,
-    };
-  });
-}
-
-function getInitialMonthKey(monthOptions: MonthOption[], todayDate?: string) {
-  if (todayDate) {
-    const todayMonthKey = todayDate.slice(0, 7);
-    if (monthOptions.some((month) => month.key === todayMonthKey)) return todayMonthKey;
-  }
-
-  return monthOptions[monthOptions.length - 1]?.key ?? "";
-}
-
-function parseIsoDate(isoDate: string) {
-  const [yearRaw, monthRaw, dayRaw] = isoDate.split("-");
-  return new Date(Number(yearRaw), Number(monthRaw) - 1, Number(dayRaw));
-}
-
-function formatIsoDate(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function formatDistance(distanceKm?: number | null) {
-  if (typeof distanceKm !== "number" || !Number.isFinite(distanceKm)) return "não informada";
-  return `${distanceKm.toFixed(1)} km`;
-}
-
-function formatPlannedWorkoutSummary(workout: SavedWorkoutCard) {
-  return [
-    formatDistance(workout.distanceKm),
-    workout.loadTl ? `${Math.round(workout.loadTl)} TL` : null,
-    workout.estimatedTime ?? null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-}
-
-function buildCalendarCells(
-  year: number,
-  monthIndex: number,
-  workoutByDate: Map<string, SavedWorkoutCard>,
-  todayDate?: string,
-): CalendarCell[] {
-  const firstOfMonth = new Date(year, monthIndex, 1);
-  const lastOfMonth = new Date(year, monthIndex + 1, 0);
-  const mondayStartOffset = (firstOfMonth.getDay() + 6) % 7;
-  const gridStart = new Date(year, monthIndex, 1 - mondayStartOffset);
-  const sundayEndOffset = (7 - ((lastOfMonth.getDay() + 6) % 7) - 1 + 7) % 7;
-  const gridEnd = new Date(year, monthIndex, lastOfMonth.getDate() + sundayEndOffset);
-
-  const cells: CalendarCell[] = [];
-  for (const date = new Date(gridStart); date <= gridEnd; date.setDate(date.getDate() + 1)) {
-    const isoDate = formatIsoDate(date);
-    const workout = workoutByDate.get(isoDate);
-    const isToday = todayDate === isoDate;
-    cells.push({
-      isoDate,
-      dayNumber: date.getDate(),
-      shortDateLabel: `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}`,
-      inCurrentMonth: date.getMonth() === monthIndex,
-      isToday,
-      status: workout?.status ?? "empty",
-      workout,
-    });
-  }
-
-  return cells;
-}
-
-function getDayCellStyle(cell: CalendarCell): CSSProperties {
-  const base: CSSProperties = {
-    minHeight: 168,
-    borderRadius: 18,
-    border: "1px solid rgba(255,255,255,0.08)",
-    background: cell.inCurrentMonth ? "rgba(255,255,255,0.035)" : "rgba(255,255,255,0.015)",
-    padding: ".85rem",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "flex-start",
-    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
-  };
-
-  if (cell.status === "done") {
-    base.background = "linear-gradient(180deg, rgba(16,185,129,0.16), rgba(255,255,255,0.035))";
-    base.border = "1px solid rgba(16,185,129,0.28)";
-    base.boxShadow = "0 0 0 1px rgba(16,185,129,0.08) inset";
-    return base;
-  }
-
-  if (cell.status === "off_target") {
-    base.background = "linear-gradient(180deg, rgba(245,158,11,0.16), rgba(255,255,255,0.035))";
-    base.border = "1px solid rgba(245,158,11,0.32)";
-    base.boxShadow = "0 0 0 1px rgba(245,158,11,0.08) inset";
-    return base;
-  }
-
-  if (cell.status === "today") {
-    base.background = "linear-gradient(180deg, rgba(59,130,246,0.16), rgba(255,255,255,0.035))";
-    base.border = "1px solid rgba(59,130,246,0.28)";
-    base.boxShadow = "0 0 0 1px rgba(59,130,246,0.08) inset";
-    return base;
-  }
-
-  if (cell.status === "missed") {
-    base.background = "linear-gradient(180deg, rgba(239,68,68,0.12), rgba(255,255,255,0.03))";
-    base.border = "1px solid rgba(239,68,68,0.24)";
-    base.boxShadow = "0 0 0 1px rgba(239,68,68,0.06) inset";
-  }
-
-  return base;
-}
-
-function getMobileDayCellStyle(cell: CalendarCell): CSSProperties {
-  const base = getDayCellStyle(cell);
-  return {
-    ...base,
-    minHeight: "auto",
-    padding: "1rem",
-  };
-}
-
-function getDateLabelStyle(cell: CalendarCell): CSSProperties | undefined {
-  if (cell.status === "done") return { color: "#86efac" };
-  if (cell.status === "off_target") return { color: "#fbbf24" };
-  if (cell.status === "today") return { color: "#93c5fd" };
-  if (cell.status === "missed") return { color: "#fca5a5" };
-  if (!cell.inCurrentMonth) return fadedLabelStyle;
-  return undefined;
-}
-
-function formatCompletionRatio(workout: SavedWorkoutCard) {
-  const plannedKm = workout.distanceKm;
-  const actualKm = workout.actualKm;
-
-  if (
-    typeof plannedKm !== "number" ||
-    !Number.isFinite(plannedKm) ||
-    plannedKm <= 0 ||
-    typeof actualKm !== "number" ||
-    !Number.isFinite(actualKm) ||
-    actualKm <= 0
-  ) {
-    return "";
-  }
-
-  return ` · ${Math.round((actualKm / plannedKm) * 100)}%`;
-}
-
-const fadedLabelStyle: CSSProperties = {
-  color: "rgba(255,255,255,0.25)",
-};
-
-const fieldStyle: CSSProperties = {
-  width: "100%",
-  borderRadius: 14,
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "rgba(255,255,255,0.05)",
-  color: "var(--text)",
-  padding: ".8rem 1rem",
-  outline: "none",
-  fontSize: 13,
-};
-
-const selectStyle: CSSProperties = {
-  borderRadius: 12,
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "rgba(255,255,255,0.05)",
-  color: "var(--text)",
-  padding: ".65rem .9rem",
-  outline: "none",
-  fontSize: 13,
-  minWidth: 180,
-};
-
-function navButtonStyle(disabled: boolean): CSSProperties {
-  return {
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: disabled ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)",
-    color: disabled ? "rgba(255,255,255,0.28)" : "var(--text)",
-    padding: ".65rem .85rem",
-    fontSize: 13,
-    fontWeight: 800,
-    cursor: disabled ? "not-allowed" : "pointer",
-  };
-}
-
-const weekdayHeaderGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
-  gap: 10,
-  marginTop: "1rem",
-  marginBottom: ".6rem",
-};
-
-const weekdayHeaderStyle: CSSProperties = {
-  color: "var(--text-muted)",
-  fontSize: 12,
-  letterSpacing: ".08em",
-  textTransform: "uppercase",
-  fontWeight: 800,
-  textAlign: "center",
-};
-
-const calendarGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
-  gap: 10,
-};
-
-const deleteButtonStyle: CSSProperties = {
-  borderRadius: 999,
-  border: "1px solid rgba(252,165,165,0.35)",
-  background: "rgba(127,29,29,0.18)",
-  color: "#fecaca",
-  padding: ".35rem .65rem",
-  fontSize: 11,
-  fontWeight: 800,
-  cursor: "pointer",
-  textTransform: "uppercase",
-  letterSpacing: ".06em",
-};

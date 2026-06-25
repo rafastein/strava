@@ -23,6 +23,7 @@ export async function POST(req: Request) {
         durationMin: workout.durationMin,
         estimatedTime: workout.estimatedTime ?? null,
         loadTl: workout.loadTl ?? null,
+        steps: workout.steps,
         source: workout.source,
       })),
     });

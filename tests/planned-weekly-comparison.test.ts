@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { buildStructuredWeeklyComparison } from "../app/lib/planned-weekly-comparison";
+import { buildStructuredWeeklyComparison, getStructuredCurrentWeekSummary } from "../app/lib/planned-weekly-comparison";
 import type { StructuredPlannedWorkoutRangeResult } from "../app/lib/planned-workout";
 import type { StravaActivitySummary } from "../app/lib/strava-client";
 
@@ -114,4 +114,20 @@ test("buildStructuredWeeklyComparison usa data do Brasil para definir semana atu
 
   assert.equal(result[0].label, "15/06–21/06");
   assert.equal(result[0].executedKm, 11);
+});
+
+
+test("getStructuredCurrentWeekSummary usa data do Brasil para resumo atual", () => {
+  const result = getStructuredCurrentWeekSummary(
+    [
+      workout("2026-06-16", 10.5),
+      workout("2026-06-18", 9),
+      workout("2026-06-23", 10.5),
+    ],
+    new Date("2026-06-22T02:30:00.000Z"),
+  );
+
+  assert.equal(result.plannedKm, 19.5);
+  assert.equal(result.longRunPlannedKm, 10.5);
+  assert.equal(result.workoutCount, 2);
 });

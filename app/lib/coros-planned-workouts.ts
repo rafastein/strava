@@ -1,6 +1,7 @@
 import {
   normalizeStructuredWorkout,
   saveStructuredPlannedWorkout,
+  type PlannedWorkoutStep,
   type StructuredPlannedWorkout,
 } from "./planned-workout";
 
@@ -11,6 +12,7 @@ export type CorosScheduleEntry = {
   estimatedTime?: string | null;
   durationMin?: number | string | null;
   loadTl?: number | string | null;
+  steps?: PlannedWorkoutStep[] | null;
   raw?: unknown;
 };
 
@@ -103,12 +105,88 @@ function findFirstMatch(lines: string[], pattern: RegExp) {
 
 function getTitleFromCorosBlock(blockLines: string[]) {
   const titleLine = blockLines.find((line) => {
-    if (/^(distance|estimated time|load)\s*:/i.test(line)) return false;
+    if (/^(distance|estimated time|load|plan id|idinplan)\s*:/i.test(line)) return false;
     if (/^[-=]+$/.test(line)) return false;
+    if (/^(estrutura|detalhes|steps|blocos|workout steps)\s*:/i.test(line)) return false;
     return Boolean(line.trim());
   });
 
   return titleLine ?? "Treino COROS";
+}
+
+function isMetricOrTechnicalLine(line: string) {
+  return /^(distance|estimated time|load|plan id|idinplan|workout id|id)\s*:/i.test(line.trim());
+}
+
+function isStepsMarker(line: string) {
+  return /^(estrutura|detalhes|steps|blocos|workout steps|treino detalhado)\s*:/i.test(line.trim());
+}
+
+function cleanStepLabel(line: string) {
+  return line
+    .replace(/^[-*•]\s*/, "")
+    .replace(/^\d+[.)]\s*/, "")
+    .replace(/^(aquecimento|bloco|recupera[cç][aã]o|desaquecimento)\s*[:\-–]\s*/i, "")
+    .trim();
+}
+
+function parseDistanceKmFromLine(line: string) {
+  const match = line.match(/(\d+(?:[,.]\d+)?)\s*(km|m)\b/i);
+  if (!match) return null;
+
+  const value = parseNumber(match[1]);
+  if (!value || value <= 0) return null;
+
+  return match[2].toLowerCase() === "m" ? value / 1000 : value;
+}
+
+function parseDurationMinFromLine(line: string) {
+  const minuteMatch = line.match(/(\d+(?:[,.]\d+)?)\s*(?:min|')\b/i);
+  if (minuteMatch) return parseNumber(minuteMatch[1]);
+
+  const clockMatch = line.match(/\b(\d{1,2}:\d{2}(?::\d{2})?)\b/);
+  if (clockMatch) return parseCorosDurationToMinutes(clockMatch[1]);
+
+  return null;
+}
+
+function parseKindFromLine(line: string): PlannedWorkoutStep["kind"] {
+  const normalized = normalizeText(line);
+  if (normalized.includes("desaquec") || normalized.includes("cooldown") || normalized.includes("volta a calma")) return "desaquecimento";
+  if (normalized.includes("aquec")) return "aquecimento";
+  if (normalized.includes("recuper") || normalized.includes("leve") || normalized.includes("trote")) return "recuperacao";
+  if (normalized.includes("bloco") || normalized.includes("forte") || normalized.includes("z2") || normalized.includes("z3") || normalized.includes("z4") || normalized.includes("z5")) return "bloco";
+  return "outro";
+}
+
+function parseCorosStepLine(line: string): PlannedWorkoutStep | null {
+  const label = cleanStepLabel(line);
+  if (!label || isMetricOrTechnicalLine(label) || isStepsMarker(label)) return null;
+
+  const repeatMatch = label.match(/\b(\d+)\s*x\b/i);
+  const intensityMatch = label.match(/\bZ\s*([1-5])\b/i);
+  const targetMatch = label.match(/(?:alvo|target|ritmo|pace)\s*[:\-–]\s*([^;|]+)/i);
+
+  return {
+    label,
+    repeat: repeatMatch ? Number(repeatMatch[1]) : null,
+    distanceKm: parseDistanceKmFromLine(label),
+    durationMin: parseDurationMinFromLine(label),
+    intensity: intensityMatch ? `Z${intensityMatch[1]}` : null,
+    target: targetMatch?.[1]?.trim() ?? null,
+    kind: parseKindFromLine(label),
+  };
+}
+
+function parseCorosStepsFromBlock(blockLines: string[]) {
+  const markerIndex = blockLines.findIndex(isStepsMarker);
+  if (markerIndex < 0) return [] as PlannedWorkoutStep[];
+
+  return blockLines
+    .slice(markerIndex + 1)
+    .filter((line) => !isMetricOrTechnicalLine(line))
+    .map(parseCorosStepLine)
+    .filter((step): step is PlannedWorkoutStep => Boolean(step));
 }
 
 export function parseCorosTrainingScheduleText(text: string): CorosScheduleEntry[] {
@@ -142,6 +220,7 @@ export function parseCorosTrainingScheduleText(text: string): CorosScheduleEntry
     const distanceKm = findFirstMatch(block, /Distance:\s*([\d.,]+)/i);
     const estimatedTime = findFirstMatch(block, /Estimated Time:\s*([\d:]+)/i);
     const loadTl = findFirstMatch(block, /Load:\s*([\d.,]+)/i);
+    const steps = parseCorosStepsFromBlock(block);
 
     entries.push({
       date,
@@ -149,7 +228,8 @@ export function parseCorosTrainingScheduleText(text: string): CorosScheduleEntry
       distanceKm,
       estimatedTime,
       loadTl,
-      raw: { originalDate: dateLine, date, title, block },
+      steps,
+      raw: { originalDate: dateLine, date, title, block, steps },
     });
 
     index = cursor;
@@ -165,6 +245,7 @@ export function normalizeCorosScheduleEntry(entry: CorosScheduleEntry): Structur
   const distanceKm = parseNumber(entry.distanceKm);
   const durationMin = parseCorosDurationToMinutes(entry.durationMin ?? entry.estimatedTime);
   const loadTl = parseNumber(entry.loadTl);
+  const steps = Array.isArray(entry.steps) ? entry.steps : [];
 
   return normalizeStructuredWorkout({
     date,
@@ -175,6 +256,7 @@ export function normalizeCorosScheduleEntry(entry: CorosScheduleEntry): Structur
     estimatedTime: entry.estimatedTime ?? null,
     loadTl,
     description: loadTl ? `Carga COROS: ${Math.round(loadTl)} TL` : null,
+    steps,
     externalId: `coros-schedule-${date}-${slugify(title)}`,
     importedAt: new Date().toISOString(),
     raw: {
@@ -186,6 +268,7 @@ export function normalizeCorosScheduleEntry(entry: CorosScheduleEntry): Structur
         estimatedTime: entry.estimatedTime ?? null,
         durationMin,
         loadTl,
+        steps,
       },
     },
   });

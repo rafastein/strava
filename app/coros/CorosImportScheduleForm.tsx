@@ -9,7 +9,11 @@ const EXAMPLE_RAW = `Training Schedule
 Longão 23k
 Distance: 23.00 km
 Estimated Time: 2:07:33
-Load: 203 TL`;
+Load: 203 TL
+Estrutura:
+- 2 km Z1 aquecimento
+- 7x 500m Z2 / 500m Z1
+- 1 km Z1 desaquecimento`;
 
 type ImportResponse = {
   success?: boolean;
@@ -24,6 +28,7 @@ type ImportResponse = {
     durationMin: number | null;
     estimatedTime?: string | null;
     loadTl?: number | null;
+    steps?: Array<{ label: string }>;
     source: string;
   }>;
   error?: string;
@@ -152,6 +157,7 @@ export default function CorosImportScheduleForm() {
                       {workout.distanceKm ? ` · ${workout.distanceKm.toFixed(1)} km` : ""}
                       {workout.loadTl ? ` · ${Math.round(workout.loadTl)} TL` : ""}
                       {workout.estimatedTime ? ` · ${workout.estimatedTime}` : ""}
+                      {workout.steps?.length ? ` · ${workout.steps.length} bloco${workout.steps.length === 1 ? "" : "s"}` : ""}
                     </p>
                   </div>
                 ))}

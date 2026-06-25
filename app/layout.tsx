@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./styles/weekly-plan.css";
+import "./styles/coros.css";
 
 export const metadata: Metadata = {
   title: "Dashboard Strava · Rafael Cabral",

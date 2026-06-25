@@ -160,3 +160,29 @@ test("normalização COROS usa data do título quando o MCP vier deslocado", () 
   assert.equal(workout.estimatedTime, "2:12:35");
   assert.equal(workout.loadTl, 257);
 });
+
+
+test("parseia detalhes manuais de blocos no texto COROS", () => {
+  const text = `Training Schedule
+========================
+
+2026-06-25
+25/06 Qui - Corrida Intervalad
+Distance: 10.00 km
+Estimated Time: 1:02:36
+Load: 104 TL
+Estrutura:
+- 2 km Z1 aquecimento
+- 7x 500m Z2 / 500m Z1
+- 1 km Z1 desaquecimento`;
+
+  const workouts = buildCorosScheduleWorkouts({ text });
+
+  assert.equal(workouts.length, 1);
+  assert.equal(workouts[0].steps.length, 3);
+  assert.equal(workouts[0].steps[0].kind, "aquecimento");
+  assert.equal(workouts[0].steps[1].repeat, 7);
+  assert.equal(workouts[0].steps[1].distanceKm, 0.5);
+  assert.equal(workouts[0].steps[1].intensity, "Z2");
+  assert.equal(workouts[0].steps[2].kind, "desaquecimento");
+});

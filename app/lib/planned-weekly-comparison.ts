@@ -106,7 +106,8 @@ export function getStructuredCurrentWeekSummary(
   workouts: StructuredPlannedWorkoutRangeResult[],
   referenceDate = new Date(),
 ) {
-  const currentWeekKey = getWeekStart(referenceDate).toISOString();
+  const brazilReferenceDate = getBrazilCalendarDate(referenceDate);
+  const currentWeekKey = getWeekStart(brazilReferenceDate).toISOString();
   let plannedKm = 0;
   let longRunPlannedKm = 0;
   let workoutCount = 0;
