@@ -4,7 +4,8 @@ import Link from "next/link";
 import Navbar from "../components/Navbar";
 import { getValidStravaAccessToken } from "../lib/strava-auth";
 import { fetchStravaApi, getStravaActivities, isRunActivity } from "../lib/strava-client";
-import { getLongRunsFromActivities } from "../lib/strava-long-runs";
+import { getRedisClient } from "../lib/redis-client";
+import { getQualityWorkoutsSnapshot, setQualityWorkoutsSnapshot } from "../lib/quality-workouts-cache";
 import QualityWorkoutsChart, {
   type QualityWorkout,
 } from "../components/QualityWorkoutsChart";
@@ -51,9 +52,12 @@ type StravaSplit = {
 };
 
 const AFTER_EPOCH = Math.floor(new Date("2026-01-01T00:00:00Z").getTime() / 1000);
+const QUALITY_ACTIVITY_CACHE_PREFIX = "quality-workout-activity:v1:";
+const QUALITY_ACTIVITY_CACHE_TTL_SECONDS = 180 * 24 * 3600;
+
 
 async function getActivities(): Promise<StravaActivity[]> {
-  return getStravaActivities({ after: AFTER_EPOCH, maxPages: 15 });
+  return getStravaActivities({ after: AFTER_EPOCH, maxPages: 3 });
 }
 
 async function getDetailedActivity(
@@ -63,12 +67,43 @@ async function getDetailedActivity(
   return fetchStravaApi<StravaActivity>(`/activities/${id}`, { accessToken: token });
 }
 
-async function getActivityLaps(
-  id: number,
-  token: string
-): Promise<StravaLap[]> {
-  const laps = await fetchStravaApi<StravaLap[]>(`/activities/${id}/laps`, { accessToken: token });
-  return Array.isArray(laps) ? laps : [];
+type CachedQualityActivityPayload = {
+  detail: StravaActivity | null;
+  laps: StravaLap[];
+  cachedAt: number;
+};
+
+type RedisClient = Awaited<ReturnType<typeof getRedisClient>>;
+
+function parseRedisValue<T>(value: unknown): T | null {
+  if (!value) return null;
+  if (typeof value === "string") {
+    try { return JSON.parse(value) as T; } catch { return null; }
+  }
+  return value as T;
+}
+
+async function getCachedActivityPayload(
+  activityId: number,
+  token: string,
+  redis: RedisClient,
+): Promise<CachedQualityActivityPayload> {
+  const cacheKey = `${QUALITY_ACTIVITY_CACHE_PREFIX}${activityId}`;
+
+  if (redis) {
+    const cached = parseRedisValue<CachedQualityActivityPayload>(await redis.get(cacheKey));
+    if (cached) return cached;
+  }
+
+  const detail = await getDetailedActivity(activityId, token);
+  const laps = Array.isArray(detail?.laps) ? detail.laps : [];
+  const payload = { detail, laps, cachedAt: Date.now() };
+
+  if (redis) {
+    await redis.set(cacheKey, payload, { ex: QUALITY_ACTIVITY_CACHE_TTL_SECONDS });
+  }
+
+  return payload;
 }
 
 // ── Workout classifier ───────────────────────────────────────────────────────
@@ -174,10 +209,27 @@ function formatBRDate(iso: string): string {
   } catch { return iso.slice(0, 10); }
 }
 
-export default async function TreinosQualidadePage() {
-  const token = await getValidStravaAccessToken();
-  const activities = await getActivities();
 
+function formatBRDateTime(timestamp: number) {
+  return new Date(timestamp).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+async function buildAndCacheQualityWorkouts() {
+  const token = await getValidStravaAccessToken();
+  const workouts: QualityWorkout[] = [];
+
+  if (!token) {
+    const result = { workouts, sourceLabel: "Sem token Strava — cache vazio" };
+    await setQualityWorkoutsSnapshot(result.workouts, result.sourceLabel);
+    return result;
+  }
+
+  const activities = await getActivities();
   const runs = activities.filter(isRunActivity);
 
   // Filter candidates: 5–16km, not races/longões/recovery
@@ -187,77 +239,83 @@ export default async function TreinosQualidadePage() {
     return km >= 5 && km <= 16 && !EXCLUDE_PATTERN.test(a.name);
   });
 
-  // Fetch detailed data (splits) for each candidate
-  const workouts: QualityWorkout[] = [];
+  const redis = await getRedisClient();
 
-  if (token) {
-    // Fetch in parallel batches of 5 to avoid rate limiting
-    const BATCH_SIZE = 5;
-    for (let i = 0; i < candidates.length; i += BATCH_SIZE) {
-      const batch = candidates.slice(i, i + BATCH_SIZE);
-      const [details, lapsAll] = await Promise.all([
-        Promise.all(batch.map((a) => getDetailedActivity(a.id, token))),
-        Promise.all(batch.map((a) => getActivityLaps(a.id, token))),
-      ]);
+  // Cold cache: still batch to avoid Strava spikes. Warm cache: no Strava detail calls.
+  const BATCH_SIZE = 4;
+  for (let i = 0; i < candidates.length; i += BATCH_SIZE) {
+    const batch = candidates.slice(i, i + BATCH_SIZE);
+    const payloads = await Promise.all(batch.map((activity) => getCachedActivityPayload(activity.id, token, redis)));
 
-      batch.forEach((activity, idx) => {
-        const detail = details[idx];
-        const splits = detail?.splits_metric ?? [];
-        const laps = lapsAll[idx] ?? [];
+    batch.forEach((activity, idx) => {
+      const { detail, laps } = payloads[idx];
+      const splits = detail?.splits_metric ?? [];
 
-        // Classify: laps first (more accurate), fallback to splits
-        const lapClass = classifyByLaps(laps, activity.name);
-        const { label, confidence } = lapClass ?? classifyBySplits(splits, activity.name);
+      // Classify: laps first (more accurate), fallback to splits
+      const lapClass = classifyByLaps(laps, activity.name);
+      const { label, confidence } = lapClass ?? classifyBySplits(splits, activity.name);
 
-        const kmSplits = splits.map((s) => {
-          const paceMinPerKm =
-            s.distance > 0 && s.moving_time > 0
-              ? (s.moving_time / s.distance) * (1000 / 60)
-              : null;
-          return {
-            km: s.split,
-            pace: paceMinPerKm ? parseFloat(paceMinPerKm.toFixed(4)) : null,
-            fc: s.average_heartrate ? Math.round(s.average_heartrate) : null,
-          };
-        });
-
-        // Build lap data for visualization
-        const lapData = laps
-          .filter((l) => l.distance > 50) // ignore very short laps
-          .map((l) => ({
-            index: l.lap_index,
-            name: l.name,
-            distKm: parseFloat((l.distance / 1000).toFixed(3)),
-            timeSec: l.moving_time,
-            paceMinPerKm: l.distance > 0 && l.moving_time > 0
-              ? parseFloat(((l.moving_time / l.distance) * (1000 / 60)).toFixed(3))
-              : null,
-            fcAvg: l.average_heartrate ? Math.round(l.average_heartrate) : null,
-            fcMax: l.max_heartrate ? Math.round(l.max_heartrate) : null,
-            speedKmh: parseFloat(((l.distance / l.moving_time) * 3.6).toFixed(2)),
-          }));
-
-        workouts.push({
-          id: String(activity.id),
-          date: activity.start_date_local.slice(0, 10),
-          name: activity.name,
-          distKm: parseFloat((activity.distance / 1000).toFixed(2)),
-          label,
-          confidence,
-          fcAvg: activity.average_heartrate
-            ? Math.round(activity.average_heartrate)
-            : null,
-          fcMax: activity.max_heartrate
-            ? Math.round(activity.max_heartrate)
-            : null,
-          elev: Math.round(activity.total_elevation_gain),
-          cal: detail?.calories ?? 0,
-          kmSplits,
-          laps: lapData,
-        });
+      const kmSplits = splits.map((s) => {
+        const paceMinPerKm =
+          s.distance > 0 && s.moving_time > 0
+            ? (s.moving_time / s.distance) * (1000 / 60)
+            : null;
+        return {
+          km: s.split,
+          pace: paceMinPerKm ? parseFloat(paceMinPerKm.toFixed(4)) : null,
+          fc: s.average_heartrate ? Math.round(s.average_heartrate) : null,
+        };
       });
-    }
+
+      // Build lap data for visualization
+      const lapData = laps
+        .filter((l) => l.distance > 50) // ignore very short laps
+        .map((l) => ({
+          index: l.lap_index,
+          name: l.name,
+          distKm: parseFloat((l.distance / 1000).toFixed(3)),
+          timeSec: l.moving_time,
+          paceMinPerKm: l.distance > 0 && l.moving_time > 0
+            ? parseFloat(((l.moving_time / l.distance) * (1000 / 60)).toFixed(3))
+            : null,
+          fcAvg: l.average_heartrate ? Math.round(l.average_heartrate) : null,
+          fcMax: l.max_heartrate ? Math.round(l.max_heartrate) : null,
+          speedKmh: l.moving_time > 0 ? parseFloat(((l.distance / l.moving_time) * 3.6).toFixed(2)) : 0,
+        }));
+
+      workouts.push({
+        id: String(activity.id),
+        date: activity.start_date_local.slice(0, 10),
+        name: activity.name,
+        distKm: parseFloat((activity.distance / 1000).toFixed(2)),
+        label,
+        confidence,
+        fcAvg: activity.average_heartrate
+          ? Math.round(activity.average_heartrate)
+          : null,
+        fcMax: activity.max_heartrate
+          ? Math.round(activity.max_heartrate)
+          : null,
+        elev: Math.round(activity.total_elevation_gain),
+        cal: detail?.calories ?? 0,
+        kmSplits,
+        laps: lapData,
+      });
+    });
   }
+
+  const sourceLabel = `Strava atualizado agora · ${workouts.length} treinos analisados`;
+  await setQualityWorkoutsSnapshot(workouts, sourceLabel);
+  return { workouts, sourceLabel };
+}
+
+export default async function TreinosQualidadePage() {
+  const snapshot = await getQualityWorkoutsSnapshot();
+  const result = snapshot ?? await buildAndCacheQualityWorkouts();
+  const workouts = result.workouts;
+  const cacheLabel = snapshot
+    ? `Cache Upstash · atualizado ${formatBRDateTime(snapshot.cachedAt)}`
+    : result.sourceLabel;
 
   const qualityWorkouts = workouts.filter((w) => QUALITY_TYPES.has(w.label));
   const baseWorkouts = workouts.filter((w) => !QUALITY_TYPES.has(w.label));
@@ -285,9 +343,12 @@ export default async function TreinosQualidadePage() {
             <p className="ba-muted" style={{ marginTop: ".5rem" }}>
               Classificação automática por padrão de velocidade — intervalados, fartleks, progressivos e mais.
             </p>
+            <p className="ba-muted" style={{ marginTop: ".35rem", fontSize: 12 }}>
+              {cacheLabel}
+            </p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <RevalidateButton path="/treinos-qualidade" />
+            <RevalidateButton path="/treinos-qualidade" label="Atualizar cache" />
             <Link href="/" className="ba-back">← Voltar ao dashboard</Link>
           </div>
         </div>
