@@ -7,6 +7,7 @@ const PATHS = [
   "/buenos-aires",
   "/coros",
   "/provas",
+  "/27-capitais",
   "/equipamentos",
   "/carga",
   "/sisrun",

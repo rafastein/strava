@@ -124,6 +124,85 @@ function getTodayBrazilDateKey() {
   }).format(new Date());
 }
 
+const STATE_NAMES_BY_CODE: Record<string, string> = {
+  AC: "Acre",
+  AL: "Alagoas",
+  AP: "Amapá",
+  AM: "Amazonas",
+  BA: "Bahia",
+  CE: "Ceará",
+  DF: "Distrito Federal",
+  ES: "Espírito Santo",
+  GO: "Goiás",
+  MA: "Maranhão",
+  MT: "Mato Grosso",
+  MS: "Mato Grosso do Sul",
+  MG: "Minas Gerais",
+  PA: "Pará",
+  PB: "Paraíba",
+  PR: "Paraná",
+  PE: "Pernambuco",
+  PI: "Piauí",
+  RJ: "Rio de Janeiro",
+  RN: "Rio Grande do Norte",
+  RS: "Rio Grande do Sul",
+  RO: "Rondônia",
+  RR: "Roraima",
+  SC: "Santa Catarina",
+  SP: "São Paulo",
+  SE: "Sergipe",
+  TO: "Tocantins",
+};
+
+const CAPITAL_ALIASES_BY_STATE: Record<string, string[]> = {
+  MG: ["Belo Horizonte", "BH"],
+  SC: ["Florianópolis", "Floripa"],
+  SP: ["São Paulo", "Sampa"],
+  RJ: ["Rio de Janeiro", "Rio"],
+  DF: ["Brasília", "Brasilia", "BSB"],
+  GO: ["Goiânia", "Goiania"],
+  PA: ["Belém", "Belem"],
+  PB: ["João Pessoa", "Joao Pessoa", "Jampa"],
+  PE: ["Recife"],
+  RN: ["Natal"],
+  RS: ["Porto Alegre", "POA"],
+  RO: ["Porto Velho"],
+  RR: ["Boa Vista"],
+  ES: ["Vitória", "Vitoria"],
+  MA: ["São Luís", "Sao Luis", "São Luiz", "Sao Luiz"],
+  MS: ["Campo Grande"],
+  MT: ["Cuiabá", "Cuiaba"],
+  AC: ["Rio Branco"],
+  AL: ["Maceió", "Maceio"],
+  AP: ["Macapá", "Macapa"],
+  AM: ["Manaus"],
+  BA: ["Salvador"],
+  CE: ["Fortaleza"],
+  PI: ["Teresina"],
+  SE: ["Aracaju"],
+  TO: ["Palmas"],
+};
+
+function includesNormalizedText(haystack: string, needle: string) {
+  const normalizedNeedle = normalizeCalendarText(needle);
+  return Boolean(normalizedNeedle) && haystack.includes(normalizedNeedle);
+}
+
+function includesNormalizedToken(haystack: string, token: string) {
+  const normalizedToken = normalizeCalendarText(token);
+  if (!normalizedToken) return false;
+  return new RegExp(`(?:^|[^a-z0-9])${normalizedToken}(?:[^a-z0-9]|$)`).test(haystack);
+}
+
+function getRaceSearchText(race: ManagedRace) {
+  return normalizeCalendarText([
+    race.name,
+    race.location,
+    race.badge ?? "",
+    race.objective ?? "",
+  ].join(" "));
+}
+
 function formatDateKeyBR(dateKey: string) {
   const [year, month, day] = dateKey.split("-");
   if (!year || !month || !day) return dateKey;
@@ -133,18 +212,25 @@ function formatDateKeyBR(dateKey: string) {
 function isCapitalMissionRace(race: ManagedRace, capital: CapitalChallengeItem) {
   if (race.distanceKm < 20 || race.distanceKm > 25) return false;
 
-  const badge = normalizeCalendarText(race.badge ?? "");
-  const objective = normalizeCalendarText(race.objective ?? "");
-  const location = normalizeCalendarText(race.location ?? "");
-  const name = normalizeCalendarText(race.name ?? "");
-  const city = normalizeCalendarText(capital.city);
-  const state = normalizeCalendarText(capital.state);
+  const searchText = getRaceSearchText(race);
+  const aliases = CAPITAL_ALIASES_BY_STATE[capital.state] ?? [capital.city];
+  const stateName = STATE_NAMES_BY_CODE[capital.state] ?? "";
 
-  const hasCapitalBadge = badge.includes("27 capitais") || objective.includes("27 capitais");
-  const matchesCity = location.includes(city) || name.includes(city);
-  const matchesState = new RegExp(`(?:^|[^a-z])${state}(?:[^a-z]|$)`).test(location);
+  const matchesCapitalName = aliases.some((alias) => includesNormalizedText(searchText, alias));
+  const matchesStateCode = includesNormalizedToken(searchText, capital.state);
+  const matchesStateName = includesNormalizedText(searchText, stateName);
+  const hasMissionHint =
+    includesNormalizedText(searchText, "27 capitais") ||
+    includesNormalizedText(searchText, "capital") ||
+    includesNormalizedText(searchText, "missão") ||
+    includesNormalizedText(searchText, "missao");
 
-  return matchesCity || (hasCapitalBadge && matchesState);
+  // Match forte: nome/local tem a capital, inclusive apelidos como BH, Floripa, BSB ou Jampa.
+  if (matchesCapitalName) return true;
+
+  // Match por UF/estado: funciona quando a prova cadastrada vem como "Belo Horizonte MG",
+  // "Goiás", "PR" etc. O hint evita transformar qualquer meia genérica em missão.
+  return (matchesStateCode || matchesStateName) && hasMissionHint;
 }
 
 function buildUpcomingRaceByState(races: ManagedRace[], challenge: CapitalChallengeItem[], todayKey: string) {
@@ -572,7 +658,8 @@ export default async function CapitaisPage() {
 
   const raceCalendar = await getManagedRaces();
   const rawChallenge = buildCapitalChallenge(activities);
-  const upcomingRaceByState = buildUpcomingRaceByState(raceCalendar.races, rawChallenge, getTodayBrazilDateKey());
+  const registeredRaces = raceCalendar.source === "upstash" ? raceCalendar.races : [];
+  const upcomingRaceByState = buildUpcomingRaceByState(registeredRaces, rawChallenge, getTodayBrazilDateKey());
   const challenge: CapitalChallengeItem[] = rawChallenge.map((capital) => ({
     ...capital,
     status: capital.bestActivity ? "completed" : upcomingRaceByState.has(capital.state) ? "next" : "locked",
@@ -864,7 +951,7 @@ export default async function CapitaisPage() {
                   Próximas missões
                 </p>
                 <span className="badge badge--muted">
-                  {raceCalendar.source === "upstash" ? "Upstash" : "Fallback"}
+                  {raceCalendar.source === "upstash" ? `${registeredRaces.length} cadastradas` : "Cadastro vazio"}
                 </span>
               </div>
 
@@ -928,7 +1015,7 @@ export default async function CapitaisPage() {
                     );
                   })
                 ) : (
-                  <p style={styles.rule}>Nenhuma próxima missão confirmada no momento.</p>
+                  <p style={styles.rule}>Nenhuma próxima missão encontrada nas provas cadastradas.</p>
                 )}
               </div>
             </div>
