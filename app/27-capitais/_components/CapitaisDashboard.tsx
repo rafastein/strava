@@ -21,6 +21,7 @@ import {
   type CapitalChallengeItem,
   type StravaActivity,
 } from "../../lib/capitals-challenge";
+import { getManagedRaces, type ManagedRace } from "../../lib/race-calendar";
 
 type Athlete = StravaAthlete;
 
@@ -29,21 +30,6 @@ type StravaPhotoMap = Record<number, string>;
 type CapitalRaceCalendarItem = {
   races: string;
   dateLabel: string;
-};
-
-const confirmedNextRace: Record<string, CapitalRaceCalendarItem> = {
-  GO: {
-    races: "Meia Maratona de Goiânia",
-    dateLabel: "18/10/2026",
-  },
-  MG: {
-    races: "Maratona & Meia Internacional de BH",
-    dateLabel: "28/06/2026",
-  },
-  PR: {
-    races: "Meia de Curitiba",
-    dateLabel: "15/11/2026",
-  },
 };
 
 const pendingRaceCalendar: Record<string, CapitalRaceCalendarItem> = {
@@ -118,21 +104,78 @@ const pendingRaceCalendar: Record<string, CapitalRaceCalendarItem> = {
 };
 
 function getCalendarInfo(state: string) {
-  return confirmedNextRace[state] ?? pendingRaceCalendar[state];
+  return pendingRaceCalendar[state];
 }
 
-function getRaceLabel(capital: CapitalChallengeItem) {
+function normalizeCalendarText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function getTodayBrazilDateKey() {
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+function formatDateKeyBR(dateKey: string) {
+  const [year, month, day] = dateKey.split("-");
+  if (!year || !month || !day) return dateKey;
+  return `${day}/${month}/${year}`;
+}
+
+function isCapitalMissionRace(race: ManagedRace, capital: CapitalChallengeItem) {
+  if (race.distanceKm < 20 || race.distanceKm > 25) return false;
+
+  const badge = normalizeCalendarText(race.badge ?? "");
+  const objective = normalizeCalendarText(race.objective ?? "");
+  const location = normalizeCalendarText(race.location ?? "");
+  const name = normalizeCalendarText(race.name ?? "");
+  const city = normalizeCalendarText(capital.city);
+  const state = normalizeCalendarText(capital.state);
+
+  const hasCapitalBadge = badge.includes("27 capitais") || objective.includes("27 capitais");
+  const matchesCity = location.includes(city) || name.includes(city);
+  const matchesState = new RegExp(`(?:^|[^a-z])${state}(?:[^a-z]|$)`).test(location);
+
+  return matchesCity || (hasCapitalBadge && matchesState);
+}
+
+function buildUpcomingRaceByState(races: ManagedRace[], challenge: CapitalChallengeItem[], todayKey: string) {
+  const pendingCapitals = challenge.filter((capital) => !capital.bestActivity);
+  const result = new Map<string, ManagedRace>();
+
+  for (const capital of pendingCapitals) {
+    const race = races
+      .filter((item) => item.dateKey >= todayKey && isCapitalMissionRace(item, capital))
+      .sort((a, b) => a.dateKey.localeCompare(b.dateKey) || a.name.localeCompare(b.name, "pt-BR"))[0];
+
+    if (race) result.set(capital.state, race);
+  }
+
+  return result;
+}
+
+function getRaceLabel(capital: CapitalChallengeItem, managedRace?: ManagedRace) {
   if (capital.bestActivity) return cleanActivityName(capital.bestActivity.name);
+  if (managedRace) return managedRace.name;
   return getCalendarInfo(capital.state)?.races ?? "—";
 }
 
-function getDateLabel(capital: CapitalChallengeItem) {
+function getDateLabel(capital: CapitalChallengeItem, managedRace?: ManagedRace) {
   if (capital.bestActivity) return formatDateBR(capital.bestActivity.start_date_local);
+  if (managedRace) return formatDateKeyBR(managedRace.dateKey);
   return getCalendarInfo(capital.state)?.dateLabel ?? "—";
 }
 
-function getDateSortValue(capital: CapitalChallengeItem) {
-  const label = getDateLabel(capital);
+function getDateSortValue(capital: CapitalChallengeItem, managedRace?: ManagedRace) {
+  const label = getDateLabel(capital, managedRace);
   const fullDateMatch = label.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
 
   if (fullDateMatch) {
@@ -527,17 +570,19 @@ export default async function CapitaisPage() {
     activities = fetchedActivities;
   }
 
+  const raceCalendar = await getManagedRaces();
   const rawChallenge = buildCapitalChallenge(activities);
+  const upcomingRaceByState = buildUpcomingRaceByState(raceCalendar.races, rawChallenge, getTodayBrazilDateKey());
   const challenge: CapitalChallengeItem[] = rawChallenge.map((capital) => ({
     ...capital,
-    status: capital.bestActivity ? "completed" : confirmedNextRace[capital.state] ? "next" : "locked",
+    status: capital.bestActivity ? "completed" : upcomingRaceByState.has(capital.state) ? "next" : "locked",
   }));
 
   const completed = challenge.filter((capital) => capital.status === "completed");
   const next = challenge.filter((capital) => capital.status === "next");
   const nextByDate = [...next].sort(
     (a, b) =>
-      getDateSortValue(a) - getDateSortValue(b) ||
+      getDateSortValue(a, upcomingRaceByState.get(a.state)) - getDateSortValue(b, upcomingRaceByState.get(b.state)) ||
       a.city.localeCompare(b.city, "pt-BR", { sensitivity: "base" }),
   );
   const progress = Math.round((completed.length / capitals.length) * 100);
@@ -598,8 +643,8 @@ export default async function CapitaisPage() {
     state: capital.state,
     city: capital.city,
     status: capital.status,
-    raceLabel: getRaceLabel(capital),
-    dateLabel: getDateLabel(capital),
+    raceLabel: getRaceLabel(capital, upcomingRaceByState.get(capital.state)),
+    dateLabel: getDateLabel(capital, upcomingRaceByState.get(capital.state)),
     time: capital.bestActivity ? formatTime(capital.bestActivity.moving_time) : undefined,
     pace: capital.bestActivity
       ? formatPace(capital.bestActivity.distance, capital.bestActivity.moving_time)
@@ -814,14 +859,20 @@ export default async function CapitaisPage() {
             </div>
 
             <div className="capitals-panel" style={styles.nextPanel}>
-              <p className="ba-eyebrow" style={{ fontSize: 10, marginBottom: 12 }}>
-                Próximas missões
-              </p>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem", alignItems: "center", marginBottom: 12 }}>
+                <p className="ba-eyebrow" style={{ fontSize: 10 }}>
+                  Próximas missões
+                </p>
+                <span className="badge badge--muted">
+                  {raceCalendar.source === "upstash" ? "Upstash" : "Fallback"}
+                </span>
+              </div>
 
               <div style={{ display: "grid", gap: 10 }}>
                 {next.length > 0 ? (
                   nextByDate.map((capital) => {
-                    const raceLabel = getRaceLabel(capital);
+                    const managedRace = upcomingRaceByState.get(capital.state);
+                    const raceLabel = getRaceLabel(capital, managedRace);
 
                     return (
                       <div key={capital.city} style={styles.nextMissionCard}>
@@ -848,7 +899,7 @@ export default async function CapitaisPage() {
                               </span>
                             </h3>
                             <p className="ba-muted" style={{ fontSize: 12, marginTop: 5 }}>
-                              {getDateLabel(capital)}
+                              {getDateLabel(capital, managedRace)}
                             </p>
                           </div>
 
@@ -1059,7 +1110,8 @@ export default async function CapitaisPage() {
               <tbody>
                 {capitalRows.map((capital) => {
                   const activity = capital.bestActivity;
-                  const raceLabel = getRaceLabel(capital);
+                  const managedRace = upcomingRaceByState.get(capital.state);
+                  const raceLabel = getRaceLabel(capital, managedRace);
                   const cellToneStyle = getTableCellToneStyle(capital.status);
 
                   return (
@@ -1098,7 +1150,7 @@ export default async function CapitaisPage() {
                       </td>
                       <td style={cellToneStyle}>{activity ? formatPace(activity.distance, activity.moving_time) : "—"}</td>
                       <td style={cellToneStyle}>{activity ? formatDistance(activity.distance) : "—"}</td>
-                      <td style={cellToneStyle}>{getDateLabel(capital)}</td>
+                      <td style={cellToneStyle}>{getDateLabel(capital, managedRace)}</td>
                       <td
                         style={{
                           ...cellToneStyle,
@@ -1120,7 +1172,8 @@ export default async function CapitaisPage() {
           <div className="capitals-mobile-list">
             {capitalRows.map((capital) => {
               const activity = capital.bestActivity;
-              const raceLabel = getRaceLabel(capital);
+              const managedRace = upcomingRaceByState.get(capital.state);
+              const raceLabel = getRaceLabel(capital, managedRace);
 
               return (
                 <article
@@ -1178,7 +1231,7 @@ export default async function CapitaisPage() {
                   </p>
 
                   <div className="capitals-mobile-metrics">
-                    <MetricBox label="Data" value={getDateLabel(capital)} />
+                    <MetricBox label="Data" value={getDateLabel(capital, managedRace)} />
                     <MetricBox label="Tempo" value={activity ? formatTime(activity.moving_time) : "—"} />
                     <MetricBox
                       label="Pace"
