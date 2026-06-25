@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import { formatBRDate } from "../lib/date-utils";
+import { getRaceCalendarData, getUpcomingBrazilManagedRaces, type ManagedRace } from "../lib/race-calendar";
 import BrazilRaceMap from "../components/BrazilRaceMap";
 import ActivitySplitsChart from "../components/ActivitySplitsChart";
 import {
@@ -120,10 +121,34 @@ function getMedalMeta(index: number) {
   return             { label: "Bronze", icon: "🥉", badgeClass: "badge--orange" };
 }
 
+function getTodayBrazilDateKey() {
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+function formatDateKeyBR(dateKey: string) {
+  const [year, month, day] = dateKey.split("-");
+  if (!year || !month || !day) return dateKey;
+  return `${day}/${month}/${year}`;
+}
+
+function formatUpcomingRacePace(seconds?: number | null) {
+  if (!seconds || !Number.isFinite(seconds)) return null;
+  return formatRacePace(seconds);
+}
+
 export default async function CorridasBrasilPage() {
-  const allRaces = await getRaceLikeActivitiesFromStrava();
+  const [allRaces, raceCalendar] = await Promise.all([
+    getRaceLikeActivitiesFromStrava(),
+    getRaceCalendarData(),
+  ]);
 
   const races = allRaces.filter((race) => race.country === "Brasil");
+  const upcomingBrazilRaces = getUpcomingBrazilManagedRaces(raceCalendar.races, getTodayBrazilDateKey(), 8);
 
   const grouped = groupStravaRacesByStateBrazil(races);
   const stats = getStravaRaceStats(races);
@@ -179,6 +204,32 @@ export default async function CorridasBrasilPage() {
             <TopDistanceCard title="Top 3 10k" races={top10k} />
             <TopDistanceCard title="Top 3 5k" races={top5k} />
           </div>
+        </section>
+
+        <section className="ba-section ba-card" style={{ padding: "1.5rem" }}>
+          <div className="br-upcoming-head">
+            <div>
+              <p className="ba-eyebrow">Brasil · Próximas</p>
+              <p className="ba-muted" style={{ marginTop: 4 }}>
+                Provas futuras puxadas do cadastro central em <strong>/provas</strong>.
+              </p>
+            </div>
+            <span className="badge badge--muted">
+              {raceCalendar.source === "upstash" ? "Upstash" : "Fallback local"}
+            </span>
+          </div>
+
+          {upcomingBrazilRaces.length === 0 ? (
+            <p className="ba-muted" style={{ marginTop: 16 }}>
+              Nenhuma próxima prova no Brasil cadastrada no momento.
+            </p>
+          ) : (
+            <div className="br-upcoming-grid">
+              {upcomingBrazilRaces.map((race) => (
+                <UpcomingBrazilRaceCard key={race.id} race={race} />
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="ba-section">
@@ -297,6 +348,37 @@ function TopDistanceCard({
       )}
     </div>
   );
+}
+
+function UpcomingBrazilRaceCard({ race }: { race: ManagedRace }) {
+  const pace = formatUpcomingRacePace(race.targetPaceSecPerKm);
+  const content = (
+    <>
+      <div className="br-upcoming-card__head">
+        <p className="br-upcoming-card__name">{race.name}</p>
+        <span className="badge badge--accent">{race.distanceKm.toFixed(race.distanceKm % 1 === 0 ? 0 : 1)} km</span>
+      </div>
+      <p className="br-upcoming-card__details">
+        {formatDateKeyBR(race.dateKey)} · {race.location}
+      </p>
+      <p className="br-upcoming-card__objective">{race.objective}</p>
+      <div className="br-upcoming-card__meta">
+        {race.badge && <span>{race.badge}</span>}
+        {race.featured && <span>Destaque</span>}
+        {pace && <span>Meta {pace}</span>}
+      </div>
+    </>
+  );
+
+  if (race.href) {
+    return (
+      <Link href={race.href} className="br-upcoming-card br-upcoming-card--link">
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className="br-upcoming-card">{content}</div>;
 }
 
 function InfoCard({ title, value }: { title: string; value: string }) {

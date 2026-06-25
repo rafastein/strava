@@ -170,6 +170,43 @@ function sortRaces(races: ManagedRace[]) {
   });
 }
 
+function normalizeRaceLocation(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+const FOREIGN_LOCATION_TERMS = [
+  "argentina",
+  "buenos aires",
+  "peru",
+  "lima",
+  "portugal",
+  "lisboa",
+  "alemanha",
+  "berlim",
+  "germany",
+  "germania",
+];
+
+export function isBrazilManagedRace(race: Pick<ManagedRace, "location" | "timezoneOffset">) {
+  const location = normalizeRaceLocation(race.location ?? "");
+  if (!location) return false;
+  if (location.includes("brasil") || location.includes("brazil")) return true;
+  if (FOREIGN_LOCATION_TERMS.some((term) => location.includes(term))) return false;
+
+  const offset = race.timezoneOffset?.trim() || DEFAULT_RACE_TIMEZONE;
+  return ["-02:00", "-03:00", "-04:00", "-05:00"].includes(offset);
+}
+
+export function getUpcomingBrazilManagedRaces(races: ManagedRace[], todayKey: string, limit = 8) {
+  return sortRaces(races)
+    .filter((race) => race.dateKey >= todayKey && isBrazilManagedRace(race))
+    .slice(0, limit);
+}
+
 export function sanitizeRaces(races: Array<Partial<ManagedRace>>) {
   const seen = new Set<string>();
   const sanitized: ManagedRace[] = [];

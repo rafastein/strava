@@ -2741,9 +2741,94 @@ body {
   word-break: normal;
 }
 
+
+.br-upcoming-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.1rem;
+}
+
+.br-upcoming-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.br-upcoming-card {
+  min-width: 0;
+  display: block;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 12px;
+  color: inherit;
+  text-decoration: none;
+  overflow: hidden;
+}
+
+.br-upcoming-card--link:hover {
+  border-color: rgba(245, 166, 35, 0.32);
+  background: rgba(245, 166, 35, 0.06);
+}
+
+.br-upcoming-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.br-upcoming-card__name {
+  min-width: 0;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.3;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.br-upcoming-card__details,
+.br-upcoming-card__objective {
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.br-upcoming-card__objective {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.br-upcoming-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.br-upcoming-card__meta span {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.48);
+  padding: 4px 8px;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 700;
+}
+
 @media (max-width: 980px) {
   .br-top-distance-grid {
     grid-template-columns: 1fr;
+  }
+
+  .br-upcoming-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .br-state-grid {
@@ -2755,6 +2840,20 @@ body {
   .br-top-distance-card,
   .br-state-card {
     padding: 0.9rem;
+  }
+
+  .br-upcoming-head {
+    flex-direction: column;
+  }
+
+  .br-upcoming-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .br-upcoming-card__name {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: initial;
   }
 
   .br-top-race-card__head,
