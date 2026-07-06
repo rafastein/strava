@@ -1,8 +1,11 @@
 import { getActivityDate, getBRDateKey } from "./date-utils";
 import { isRunActivity, type StravaActivitySummary } from "./strava-client";
 
-export type SameDayRunActivity = Omit<StravaActivitySummary, "id"> & {
+export type SameDayRunInput = Omit<StravaActivitySummary, "id"> & {
   id: number | string;
+};
+
+export type SameDayRunActivity = SameDayRunInput & {
   name: string;
   sourceActivityIds?: Array<number | string>;
   mergedActivityCount?: number;
@@ -13,7 +16,7 @@ function safeNumber(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
-function pickDate(activity: StravaActivitySummary) {
+function pickDate(activity: SameDayRunInput) {
   return activity.start_date_local ?? activity.start_date ?? "";
 }
 
@@ -33,7 +36,7 @@ function weightedAverage(
   return valid.reduce((sum, item) => sum + item.value * item.weight, 0) / weightSum;
 }
 
-function buildMergedName(dateKey: string, activities: StravaActivitySummary[]) {
+function buildMergedName(dateKey: string, activities: SameDayRunInput[]) {
   const namedLongRun = activities.find((activity) => /long[aã]o/i.test(activity.name ?? ""));
   if (namedLongRun?.name) return `${namedLongRun.name} · consolidado (${activities.length} partes)`;
 
@@ -41,8 +44,8 @@ function buildMergedName(dateKey: string, activities: StravaActivitySummary[]) {
   return `Corridas do dia · ${dateKey} · consolidado (${activities.length} partes · ${totalKm.toFixed(1)} km)`;
 }
 
-export function combineSameDayRuns(activities: StravaActivitySummary[]): SameDayRunActivity[] {
-  const groups = new Map<string, StravaActivitySummary[]>();
+export function combineSameDayRuns<TActivity extends SameDayRunInput>(activities: TActivity[]): SameDayRunActivity[] {
+  const groups = new Map<string, TActivity[]>();
   const nonRuns: SameDayRunActivity[] = [];
 
   activities.forEach((activity) => {
