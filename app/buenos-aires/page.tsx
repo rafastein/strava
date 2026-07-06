@@ -12,6 +12,7 @@ import WeeklyGoalCard from "../components/WeeklyGoalCard";
 import { getValidStravaAccessToken } from "../lib/strava-auth";
 import { BUENOS_AIRES_GOAL } from "../lib/race-calendar";
 import { isLongRunActivityName } from "../lib/strava-long-runs";
+import { combineSameDayRuns } from "../lib/strava-same-day-runs";
 import { getDynamicAthleteProfile } from "../lib/strava-prs";
 import { trainingPacesFromVdot } from "../lib/vdot";
 import {
@@ -99,9 +100,10 @@ export default async function BuenosAiresPage() {
   });
 
   const runs = activities.filter(isRunActivity);
+  const consolidatedRuns = combineSameDayRuns(activities).filter(isRunActivity);
 
-  const namedLongRuns = runs.filter((activity) =>
-    isLongRunActivityName(activity.name),
+  const namedLongRuns = consolidatedRuns.filter((activity) =>
+    isLongRunActivityName(activity.name) || Boolean(activity.isMergedSameDayRun && activity.distance / 1000 >= PROJECTION_LONG_RUN_MIN_KM),
   );
 
   const longestRun = namedLongRuns.length
@@ -230,10 +232,10 @@ export default async function BuenosAiresPage() {
   const marathonPaces = athleteProfile?.paces.marathon ?? null;
   const trainingPaces = vdot ? trainingPacesFromVdot(vdot) : null;
 
-  const recentLongRunsBase = runs
+  const recentLongRunsBase = consolidatedRuns
     .filter(
       (activity) =>
-        activity.distance >= 14000 && isLongRunActivityName(activity.name),
+        activity.distance >= 14000 && (isLongRunActivityName(activity.name) || Boolean(activity.isMergedSameDayRun)),
     )
     .sort(
       (a, b) =>
@@ -246,7 +248,7 @@ export default async function BuenosAiresPage() {
     recentLongRunsBase.map(async (run) => {
       if (run.average_heartrate) return run;
 
-      if (accessToken) {
+      if (accessToken && typeof run.id === "number") {
         const detail = await getActivityDetail(run.id, accessToken);
         if (detail?.average_heartrate) return { ...run, ...detail };
       }
@@ -255,11 +257,11 @@ export default async function BuenosAiresPage() {
     }),
   );
 
-  const projRunsBase = runs
+  const projRunsBase = consolidatedRuns
     .filter(
       (activity) =>
         activity.distance / 1000 >= PROJECTION_LONG_RUN_MIN_KM &&
-        isLongRunActivityName(activity.name),
+        (isLongRunActivityName(activity.name) || Boolean(activity.isMergedSameDayRun)),
     )
     .sort(
       (a, b) =>
@@ -271,7 +273,7 @@ export default async function BuenosAiresPage() {
     projRunsBase.map(async (run) => {
       if (run.average_heartrate) return run;
 
-      if (accessToken) {
+      if (accessToken && typeof run.id === "number") {
         const detail = await getActivityDetail(run.id, accessToken);
         if (detail?.average_heartrate) return { ...run, ...detail };
       }

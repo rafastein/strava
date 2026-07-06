@@ -13,7 +13,12 @@ import {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type StravaActivity = StravaActivitySummary;
+export type StravaActivity = Omit<StravaActivitySummary, "id"> & {
+  id: number | string;
+  sourceActivityIds?: Array<number | string>;
+  mergedActivityCount?: number;
+  isMergedSameDayRun?: boolean;
+};
 export type Athlete = StravaAthlete;
 
 export type HrZone = {

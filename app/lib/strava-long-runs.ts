@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { getActivityDate } from "./date-utils";
 import { isRunActivity } from "./strava-client";
+import { combineSameDayRuns } from "./strava-same-day-runs";
 
 type ActivityLike = {
   id: number | string;
@@ -64,6 +65,7 @@ const cachePath = path.join(process.cwd(), "data/geocode-cache.json");
 const isProduction = process.env.NODE_ENV === "production";
 const memoryCache: Record<string, ReverseGeocodeResult | null> = {};
 const GEOCODE_RATE_LIMIT_TTL_MS = 1000 * 60 * 30;
+const MIN_CONSOLIDATED_LONG_RUN_KM = 15;
 
 function normalizeText(value: string) {
   return String(value ?? "")
@@ -332,9 +334,12 @@ export async function getLongRunsFromActivities(
   activities: ActivityLike[]
 ): Promise<LongRunEntry[]> {
   const longRuns = await Promise.all(
-    activities
+    combineSameDayRuns(activities as any)
       .filter(isRunActivity)
-      .filter((activity) => isLongRunActivityName(activity.name))
+      .filter((activity) => {
+        const distanceKm = safeNumber(activity.distance) / 1000;
+        return isLongRunActivityName(activity.name) || Boolean(activity.isMergedSameDayRun && distanceKm >= MIN_CONSOLIDATED_LONG_RUN_KM);
+      })
       .map(async (activity) => {
         const location = await resolveActivityLocation(activity);
 

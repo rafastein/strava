@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Navbar from "../../components/Navbar";
 import { getStravaActivities, isRunActivity, type StravaActivitySummary } from "../../lib/strava-client";
+import { combineSameDayRuns, type SameDayRunActivity } from "../../lib/strava-same-day-runs";
 import {
   BUENOS_AIRES_GOAL_PACE_SEC_PER_KM,
   BUENOS_AIRES_RACE_DATE,
@@ -27,6 +28,7 @@ import LongRunCharts from "../../components/LongRunCharts";
 import ActivitySplitsChart from "../../components/ActivitySplitsChart";
 
 type StravaActivity = StravaActivitySummary;
+type LongRunMatchedActivity = SameDayRunActivity;
 
 const MAX_REASONABLE_LONG_RUN_KM = 45;
 const MIN_PLANNED_LONG_RUN_KM = 15;
@@ -184,7 +186,7 @@ type MarathonLongRunPlanItem = {
   title: string;
   typeLabel: string;
   note: string;
-  matchedActivity: StravaActivity | null;
+  matchedActivity: LongRunMatchedActivity | null;
   isKeyWorkout: boolean;
   isRaceGoal: boolean;
   isRace: boolean;
@@ -373,14 +375,14 @@ function findMatchingRun(
   plannedDate: Date,
   plannedKm: number,
   activities: StravaActivity[],
-) {
+): LongRunMatchedActivity | null {
   if (!Number.isFinite(plannedKm) || plannedKm <= 0 || plannedKm > MAX_REASONABLE_LONG_RUN_KM) {
     return null;
   }
 
   const minDistanceToMatch = Math.max(6, plannedKm * 0.5);
 
-  const candidates = activities
+  const candidates = combineSameDayRuns(activities)
     .filter(isRunActivity)
     .map((activity) => {
       const dateKey = getBRDateKey(activity.start_date_local ?? activity.start_date);
@@ -892,7 +894,11 @@ export default async function LongoesPage() {
                             {item.typeLabel}
                           </span>
                           <span className="badge badge--muted">{item.sourceLabel}</span>
-                          {item.matchedActivity && <span className="badge badge--blue">Strava encontrado</span>}
+                          {item.matchedActivity && (
+                            <span className="badge badge--blue">
+                              {item.matchedActivity.isMergedSameDayRun ? "Strava consolidado" : "Strava encontrado"}
+                            </span>
+                          )}
                         </div>
                         <h3 className="mt-3 text-lg font-semibold leading-snug text-white/90">{item.title}</h3>
                         <p className="mt-2 text-xs leading-5 text-white/42">{item.note}</p>
@@ -1075,12 +1081,16 @@ export default async function LongoesPage() {
                           <span className="text-xs text-white/35">Eficiência:</span>
                           <span className="text-sm font-bold text-white/90">{formatEfficiency(run.efficiency)}</span>
                         </div>
-                        <ActivitySplitsChart
-                          activityId={Number(run.id)}
-                          activityName={run.name}
-                          targetPaceSecPerKm={run.paceSecPerKm ?? undefined}
-                          goalPaceSecPerKm={BUENOS_AIRES_GOAL_PACE_SEC_PER_KM}
-                        />
+                        {typeof run.id === "number" && !run.name.includes("consolidado") ? (
+                          <ActivitySplitsChart
+                            activityId={run.id}
+                            activityName={run.name}
+                            targetPaceSecPerKm={run.paceSecPerKm ?? undefined}
+                            goalPaceSecPerKm={BUENOS_AIRES_GOAL_PACE_SEC_PER_KM}
+                          />
+                        ) : (
+                          <span className="badge badge--blue">Consolidado por dia</span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 text-right">
                         <span className="text-sm">{trend.emoji}</span>

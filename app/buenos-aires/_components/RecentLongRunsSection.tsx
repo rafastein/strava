@@ -1,5 +1,5 @@
 type RecentLongRunItem = {
-  id: number;
+  id: number | string;
   name: string;
   dateLabel: string;
   distanceLabel: string;
