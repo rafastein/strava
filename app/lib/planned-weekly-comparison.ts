@@ -6,7 +6,6 @@ import {
   type StructuredPlannedWorkoutRangeResult,
 } from "./planned-workout";
 import { formatWeekLabel, getWeekStart, type WeeklyComparisonItem, type WeeklyPlannedSegment } from "./sisrun-utils";
-import type { StravaActivitySummary } from "./strava-client";
 
 function getDateFromIso(dateIso: string) {
   const match = dateIso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -17,7 +16,7 @@ function getDateFromIso(dateIso: string) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function getActivityBrazilDate(activity: StravaActivitySummary) {
+function getActivityBrazilDate(activity: ActivityForWeeklyComparison) {
   return getBRDate(activity.start_date_local ?? activity.start_date ?? null);
 }
 
@@ -64,6 +63,16 @@ function getWeekStartsTouchingMonth(monthReference: Date) {
 
   return weeks;
 }
+
+
+type ActivityForWeeklyComparison = {
+  id?: number | string;
+  type?: string | null;
+  sport_type?: string | null;
+  distance: number;
+  start_date?: string | null;
+  start_date_local?: string | null;
+};
 
 type StructuredWeeklyComparisonOptions = {
   onlyWeeksTouchingReferenceMonth?: boolean;
@@ -134,7 +143,7 @@ export function getStructuredCurrentWeekSummary(
 
 export function buildStructuredWeeklyComparison(
   workouts: StructuredPlannedWorkoutRangeResult[],
-  activities: StravaActivitySummary[],
+  activities: ActivityForWeeklyComparison[],
   limit = 6,
   referenceDate = new Date(),
   options: StructuredWeeklyComparisonOptions = {},
