@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChartDataset } from "chart.js";
 
 export type QualityWorkout = {
@@ -66,10 +66,6 @@ function formatDate(iso: string): string {
   return new Date(iso + "T12:00:00").toLocaleDateString("pt-BR", {
     day: "2-digit", month: "2-digit", year: "2-digit",
   });
-}
-
-function formatMonthYear(iso: string): string {
-  return new Date(iso + "T12:00:00").toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
 }
 
 // ── Volume chart ─────────────────────────────────────────────────────────────

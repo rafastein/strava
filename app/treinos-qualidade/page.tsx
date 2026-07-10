@@ -173,7 +173,6 @@ function classifyByLaps(
 
   if (speeds.length < 2) return null;
 
-  const avg = speeds.reduce((a, b) => a + b, 0) / speeds.length;
   const max = Math.max(...speeds);
   const min = Math.min(...speeds);
   const range = max - min;
@@ -246,15 +245,6 @@ async function getPlannedWorkoutHintsByDate() {
 
   return hints;
 }
-
-function formatBRDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString("pt-BR", {
-      day: "2-digit", month: "short", year: "numeric",
-    });
-  } catch { return iso.slice(0, 10); }
-}
-
 
 function formatBRDateTime(timestamp: number) {
   return new Date(timestamp).toLocaleString("pt-BR", {

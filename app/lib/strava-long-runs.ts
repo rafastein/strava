@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { getActivityDate } from "./date-utils";
 import { isRunActivity } from "./strava-client";
-import { combineSameDayRuns } from "./strava-same-day-runs";
+import { combineSameDayRuns, type SameDayRunInput } from "./strava-same-day-runs";
 
 type ActivityLike = {
   id: number | string;
@@ -21,6 +21,21 @@ type ActivityLike = {
   location_state?: string | null;
   start_latlng?: [number, number] | [] | null;
 };
+
+function toSameDayRunInput(activity: ActivityLike): SameDayRunInput {
+  return {
+    ...activity,
+    id: activity.id,
+    name: activity.name ?? "",
+    type: activity.type ?? "Run",
+    distance: activity.distance ?? 0,
+    moving_time: activity.moving_time ?? 0,
+    elapsed_time: activity.elapsed_time ?? 0,
+    total_elevation_gain: activity.total_elevation_gain ?? 0,
+    start_date: activity.start_date ?? "",
+    start_date_local: activity.start_date_local ?? "",
+  };
+}
 
 export type LongRunEntry = {
   id: number | string;
@@ -334,7 +349,7 @@ export async function getLongRunsFromActivities(
   activities: ActivityLike[]
 ): Promise<LongRunEntry[]> {
   const longRuns = await Promise.all(
-    combineSameDayRuns(activities as any)
+    combineSameDayRuns(activities.map(toSameDayRunInput))
       .filter(isRunActivity)
       .filter((activity) => {
         const distanceKm = safeNumber(activity.distance) / 1000;
