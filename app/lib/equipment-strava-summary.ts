@@ -1,4 +1,5 @@
-import { isRunActivity, type StravaActivitySummary, type StravaGear } from "./strava-client";
+import { type StravaActivitySummary, type StravaGear } from "./strava-client";
+import { isEquipmentRunActivity } from "./strava-activity";
 import {
   KNOWN_GEAR_NAME_FALLBACKS,
   getShoeMaxKm,
@@ -47,7 +48,7 @@ export function buildGearRecommendationSummaries(
   });
 
   activities
-    .filter((activity) => isRunActivity(activity) && activity.gear_id && allGearIds.has(activity.gear_id))
+    .filter((activity) => isEquipmentRunActivity(activity) && activity.gear_id && allGearIds.has(activity.gear_id))
     .forEach((activity) => {
       const gearId = activity.gear_id as string;
       const item = grouped.get(gearId);

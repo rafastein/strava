@@ -6,11 +6,11 @@ import BrandIcon from "../components/BrandIcon";
 import {
   getStravaActivities,
   getStravaAthlete,
-  isRunActivity,
   STRAVA_2024_START_EPOCH,
   type StravaActivitySummary,
   type StravaGear,
 } from "../lib/strava-client";
+import { isEquipmentRunActivity } from "../lib/strava-activity";
 import { formatBRDate } from "../lib/date-utils";
 import { formatEfficiency, formatLongRunPace } from "../lib/strava-long-runs";
 import ShoeUsageChart from "../components/ShoeUsageChart";
@@ -36,6 +36,7 @@ type StravaActivity = StravaActivitySummary;
 
 type GearSummary = GearForRecommendation & {
   gearId: string;
+  activityDistanceKm: number;
   totalTime: number;
   totalElevation: number;
   activities: number;
@@ -120,6 +121,7 @@ function buildInitialGearSummary(gearId: string, name: string, brandName?: strin
     brand: inferBrand(name, brandName),
     totalKm: 0,
     maxKm: getShoeMaxKm(name),
+    activityDistanceKm: 0,
     totalTime: 0,
     totalElevation: 0,
     activities: 0,
@@ -156,7 +158,7 @@ function buildGearSummaries(
   });
 
   activities
-    .filter((activity) => isRunActivity(activity) && activity.gear_id && allGearIds.has(activity.gear_id))
+    .filter((activity) => isEquipmentRunActivity(activity) && activity.gear_id && allGearIds.has(activity.gear_id))
     .forEach((activity) => {
       const gearId = activity.gear_id as string;
       const distanceKm = activity.distance / 1000;
@@ -164,6 +166,7 @@ function buildGearSummaries(
       if (!item) return;
 
       item.totalKm += distanceKm;
+      item.activityDistanceKm += distanceKm;
       item.totalTime += activity.moving_time;
       item.totalElevation += activity.total_elevation_gain ?? 0;
       item.activities += 1;
@@ -323,11 +326,18 @@ export default async function EquipamentosPage() {
 
             <section className="grid gap-4 md:grid-cols-2">
               {grouped.map((gear) => {
+                // Pace e média por corrida precisam usar a mesma base das atividades
+                // que compõem o tempo total. `gear.totalKm` pode vir do acumulado do
+                // equipamento no Strava e incluir atividades fora do filtro desta página.
                 const averagePace =
-                  gear.totalKm > 0 ? gear.totalTime / gear.totalKm : null;
+                  gear.activityDistanceKm > 0
+                    ? gear.totalTime / gear.activityDistanceKm
+                    : null;
 
                 const averageKmPerRun =
-                  gear.activities > 0 ? gear.totalKm / gear.activities : 0;
+                  gear.activities > 0
+                    ? gear.activityDistanceKm / gear.activities
+                    : 0;
 
                 const averageHr =
                   gear.heartRates.length > 0
