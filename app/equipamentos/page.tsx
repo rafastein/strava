@@ -10,7 +10,7 @@ import {
   type StravaActivitySummary,
   type StravaGear,
 } from "../lib/strava-client";
-import { isEquipmentRunActivity } from "../lib/strava-activity";
+import { summarizeEquipmentActivities } from "../lib/equipment-activity-summary";
 import { formatBRDate } from "../lib/date-utils";
 import { formatEfficiency, formatLongRunPace } from "../lib/strava-long-runs";
 import ShoeUsageChart from "../components/ShoeUsageChart";
@@ -36,7 +36,6 @@ type StravaActivity = StravaActivitySummary;
 
 type GearSummary = GearForRecommendation & {
   gearId: string;
-  activityDistanceKm: number;
   totalTime: number;
   totalElevation: number;
   activities: number;
@@ -52,21 +51,6 @@ async function getAthleteGear(): Promise<StravaGear[]> {
 
 async function getActivities(): Promise<StravaActivity[]> {
   return getStravaActivities({ after: STRAVA_2024_START_EPOCH, maxPages: 20 });
-}
-
-function calculateEfficiency(
-  distanceKm: number,
-  movingTimeSec: number,
-  averageHeartrate: number | null | undefined,
-  elevationGain: number
-) {
-  if (!distanceKm || !movingTimeSec || !averageHeartrate) return null;
-
-  const rawSpeedKmh = distanceKm / (movingTimeSec / 3600);
-  const elevationFactor =
-    elevationGain > 0 ? 1 + elevationGain / (distanceKm * 100) : 1;
-
-  return ((rawSpeedKmh * elevationFactor) / averageHeartrate) * 1000;
 }
 
 function formatDuration(seconds: number) {
@@ -121,7 +105,6 @@ function buildInitialGearSummary(gearId: string, name: string, brandName?: strin
     brand: inferBrand(name, brandName),
     totalKm: 0,
     maxKm: getShoeMaxKm(name),
-    activityDistanceKm: 0,
     totalTime: 0,
     totalElevation: 0,
     activities: 0,
@@ -137,11 +120,9 @@ function buildGearSummaries(
 ): GearSummary[] {
   const athleteGearById = new Map(athleteGear.map((gear) => [gear.id, gear]));
   const gearNameLookup: Record<string, string> = { ...KNOWN_GEAR_NAME_FALLBACKS };
-  const stravaGearDistanceKm: Record<string, number> = {};
 
   athleteGear.forEach((gear) => {
     gearNameLookup[gear.id] = KNOWN_GEAR_NAME_FALLBACKS[gear.id] ?? gear.name;
-    stravaGearDistanceKm[gear.id] = (gear.distance ?? 0) / 1000;
   });
 
   const allGearIds = new Set([
@@ -157,44 +138,21 @@ function buildGearSummaries(
     grouped.set(gearId, buildInitialGearSummary(gearId, name, stravaGear?.brand_name));
   });
 
-  activities
-    .filter((activity) => isEquipmentRunActivity(activity) && activity.gear_id && allGearIds.has(activity.gear_id))
-    .forEach((activity) => {
-      const gearId = activity.gear_id as string;
-      const distanceKm = activity.distance / 1000;
-      const item = grouped.get(gearId);
-      if (!item) return;
+  const activityStatsByGear = summarizeEquipmentActivities(activities);
 
-      item.totalKm += distanceKm;
-      item.activityDistanceKm += distanceKm;
-      item.totalTime += activity.moving_time;
-      item.totalElevation += activity.total_elevation_gain ?? 0;
-      item.activities += 1;
+  activityStatsByGear.forEach((stats, gearId) => {
+    if (!allGearIds.has(gearId)) return;
 
-      if (activity.average_heartrate) {
-        item.heartRates.push(activity.average_heartrate);
-      }
+    const item = grouped.get(gearId);
+    if (!item) return;
 
-      const efficiency = calculateEfficiency(
-        distanceKm,
-        activity.moving_time,
-        activity.average_heartrate,
-        activity.total_elevation_gain ?? 0
-      );
-
-      if (efficiency) {
-        item.efficiencies.push(efficiency);
-      }
-
-      const activityDate = activity.start_date_local ?? activity.start_date;
-      if (!item.lastUse || new Date(activityDate) > new Date(item.lastUse)) {
-        item.lastUse = activityDate;
-      }
-    });
-
-  grouped.forEach((gear) => {
-    const stravaTotalKm = stravaGearDistanceKm[gear.gearId] ?? 0;
-    gear.totalKm = Number(Math.max(gear.totalKm, stravaTotalKm).toFixed(1));
+    item.totalKm = stats.totalKm;
+    item.totalTime = stats.totalTime;
+    item.totalElevation = stats.totalElevation;
+    item.activities = stats.activities;
+    item.heartRates = stats.heartRates;
+    item.efficiencies = stats.efficiencies;
+    item.lastUse = stats.lastUse;
   });
 
   return Array.from(grouped.values())
@@ -326,18 +284,11 @@ export default async function EquipamentosPage() {
 
             <section className="grid gap-4 md:grid-cols-2">
               {grouped.map((gear) => {
-                // Pace e média por corrida precisam usar a mesma base das atividades
-                // que compõem o tempo total. `gear.totalKm` pode vir do acumulado do
-                // equipamento no Strava e incluir atividades fora do filtro desta página.
                 const averagePace =
-                  gear.activityDistanceKm > 0
-                    ? gear.totalTime / gear.activityDistanceKm
-                    : null;
+                  gear.totalKm > 0 ? gear.totalTime / gear.totalKm : null;
 
                 const averageKmPerRun =
-                  gear.activities > 0
-                    ? gear.activityDistanceKm / gear.activities
-                    : 0;
+                  gear.activities > 0 ? gear.totalKm / gear.activities : 0;
 
                 const averageHr =
                   gear.heartRates.length > 0

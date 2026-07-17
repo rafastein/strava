@@ -1,5 +1,5 @@
 import { type StravaActivitySummary, type StravaGear } from "./strava-client";
-import { isEquipmentRunActivity } from "./strava-activity";
+import { summarizeEquipmentActivities } from "./equipment-activity-summary";
 import {
   KNOWN_GEAR_NAME_FALLBACKS,
   getShoeMaxKm,
@@ -19,11 +19,9 @@ export function buildGearRecommendationSummaries(
 ): GearRecommendationSummary[] {
   const athleteGearById = new Map(athleteGear.map((gear) => [gear.id, gear]));
   const gearNameLookup: Record<string, string> = { ...KNOWN_GEAR_NAME_FALLBACKS };
-  const stravaGearDistanceKm: Record<string, number> = {};
 
   athleteGear.forEach((gear) => {
     gearNameLookup[gear.id] = KNOWN_GEAR_NAME_FALLBACKS[gear.id] ?? gear.name;
-    stravaGearDistanceKm[gear.id] = (gear.distance ?? 0) / 1000;
   });
 
   const allGearIds = new Set([
@@ -47,25 +45,17 @@ export function buildGearRecommendationSummaries(
     });
   });
 
-  activities
-    .filter((activity) => isEquipmentRunActivity(activity) && activity.gear_id && allGearIds.has(activity.gear_id))
-    .forEach((activity) => {
-      const gearId = activity.gear_id as string;
-      const item = grouped.get(gearId);
-      if (!item) return;
+  const activityStatsByGear = summarizeEquipmentActivities(activities);
 
-      item.totalKm += activity.distance / 1000;
-      item.activities += 1;
+  activityStatsByGear.forEach((stats, gearId) => {
+    if (!allGearIds.has(gearId)) return;
 
-      const activityDate = activity.start_date_local ?? activity.start_date;
-      if (!item.lastUse || new Date(activityDate) > new Date(item.lastUse)) {
-        item.lastUse = activityDate;
-      }
-    });
+    const item = grouped.get(gearId);
+    if (!item) return;
 
-  grouped.forEach((gear) => {
-    const stravaTotalKm = stravaGearDistanceKm[gear.gearId] ?? 0;
-    gear.totalKm = Number(Math.max(gear.totalKm, stravaTotalKm).toFixed(1));
+    item.totalKm = stats.totalKm;
+    item.activities = stats.activities;
+    item.lastUse = stats.lastUse;
   });
 
   return Array.from(grouped.values())
