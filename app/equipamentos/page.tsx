@@ -11,6 +11,11 @@ import {
   type StravaGear,
 } from "../lib/strava-client";
 import { summarizeEquipmentActivities } from "../lib/equipment-activity-summary";
+import {
+  formatEquipmentAge,
+  formatPricePerKm,
+  getEquipmentPurchaseMetadata,
+} from "../lib/equipment-metadata";
 import { formatBRDate } from "../lib/date-utils";
 import { formatEfficiency, formatLongRunPace } from "../lib/strava-long-runs";
 import ShoeUsageChart from "../components/ShoeUsageChart";
@@ -303,6 +308,12 @@ export default async function EquipamentosPage() {
                     : null;
 
                 const wear = getWearStatus(gear.totalKm, gear.maxKm);
+                const purchase = getEquipmentPurchaseMetadata(gear.name);
+                const pricePerKm = formatPricePerKm(
+                  purchase?.priceBRL,
+                  gear.totalKm,
+                );
+                const equipmentAge = formatEquipmentAge(purchase?.purchaseDate);
 
                 return (
                   <article key={gear.gearId} className="ba-card" style={{ padding: "1.5rem" }}>
@@ -349,6 +360,8 @@ export default async function EquipamentosPage() {
                         value={`${gear.totalElevation.toFixed(0)} m`}
                       />
                       <Metric label="Último uso" value={gear.lastUse ? formatBRDate(gear.lastUse) : "-"} />
+                      <Metric label="Preço por km" value={pricePerKm} />
+                      <Metric label="Idade" value={equipmentAge} />
                     </div>
 
                     <div className="mt-4">
