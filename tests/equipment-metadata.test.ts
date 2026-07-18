@@ -37,8 +37,8 @@ test("calcula preço por km com a quilometragem filtrada do equipamento", () => 
 });
 
 test("calcula preço por corrida com a quantidade filtrada de atividades", () => {
-  assert.equal(formatPricePerRun(729.4, 62), "R$ 11,76/corrida");
-  assert.equal(formatPricePerRun(331.19, 3), "R$ 110,40/corrida");
+  assert.equal(formatPricePerRun(729.4, 62), "R$ 11,76");
+  assert.equal(formatPricePerRun(331.19, 3), "R$ 110,40");
   assert.equal(formatPricePerRun(331.19, 0), "Ainda sem uso");
   assert.equal(formatPricePerRun(undefined, 3), "Não informado");
 });

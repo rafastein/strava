@@ -127,7 +127,7 @@ export function formatPricePerRun(
     .format(priceBRL / activityCount)
     .replace(/\u00a0/g, " ");
 
-  return `${formattedPrice}/corrida`;
+  return formattedPrice;
 }
 
 type CalendarDate = {
