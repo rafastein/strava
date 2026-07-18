@@ -14,6 +14,7 @@ import { summarizeEquipmentActivities } from "../lib/equipment-activity-summary"
 import {
   formatEquipmentAge,
   formatPricePerKm,
+  formatPricePerRun,
   getEquipmentPurchaseMetadata,
 } from "../lib/equipment-metadata";
 import { formatBRDate } from "../lib/date-utils";
@@ -313,6 +314,10 @@ export default async function EquipamentosPage() {
                   purchase?.priceBRL,
                   gear.totalKm,
                 );
+                const pricePerRun = formatPricePerRun(
+                  purchase?.priceBRL,
+                  gear.activities,
+                );
                 const equipmentAge = formatEquipmentAge(purchase?.purchaseDate);
 
                 return (
@@ -361,6 +366,7 @@ export default async function EquipamentosPage() {
                       />
                       <Metric label="Último uso" value={gear.lastUse ? formatBRDate(gear.lastUse) : "-"} />
                       <Metric label="Preço por km" value={pricePerKm} />
+                      <Metric label="Preço por corrida" value={pricePerRun} />
                       <Metric label="Idade" value={equipmentAge} />
                     </div>
 

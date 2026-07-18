@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   formatEquipmentAge,
   formatPricePerKm,
+  formatPricePerRun,
   getEquipmentPurchaseMetadata,
 } from "../app/lib/equipment-metadata";
 
@@ -19,12 +20,27 @@ test("encontra preço e data pelo nome do tênis", () => {
       purchaseDate: "2026-06-18",
     },
   );
+
+  assert.deepEqual(
+    getEquipmentPurchaseMetadata("Saucony Endorphin Pro 4"),
+    {
+      priceBRL: 1083.59,
+      purchaseDate: "2026-05-23",
+    },
+  );
 });
 
 test("calcula preço por km com a quilometragem filtrada do equipamento", () => {
   assert.equal(formatPricePerKm(331.19, 19.97), "R$ 16,58/km");
   assert.equal(formatPricePerKm(331.19, 0), "Ainda sem uso");
   assert.equal(formatPricePerKm(undefined, 20), "Não informado");
+});
+
+test("calcula preço por corrida com a quantidade filtrada de atividades", () => {
+  assert.equal(formatPricePerRun(729.4, 62), "R$ 11,76/corrida");
+  assert.equal(formatPricePerRun(331.19, 3), "R$ 110,40/corrida");
+  assert.equal(formatPricePerRun(331.19, 0), "Ainda sem uso");
+  assert.equal(formatPricePerRun(undefined, 3), "Não informado");
 });
 
 test("formata a idade em anos e meses completos", () => {

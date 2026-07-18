@@ -48,6 +48,10 @@ const EQUIPMENT_PURCHASES: Record<string, EquipmentPurchaseMetadata> = {
     priceBRL: 764.99,
     purchaseDate: "2026-06-18",
   },
+  "saucony endorphin pro 4": {
+    priceBRL: 1083.59,
+    purchaseDate: "2026-05-23",
+  },
 };
 
 function normalizeEquipmentName(name: string) {
@@ -100,6 +104,30 @@ export function formatPricePerKm(
     .replace(/\u00a0/g, " ");
 
   return `${formattedPrice}/km`;
+}
+
+export function formatPricePerRun(
+  priceBRL: number | null | undefined,
+  activityCount: number,
+) {
+  if (typeof priceBRL !== "number" || !Number.isFinite(priceBRL)) {
+    return "Não informado";
+  }
+
+  if (!Number.isFinite(activityCount) || activityCount <= 0) {
+    return "Ainda sem uso";
+  }
+
+  const formattedPrice = new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+    .format(priceBRL / activityCount)
+    .replace(/\u00a0/g, " ");
+
+  return `${formattedPrice}/corrida`;
 }
 
 type CalendarDate = {
