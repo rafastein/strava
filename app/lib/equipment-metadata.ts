@@ -64,6 +64,17 @@ function normalizeEquipmentName(name: string) {
     .replace(/\s+/g, " ");
 }
 
+function formatCurrencyBRL(value: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+    .format(value)
+    .replace(/\u00a0/g, " ");
+}
+
 export function getEquipmentPurchaseMetadata(
   shoeName: string,
 ): EquipmentPurchaseMetadata | null {
@@ -94,16 +105,7 @@ export function formatPricePerKm(
     return "Ainda sem uso";
   }
 
-  const formattedPrice = new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
-    .format(priceBRL / totalKm)
-    .replace(/\u00a0/g, " ");
-
-  return `${formattedPrice}/km`;
+  return `${formatCurrencyBRL(priceBRL / totalKm)}/km`;
 }
 
 export function formatPricePerRun(
@@ -118,16 +120,35 @@ export function formatPricePerRun(
     return "Ainda sem uso";
   }
 
-  const formattedPrice = new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
-    .format(priceBRL / activityCount)
-    .replace(/\u00a0/g, " ");
+  return formatCurrencyBRL(priceBRL / activityCount);
+}
 
-  return formattedPrice;
+export function formatEquipmentPrice(
+  priceBRL: number | null | undefined,
+) {
+  if (typeof priceBRL !== "number" || !Number.isFinite(priceBRL)) {
+    return "Não informado";
+  }
+
+  return formatCurrencyBRL(priceBRL);
+}
+
+export function formatEstimatedPricePerKm(
+  priceBRL: number | null | undefined,
+  estimatedDurabilityKm: number,
+) {
+  if (typeof priceBRL !== "number" || !Number.isFinite(priceBRL)) {
+    return "Não informado";
+  }
+
+  if (
+    !Number.isFinite(estimatedDurabilityKm) ||
+    estimatedDurabilityKm <= 0
+  ) {
+    return "Não estimado";
+  }
+
+  return `${formatCurrencyBRL(priceBRL / estimatedDurabilityKm)}/km`;
 }
 
 type CalendarDate = {
@@ -154,6 +175,19 @@ function parseDateOnly(value: string): CalendarDate | null {
   }
 
   return { year, month, day };
+}
+
+export function formatEquipmentPurchaseDate(
+  purchaseDate: string | null | undefined,
+) {
+  if (!purchaseDate) return "Não informada";
+
+  const purchase = parseDateOnly(purchaseDate);
+  if (!purchase) return "Não informada";
+
+  return `${String(purchase.day).padStart(2, "0")}/${String(
+    purchase.month,
+  ).padStart(2, "0")}/${purchase.year}`;
 }
 
 function getCalendarDateInBrazil(referenceDate: Date): CalendarDate {

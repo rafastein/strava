@@ -12,7 +12,10 @@ import {
 } from "../lib/strava-client";
 import { summarizeEquipmentActivities } from "../lib/equipment-activity-summary";
 import {
+  formatEquipmentPrice,
+  formatEquipmentPurchaseDate,
   formatEquipmentAge,
+  formatEstimatedPricePerKm,
   formatPricePerKm,
   formatPricePerRun,
   getEquipmentPurchaseMetadata,
@@ -318,6 +321,14 @@ export default async function EquipamentosPage() {
                   purchase?.priceBRL,
                   gear.activities,
                 );
+                const purchasePrice = formatEquipmentPrice(purchase?.priceBRL);
+                const purchaseDate = formatEquipmentPurchaseDate(
+                  purchase?.purchaseDate,
+                );
+                const estimatedPricePerKm = formatEstimatedPricePerKm(
+                  purchase?.priceBRL,
+                  gear.maxKm,
+                );
                 const equipmentAge = formatEquipmentAge(purchase?.purchaseDate);
 
                 return (
@@ -365,9 +376,12 @@ export default async function EquipamentosPage() {
                         value={`${gear.totalElevation.toFixed(0)} m`}
                       />
                       <Metric label="Último uso" value={gear.lastUse ? formatBRDate(gear.lastUse) : "-"} />
+                      <Metric label="Preço" value={purchasePrice} />
+                      <Metric label="Data da compra" value={purchaseDate} />
+                      <Metric label="Idade" value={equipmentAge} />
                       <Metric label="Preço por km" value={pricePerKm} />
                       <Metric label="Preço por corrida" value={pricePerRun} />
-                      <Metric label="Idade" value={equipmentAge} />
+                      <Metric label="Preço estimado por km" value={estimatedPricePerKm} />
                     </div>
 
                     <div className="mt-4">

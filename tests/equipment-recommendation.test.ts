@@ -4,6 +4,7 @@ import {
   classifyEquipmentWorkout,
   getTodayEquipmentWorkout,
   inferShoeProfile,
+  getShoeMaxKm,
   pickRecommendedShoeForWorkout,
   type GearForRecommendation,
 } from "../app/lib/equipment-recommendation";
@@ -109,6 +110,10 @@ test("pickRecommendedShoeForWorkout libera tênis de placa para prova longa", ()
 test("inferShoeProfile identifica modelos pelo nome do Strava, não pelo id", () => {
   assert.equal(inferShoeProfile("Meu Adidas Adios Pro 4").key, "adidas-adios-pro-4");
   assert.equal(inferShoeProfile("ASICS Superblast 2 - treino").key, "asics-superblast-2");
+  assert.equal(inferShoeProfile("ASICS Magic Speed 5").key, "asics-magic-speed-5");
+  assert.equal(inferShoeProfile("Saucony Endorphin Pro 4").key, "saucony-endorphin-pro-4");
+  assert.equal(getShoeMaxKm("ASICS Magic Speed 5"), 600);
+  assert.equal(getShoeMaxKm("Saucony Endorphin Pro 4"), 500);
 });
 
 test("getTodayEquipmentWorkout não trata como descanso quando SisRUN tem treino sem distância, mas com janela de tempo", () => {

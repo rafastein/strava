@@ -167,6 +167,16 @@ export const SHOE_MODEL_PROFILES: ShoeProfile[] = [
     notes: "Alta proteção com resposta, ideal para longões e ritmo controlado.",
   },
   {
+    key: "asics-magic-speed-5",
+    label: "ASICS Magic Speed 5",
+    match: ["magic speed"],
+    brand: "asics",
+    maxKm: 600,
+    strengths: ["intervalado", "ritmo", "prova_curta"],
+    secondary: ["fartlek", "prova_longa"],
+    notes: "Tênis com placa para velocidade, ritmo e provas, com durabilidade de treinador rápido.",
+  },
+  {
     key: "adidas-adios-pro-4",
     label: "Adidas Adios Pro 4",
     match: ["adios pro"],
@@ -176,6 +186,17 @@ export const SHOE_MODEL_PROFILES: ShoeProfile[] = [
     secondary: ["ritmo"],
     raceOnly: true,
     notes: "Tênis de prova para meia e maratona; evitar gastar em treino comum.",
+  },
+  {
+    key: "saucony-endorphin-pro-4",
+    label: "Saucony Endorphin Pro 4",
+    match: ["endorphin pro"],
+    brand: "saucony",
+    maxKm: 500,
+    strengths: ["prova_curta", "prova_longa"],
+    secondary: ["ritmo"],
+    raceOnly: true,
+    notes: "Supershoe com placa reservado para provas e treinos específicos de ritmo.",
   },
   {
     key: "361-flame-rs",
@@ -234,6 +255,7 @@ export function inferBrand(name: string, fallback?: string | null) {
   if (lower.includes("new balance")) return "new balance";
   if (lower.includes("fila")) return "fila";
   if (lower.includes("361")) return "361";
+  if (lower.includes("saucony")) return "saucony";
   if (lower.includes("cloudsurfer") || lower.startsWith("on ")) return "on";
 
   return name.split(" ")[0] || "outro";
