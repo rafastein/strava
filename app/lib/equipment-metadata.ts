@@ -133,6 +133,23 @@ export function formatEquipmentPrice(
   return formatCurrencyBRL(priceBRL);
 }
 
+export function formatEstimatedRuns(
+  estimatedDurabilityKm: number,
+  averageKmPerRun: number,
+) {
+  if (
+    !Number.isFinite(estimatedDurabilityKm) ||
+    estimatedDurabilityKm <= 0 ||
+    !Number.isFinite(averageKmPerRun) ||
+    averageKmPerRun <= 0
+  ) {
+    return "Não estimado";
+  }
+
+  const estimatedRuns = Math.round(estimatedDurabilityKm / averageKmPerRun);
+  return `${estimatedRuns} ${estimatedRuns === 1 ? "corrida" : "corridas"}`;
+}
+
 export function formatEstimatedPricePerKm(
   priceBRL: number | null | undefined,
   estimatedDurabilityKm: number,

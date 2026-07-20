@@ -5,6 +5,7 @@ import {
   formatEquipmentPrice,
   formatEquipmentPurchaseDate,
   formatEstimatedPricePerKm,
+  formatEstimatedRuns,
   formatPricePerKm,
   formatPricePerRun,
   getEquipmentPurchaseMetadata,
@@ -59,6 +60,15 @@ test("calcula preço estimado por km pela vida útil cadastrada", () => {
   assert.equal(formatEstimatedPricePerKm(1224.18, 500), "R$ 2,45/km");
   assert.equal(formatEstimatedPricePerKm(undefined, 500), "Não informado");
   assert.equal(formatEstimatedPricePerKm(729.4, 0), "Não estimado");
+});
+
+
+test("estima a quantidade de corridas pela distância média e vida útil", () => {
+  assert.equal(formatEstimatedRuns(800, 7.5), "107 corridas");
+  assert.equal(formatEstimatedRuns(500, 13.3), "38 corridas");
+  assert.equal(formatEstimatedRuns(10, 10), "1 corrida");
+  assert.equal(formatEstimatedRuns(800, 0), "Não estimado");
+  assert.equal(formatEstimatedRuns(0, 7.5), "Não estimado");
 });
 
 test("formata a idade em anos e meses completos", () => {

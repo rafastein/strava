@@ -16,6 +16,7 @@ import {
   formatEquipmentPurchaseDate,
   formatEquipmentAge,
   formatEstimatedPricePerKm,
+  formatEstimatedRuns,
   formatPricePerKm,
   formatPricePerRun,
   getEquipmentPurchaseMetadata,
@@ -329,6 +330,10 @@ export default async function EquipamentosPage() {
                   purchase?.priceBRL,
                   gear.maxKm,
                 );
+                const estimatedRuns = formatEstimatedRuns(
+                  gear.maxKm,
+                  averageKmPerRun,
+                );
                 const equipmentAge = formatEquipmentAge(purchase?.purchaseDate);
 
                 return (
@@ -382,6 +387,7 @@ export default async function EquipamentosPage() {
                       <Metric label="Preço por km" value={pricePerKm} />
                       <Metric label="Preço por corrida" value={pricePerRun} />
                       <Metric label="Preço estimado por km" value={estimatedPricePerKm} />
+                      <Metric label="Corridas estimadas" value={estimatedRuns} />
                     </div>
 
                     <div className="mt-4">
