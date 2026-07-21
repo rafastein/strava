@@ -22,6 +22,7 @@ import {
   getEquipmentPurchaseMetadata,
 } from "../lib/equipment-metadata";
 import { formatBRDate } from "../lib/date-utils";
+import { sortEquipmentByName } from "../lib/equipment-sort";
 import { formatEfficiency, formatLongRunPace } from "../lib/strava-long-runs";
 import ShoeUsageChart from "../components/ShoeUsageChart";
 import { getSisrunDataWithSource } from "../lib/sisrun-utils";
@@ -165,9 +166,11 @@ function buildGearSummaries(
     item.lastUse = stats.lastUse;
   });
 
-  return Array.from(grouped.values())
-    .filter((gear) => gear.activities > 0 || gear.totalKm > 0 || athleteGearById.has(gear.gearId))
-    .sort((a, b) => b.totalKm - a.totalKm);
+  return sortEquipmentByName(
+    Array.from(grouped.values()).filter(
+      (gear) => gear.activities > 0 || gear.totalKm > 0 || athleteGearById.has(gear.gearId),
+    ),
+  );
 }
 
 function getRecommendationAlternatives(
