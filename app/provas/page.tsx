@@ -11,15 +11,15 @@ export default async function ProvasPage() {
     <main className="site-shell">
       <Navbar />
       <div className="ba-page">
-        <section className="ba-hero" style={{ marginBottom: "1.5rem" }}>
-          <div>
+        <section className="ba-hero provas-hero">
+          <div className="provas-hero__copy">
             <p className="ba-eyebrow">Calendário dinâmico</p>
             <h1 className="ba-title">Provas</h1>
             <p className="ba-subtitle" style={{ maxWidth: 760 }}>
               Cadastro central das provas previstas. O Upstash passa a ser a fonte principal; o calendário hardcoded fica apenas como fallback quando não houver nada salvo.
             </p>
           </div>
-          <div className="ba-card" style={{ padding: "1rem 1.25rem", minWidth: 220 }}>
+          <div className="ba-card provas-source-card">
             <p className="ba-label">Fonte atual</p>
             <p style={{ color: "#fff", fontWeight: 800, marginTop: 4 }}>
               {calendar.source === "upstash" ? "Upstash" : "Fallback local"}

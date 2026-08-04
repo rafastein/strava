@@ -194,9 +194,9 @@ export default function RaceManagerClient({ initialRaces }: Props) {
 
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.15fr) minmax(340px, .85fr)", gap: "1.25rem", alignItems: "start" }}>
-      <section className="ba-card" style={{ padding: "1.5rem" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", marginBottom: "1.25rem" }}>
+    <div className="race-manager-layout">
+      <section className="ba-card race-manager-panel race-manager-list-panel">
+        <div className="race-manager-heading">
           <div>
             <p className="ba-eyebrow">Calendário salvo</p>
             <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.75rem", color: "#fff", marginTop: 4 }}>Provas cadastradas</h2>
@@ -210,10 +210,10 @@ export default function RaceManagerClient({ initialRaces }: Props) {
               <p className="ba-label" style={{ marginBottom: ".6rem", textTransform: "capitalize" }}>{label}</p>
               <div style={{ display: "grid", gap: ".65rem" }}>
                 {races.map((race) => (
-                  <div key={race.id} className="ba-card-soft" style={{ padding: ".9rem 1rem", display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "center" }}>
-                    <div>
+                  <div key={race.id} className="ba-card-soft race-manager-item">
+                    <div className="race-manager-item__content">
                       <p style={{ color: "#fff", fontWeight: 800, fontSize: 14, marginBottom: 3 }}>{race.name}</p>
-                      <p className="ba-muted" style={{ fontSize: 12 }}>{formatDate(race.dateKey)} · {race.location} · {formatDistance(race.distanceKm)}</p>
+                      <p className="ba-muted race-manager-item__meta">{formatDate(race.dateKey)} · {race.location} · {formatDistance(race.distanceKm)}</p>
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: ".55rem" }}>
                         <span className="badge badge--accent">{race.objective}</span>
                         {race.badge && <span className="badge badge--purple">{race.badge}</span>}
@@ -221,7 +221,7 @@ export default function RaceManagerClient({ initialRaces }: Props) {
                         {race.isGoal && <span className="badge badge--orange">prova-alvo</span>}
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
+                    <div className="race-manager-item__actions">
                       <button type="button" onClick={() => setForm(raceToForm(race))} className="ba-pill ba-pill-dark">Editar</button>
                       <button type="button" onClick={() => handleDelete(race)} className="ba-pill ba-pill-dark" disabled={busyId === race.id} style={{ opacity: busyId === race.id ? .55 : 1 }}>
                         Apagar
@@ -235,7 +235,7 @@ export default function RaceManagerClient({ initialRaces }: Props) {
         </div>
       </section>
 
-      <form onSubmit={handleSubmit} className="ba-card" style={{ padding: "1.5rem", position: "sticky", top: 88 }}>
+      <form onSubmit={handleSubmit} className="ba-card race-manager-panel race-manager-form-panel">
         <p className="ba-eyebrow">Cadastro</p>
         <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.75rem", color: "#fff", marginTop: 4 }}>{form.id ? "Editar prova" : "Nova prova"}</h2>
         <p className="ba-muted" style={{ marginTop: ".35rem", marginBottom: "1rem" }}>A senha administrativa será solicitada automaticamente se necessário.</p>
@@ -246,7 +246,7 @@ export default function RaceManagerClient({ initialRaces }: Props) {
             <input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder="Ex: Meia de Goiânia" style={fieldStyle} required />
           </label>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".75rem" }}>
+          <div className="race-form-grid-2">
             <label style={labelStyle}>
               <span className="ba-label">Data</span>
               <input value={form.dateKey} onChange={(e) => update("dateKey", e.target.value)} type="date" style={fieldStyle} required />
@@ -267,7 +267,7 @@ export default function RaceManagerClient({ initialRaces }: Props) {
             <input value={form.objective} onChange={(e) => update("objective", e.target.value)} placeholder="Treino / All-in / Sub-3:45" style={fieldStyle} />
           </label>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".75rem" }}>
+          <div className="race-form-grid-2">
             <label style={labelStyle}>
               <span className="ba-label">Pace alvo</span>
               <input value={form.targetPace} onChange={(e) => update("targetPace", e.target.value)} placeholder="5:20 ou 320" style={fieldStyle} />
@@ -278,7 +278,7 @@ export default function RaceManagerClient({ initialRaces }: Props) {
             </label>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".75rem" }}>
+          <div className="race-form-grid-2">
             <label style={labelStyle}>
               <span className="ba-label">Status fixo</span>
               <select value={form.fixedStatus} onChange={(e) => update("fixedStatus", e.target.value as RaceFormState["fixedStatus"])} style={fieldStyle}>
@@ -295,7 +295,7 @@ export default function RaceManagerClient({ initialRaces }: Props) {
             </label>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".75rem" }}>
+          <div className="race-form-grid-2">
             <label style={labelStyle}>
               <span className="ba-label">Horário</span>
               <input value={form.timeLocal} onChange={(e) => update("timeLocal", e.target.value)} placeholder="07:00:00" style={fieldStyle} />
@@ -306,7 +306,7 @@ export default function RaceManagerClient({ initialRaces }: Props) {
             </label>
           </div>
 
-          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+          <div className="race-form-checks">
             <label style={checkboxLabelStyle}>
               <input type="checkbox" checked={form.featured} onChange={(e) => update("featured", e.target.checked)} />
               Aparece na temporada
@@ -317,7 +317,7 @@ export default function RaceManagerClient({ initialRaces }: Props) {
             </label>
           </div>
 
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginTop: ".35rem" }}>
+          <div className="race-form-actions">
             <button type="submit" className="ba-pill ba-pill-orange" disabled={busyId === "form"} style={{ opacity: busyId === "form" ? .55 : 1 }}>
               {busyId === "form" ? "Salvando..." : form.id ? "Salvar edição" : "Incluir prova"}
             </button>
