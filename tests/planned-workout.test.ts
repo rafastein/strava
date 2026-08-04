@@ -6,6 +6,7 @@ import {
   getIsoDatesForRange,
   getPlannedWorkoutKey,
   getStructuredWorkoutPlannedDistanceKm,
+  isCorosPlannedWorkout,
   isStructuredRunningWorkout,
   normalizeStructuredWorkout,
   PLANNED_WORKOUT_KEY_PREFIX,
@@ -116,4 +117,27 @@ test("helpers de treino estruturado diferenciam corrida de descanso", () => {
 
 test("formats planned workout labels with weekday", () => {
   assert.equal(formatPlannedWorkoutDateWithWeekdayLabel("2026-06-21"), "21/06/2026 · dom");
+});
+
+test("filtro COROS exclui treinos manuais e importados", () => {
+  const coros = normalizeStructuredWorkout({
+    date: "2026-07-25",
+    source: "coros",
+    title: "Corrida Prova 30,0",
+    distanceKm: 30,
+  });
+  const manual = normalizeStructuredWorkout({
+    date: "2026-07-26",
+    source: "manual",
+    title: "Longão controlado",
+    distanceKm: 15,
+  });
+  const imported = normalizeStructuredWorkout({
+    date: "2026-07-27",
+    source: "import",
+    title: "Treino importado",
+    distanceKm: 18,
+  });
+
+  assert.deepEqual([coros, manual, imported].filter(isCorosPlannedWorkout), [coros]);
 });

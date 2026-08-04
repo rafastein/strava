@@ -113,6 +113,12 @@ function getNestedRecord(input: Record<string, unknown>, key: string) {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
 }
 
+export function isCorosPlannedWorkout(
+  workout: StructuredPlannedWorkout | null | undefined,
+): workout is StructuredPlannedWorkout {
+  return workout?.source === "coros";
+}
+
 export function getTodayIsoDate(date = new Date()) {
   return new Intl.DateTimeFormat("sv-SE", {
     timeZone: "America/Sao_Paulo",
