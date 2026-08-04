@@ -7,6 +7,7 @@ import type { ManagedRace, SeasonRaceStatus } from "../lib/race-calendar";
 
 type Props = {
   initialRaces: ManagedRace[];
+  todayKey: string;
 };
 
 type RaceFormState = {
@@ -118,7 +119,7 @@ function monthLabel(dateKey: string) {
   return new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(new Date(year, month - 1, 1));
 }
 
-export default function RaceManagerClient({ initialRaces }: Props) {
+export default function RaceManagerClient({ initialRaces, todayKey }: Props) {
   const router = useRouter();
   const [form, setForm] = useState<RaceFormState>(EMPTY_FORM);
   const [status, setStatus] = useState("");
@@ -127,11 +128,12 @@ export default function RaceManagerClient({ initialRaces }: Props) {
   const grouped = useMemo(() => {
     const map = new Map<string, ManagedRace[]>();
     for (const race of initialRaces) {
+      if (race.dateKey < todayKey) continue;
       const label = monthLabel(race.dateKey);
       map.set(label, [...(map.get(label) ?? []), race]);
     }
     return Array.from(map.entries());
-  }, [initialRaces]);
+  }, [initialRaces, todayKey]);
 
   function update<K extends keyof RaceFormState>(key: K, value: RaceFormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -199,12 +201,18 @@ export default function RaceManagerClient({ initialRaces }: Props) {
         <div className="race-manager-heading">
           <div>
             <p className="ba-eyebrow">Calendário salvo</p>
-            <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.75rem", color: "#fff", marginTop: 4 }}>Provas cadastradas</h2>
-            <p className="ba-muted" style={{ marginTop: ".35rem" }}>Essas provas alimentam Home, Longões e calendário da temporada.</p>
+            <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.75rem", color: "#fff", marginTop: 4 }}>Próximas provas</h2>
+            <p className="ba-muted" style={{ marginTop: ".35rem" }}>A lista mostra apenas provas de hoje em diante. As anteriores continuam salvas no calendário.</p>
           </div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          {grouped.length === 0 && (
+            <div className="ba-card-soft" style={{ padding: "1rem" }}>
+              <p style={{ color: "#fff", fontWeight: 800 }}>Nenhuma prova futura cadastrada.</p>
+              <p className="ba-muted" style={{ marginTop: ".35rem", fontSize: 13 }}>Use o formulário ao lado para incluir a próxima prova.</p>
+            </div>
+          )}
           {grouped.map(([label, races]) => (
             <div key={label}>
               <p className="ba-label" style={{ marginBottom: ".6rem", textTransform: "capitalize" }}>{label}</p>
@@ -249,7 +257,7 @@ export default function RaceManagerClient({ initialRaces }: Props) {
           <div className="race-form-grid-2">
             <label style={labelStyle}>
               <span className="ba-label">Data</span>
-              <input value={form.dateKey} onChange={(e) => update("dateKey", e.target.value)} type="date" style={fieldStyle} required />
+              <input value={form.dateKey} onChange={(e) => update("dateKey", e.target.value)} type="date" min={todayKey} style={fieldStyle} required />
             </label>
             <label style={labelStyle}>
               <span className="ba-label">Distância km</span>

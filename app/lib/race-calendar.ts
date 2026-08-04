@@ -80,6 +80,7 @@ export const BUENOS_AIRES_MARATHON_DISTANCE_KM = 42.195;
 const RACE_CALENDAR_KEY = "race-calendar:2026";
 const DEFAULT_RACE_TIME = "07:00:00";
 const DEFAULT_RACE_TIMEZONE = "-03:00";
+const RACE_CALENDAR_TIME_ZONE = "America/Sao_Paulo";
 const MONTH_LABELS = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
 const S1_MONTH_INDEXES = new Set([0, 1, 2, 3, 4, 5]);
 
@@ -201,9 +202,22 @@ export function isBrazilManagedRace(race: Pick<ManagedRace, "location" | "timezo
   return ["-02:00", "-03:00", "-04:00", "-05:00"].includes(offset);
 }
 
+export function getRaceCalendarTodayKey(now = new Date()) {
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: RACE_CALENDAR_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
+export function getUpcomingManagedRaces(races: ManagedRace[], todayKey: string) {
+  return sortRaces(races).filter((race) => race.dateKey >= todayKey);
+}
+
 export function getUpcomingBrazilManagedRaces(races: ManagedRace[], todayKey: string, limit = 8) {
-  return sortRaces(races)
-    .filter((race) => race.dateKey >= todayKey && isBrazilManagedRace(race))
+  return getUpcomingManagedRaces(races, todayKey)
+    .filter((race) => isBrazilManagedRace(race))
     .slice(0, limit);
 }
 
