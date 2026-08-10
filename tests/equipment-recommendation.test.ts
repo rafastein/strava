@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  buildSequentialShoeRecommendations,
   classifyEquipmentWorkout,
   getTodayEquipmentWorkout,
   inferShoeProfile,
@@ -262,4 +263,102 @@ test("tênis sem histórico de último uso não recebe bônus artificial de rota
   );
 
   assert.equal(score.reasons.some((reason) => reason.includes("sem uso")), false);
+});
+
+
+test("recomendações futuras avançam o rodízio entre treinos do mesmo tipo", () => {
+  const rotationShoes: GearForRecommendation[] = [
+    {
+      gearId: "ms5",
+      name: "ASICS Magic Speed 5",
+      brand: "asics",
+      totalKm: 100,
+      maxKm: 600,
+      lastUse: "2026-07-01T08:00:00-03:00",
+    },
+    {
+      gearId: "deviate",
+      name: "PUMA Deviate Nitro 3",
+      brand: "puma",
+      totalKm: 100,
+      maxKm: 700,
+      lastUse: "2026-07-10T08:00:00-03:00",
+    },
+    {
+      gearId: "evo",
+      name: "Adidas Evo SL",
+      brand: "adidas",
+      totalKm: 100,
+      maxKm: 800,
+      lastUse: "2026-07-20T08:00:00-03:00",
+    },
+  ];
+
+  const intervalado = (date: string) => ({
+    date,
+    workout: {
+      status: "planned" as const,
+      type: "intervalado" as const,
+      label: "Intervalado",
+      dateLabel: date,
+      distanceKm: 10,
+      source: "structured-workout" as const,
+      evidence: [],
+    },
+  });
+
+  const recommendations = buildSequentialShoeRecommendations(
+    rotationShoes,
+    [intervalado("2026-08-11"), intervalado("2026-08-13"), intervalado("2026-08-18")],
+    { startDateIso: "2026-08-10" },
+  );
+
+  assert.equal(recommendations.get("2026-08-11")?.name, "ASICS Magic Speed 5");
+  assert.equal(recommendations.get("2026-08-13")?.name, "PUMA Deviate Nitro 3");
+  assert.equal(recommendations.get("2026-08-18")?.name, "Adidas Evo SL");
+});
+
+test("recomendação passada não contamina o rodízio virtual do futuro", () => {
+  const rotationShoes: GearForRecommendation[] = [
+    {
+      gearId: "ms5",
+      name: "ASICS Magic Speed 5",
+      brand: "asics",
+      totalKm: 50,
+      maxKm: 600,
+      lastUse: "2026-07-01T08:00:00-03:00",
+    },
+    {
+      gearId: "evo",
+      name: "Adidas Evo SL",
+      brand: "adidas",
+      totalKm: 50,
+      maxKm: 800,
+      lastUse: "2026-07-20T08:00:00-03:00",
+    },
+  ];
+
+  const makeWorkout = (date: string) => ({
+    date,
+    workout: {
+      status: "planned" as const,
+      type: "intervalado" as const,
+      label: "Intervalado",
+      dateLabel: date,
+      distanceKm: 10,
+      source: "structured-workout" as const,
+      evidence: [],
+    },
+  });
+
+  const recommendations = buildSequentialShoeRecommendations(
+    rotationShoes,
+    [makeWorkout("2026-08-06"), makeWorkout("2026-08-11")],
+    {
+      startDateIso: "2026-08-10",
+      pastReferenceDate: new Date("2026-08-10T12:00:00-03:00"),
+    },
+  );
+
+  assert.equal(recommendations.get("2026-08-11")?.name, "ASICS Magic Speed 5");
 });

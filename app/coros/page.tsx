@@ -16,7 +16,7 @@ import {
 import { getSisrunDataWithSource } from "../lib/sisrun-utils";
 import { getStravaActivities, getStravaAthlete, STRAVA_2024_START_EPOCH, isRunActivity, type StravaActivitySummary, type StravaGear } from "../lib/strava-client";
 import { buildGearRecommendationSummaries } from "../lib/equipment-strava-summary";
-import { getEquipmentWorkoutFromStructuredWorkout, pickRecommendedShoeForWorkout } from "../lib/equipment-recommendation";
+import { buildSequentialShoeRecommendations, getEquipmentWorkoutFromStructuredWorkout } from "../lib/equipment-recommendation";
 
 type WorkoutCompletionStatus = "done" | "off_target" | "today" | "missed" | "future";
 
@@ -125,12 +125,20 @@ export default async function CorosPage() {
   });
   const todayStatusStyle = getWorkoutStatusCardStyle(todayStatus);
 
+  const sequentialRecommendations = buildSequentialShoeRecommendations(
+    gears,
+    savedWorkouts.map((result) => ({
+      date: result.data.date,
+      workout: getEquipmentWorkoutFromStructuredWorkout(result.data),
+    })),
+    { startDateIso: todayIso },
+  );
+
   const recommendationByDate = new Map(
-    savedWorkouts.map((result) => {
-      const workout = getEquipmentWorkoutFromStructuredWorkout(result.data);
-      const recommendation = pickRecommendedShoeForWorkout(gears, workout);
-      return [result.data.date, recommendation?.name ?? null] as const;
-    }),
+    savedWorkouts.map((result) => [
+      result.data.date,
+      sequentialRecommendations.get(result.data.date)?.name ?? null,
+    ] as const),
   );
 
   return (

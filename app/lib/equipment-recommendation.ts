@@ -705,3 +705,63 @@ export function pickRecommendedShoeForWorkout(
 
   return ranked[0] ?? null;
 }
+
+export type DatedEquipmentWorkout = {
+  date: string;
+  workout: EquipmentWorkout;
+};
+
+function getReferenceDateForIsoDate(dateIso: string) {
+  const parsed = new Date(`${dateIso}T12:00:00-03:00`);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
+/**
+ * Monta recomendações em ordem cronológica e trata cada recomendação futura
+ * como um uso virtual do tênis escolhido. Assim, treinos seguintes passam a
+ * enxergar aquele modelo como recém-usado e o rodízio avança para outro tênis
+ * adequado que esteja há mais tempo parado.
+ *
+ * Datas anteriores a startDateIso não alteram o estado virtual: o histórico
+ * real do Strava continua sendo a fonte de verdade para o passado.
+ */
+export function buildSequentialShoeRecommendations(
+  gears: GearForRecommendation[],
+  datedWorkouts: DatedEquipmentWorkout[],
+  options?: {
+    startDateIso?: string;
+    pastReferenceDate?: Date;
+  },
+) {
+  const startDateIso = options?.startDateIso;
+  const pastReferenceDate = options?.pastReferenceDate ?? new Date();
+  const virtualGears = gears.map((gear) => ({ ...gear }));
+  const recommendations = new Map<string, ShoeRecommendation | null>();
+
+  const orderedWorkouts = [...datedWorkouts].sort((a, b) => a.date.localeCompare(b.date));
+
+  orderedWorkouts.forEach(({ date, workout }) => {
+    const isSequentialDate = !startDateIso || date >= startDateIso;
+    const recommendation = pickRecommendedShoeForWorkout(
+      isSequentialDate ? virtualGears : gears,
+      workout,
+      isSequentialDate ? getReferenceDateForIsoDate(date) : pastReferenceDate,
+    );
+
+    recommendations.set(date, recommendation);
+
+    if (!isSequentialDate || !recommendation) return;
+
+    const selectedGear = virtualGears.find((gear) =>
+      recommendation.gearId
+        ? gear.gearId === recommendation.gearId
+        : gear.name === recommendation.name,
+    );
+
+    if (selectedGear) {
+      selectedGear.lastUse = `${date}T12:00:00-03:00`;
+    }
+  });
+
+  return recommendations;
+}
