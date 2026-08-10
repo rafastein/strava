@@ -1,5 +1,20 @@
 export type WorkoutCompletionStatus = "done" | "off_target" | "today" | "missed" | "future";
 
+export type SavedRaceCard = {
+  id: string;
+  date: string;
+  name: string;
+  location: string;
+  distanceKm: number;
+  objective: string;
+  targetPaceSecPerKm?: number | null;
+  isGoal?: boolean;
+  href?: string;
+  actualKm?: number | null;
+  shoeName: string | null;
+  status: WorkoutCompletionStatus;
+};
+
 export type SavedWorkoutCard = {
   redisKey: string;
   date: string;
@@ -23,6 +38,8 @@ export type CalendarCell = {
   isToday: boolean;
   status: WorkoutCompletionStatus | "empty";
   workout?: SavedWorkoutCard;
+  races: SavedRaceCard[];
+  shoeName: string | null;
 };
 
 export type MonthOption = {

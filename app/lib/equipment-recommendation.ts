@@ -24,7 +24,7 @@ export type EquipmentWorkout = {
   label: string;
   dateLabel: string;
   distanceKm: number | null;
-  source: "structured-workout" | "sisrun-workout" | "sisrun-row" | "none";
+  source: "structured-workout" | "race-calendar" | "sisrun-workout" | "sisrun-row" | "none";
   evidence: string[];
   plannedWorkout?: SisrunWorkout | null;
   sisrunRow?: SisrunRow | null;
@@ -412,6 +412,39 @@ export function classifyEquipmentWorkout(
   return "rodagem";
 }
 
+
+export type RaceEquipmentInput = {
+  dateKey: string;
+  name: string;
+  distanceKm: number;
+  location?: string | null;
+  objective?: string | null;
+};
+
+export function getEquipmentWorkoutFromRace(
+  race: RaceEquipmentInput,
+): EquipmentWorkout {
+  const distanceKm = Number.isFinite(race.distanceKm) && race.distanceKm > 0
+    ? race.distanceKm
+    : null;
+  const type: EquipmentWorkoutType = (distanceKm ?? 0) <= 10
+    ? "prova_curta"
+    : "prova_longa";
+
+  return {
+    status: "planned",
+    type,
+    label: getWorkoutLabel(type),
+    dateLabel: formatPlannedWorkoutDateLabel(race.dateKey),
+    distanceKm,
+    source: "race-calendar",
+    evidence: [
+      `Prova: ${race.name}`,
+      race.location ? `Local: ${race.location}` : null,
+      race.objective ? `Objetivo: ${race.objective}` : null,
+    ].filter((item): item is string => Boolean(item)),
+  };
+}
 
 export function getEquipmentWorkoutFromStructuredWorkout(
   structuredWorkout: StructuredPlannedWorkout,

@@ -16,7 +16,12 @@ import {
 import { getSisrunDataWithSource } from "../lib/sisrun-utils";
 import { getStravaActivities, getStravaAthlete, STRAVA_2024_START_EPOCH, isRunActivity, type StravaActivitySummary, type StravaGear } from "../lib/strava-client";
 import { buildGearRecommendationSummaries } from "../lib/equipment-strava-summary";
-import { buildSequentialShoeRecommendations, getEquipmentWorkoutFromStructuredWorkout } from "../lib/equipment-recommendation";
+import {
+  buildSequentialShoeRecommendations,
+  getEquipmentWorkoutFromRace,
+  getEquipmentWorkoutFromStructuredWorkout,
+} from "../lib/equipment-recommendation";
+import { getRaceCalendarData, type ManagedRace } from "../lib/race-calendar";
 
 type WorkoutCompletionStatus = "done" | "off_target" | "today" | "missed" | "future";
 
@@ -85,6 +90,15 @@ function getWorkoutStatusCardStyle(status: WorkoutCompletionStatus) {
   };
 }
 
+
+function pickRaceForRecommendation(races: ManagedRace[]) {
+  return [...races].sort((a, b) => {
+    const goalDiff = Number(Boolean(b.isGoal)) - Number(Boolean(a.isGoal));
+    if (goalDiff !== 0) return goalDiff;
+    return b.distanceKm - a.distanceKm || a.name.localeCompare(b.name, "pt-BR");
+  })[0] ?? null;
+}
+
 const SAMPLE_JSON = `{
   "date": "2026-06-11",
   "source": "coros",
@@ -102,12 +116,13 @@ const SAMPLE_JSON = `{
 
 export default async function CorosPage() {
   const todayIso = getTodayIsoDate();
-  const [todayWorkoutResult, nextWorkouts, sisrunResult, activities, athlete] = await Promise.all([
+  const [todayWorkoutResult, nextWorkouts, sisrunResult, activities, athlete, raceCalendar] = await Promise.all([
     getStructuredPlannedWorkout(todayIso),
     getAllStructuredPlannedWorkouts(),
     getSisrunDataWithSource(),
     getStravaActivities({ after: STRAVA_2024_START_EPOCH, maxPages: 20 }),
     getStravaAthlete(),
+    getRaceCalendarData(),
   ]);
 
   const sisrunSummary = buildSisrunFallbackWorkoutSummary(sisrunResult.data);
@@ -125,19 +140,39 @@ export default async function CorosPage() {
   });
   const todayStatusStyle = getWorkoutStatusCardStyle(todayStatus);
 
+  const structuredWorkoutByDate = new Map(
+    savedWorkouts.map((result) => [result.data.date, result.data] as const),
+  );
+  const racesByDate = new Map<string, ManagedRace[]>();
+  raceCalendar.races.forEach((race) => {
+    racesByDate.set(race.dateKey, [...(racesByDate.get(race.dateKey) ?? []), race]);
+  });
+
+  const recommendationDates = Array.from(new Set([
+    ...savedWorkouts.map((result) => result.data.date),
+    ...raceCalendar.races.map((race) => race.dateKey),
+  ])).sort();
+
   const sequentialRecommendations = buildSequentialShoeRecommendations(
     gears,
-    savedWorkouts.map((result) => ({
-      date: result.data.date,
-      workout: getEquipmentWorkoutFromStructuredWorkout(result.data),
-    })),
+    recommendationDates.map((date) => {
+      const race = pickRaceForRecommendation(racesByDate.get(date) ?? []);
+      const structuredWorkout = structuredWorkoutByDate.get(date);
+
+      return {
+        date,
+        workout: race
+          ? getEquipmentWorkoutFromRace(race)
+          : getEquipmentWorkoutFromStructuredWorkout(structuredWorkout!),
+      };
+    }),
     { startDateIso: todayIso },
   );
 
   const recommendationByDate = new Map(
-    savedWorkouts.map((result) => [
-      result.data.date,
-      sequentialRecommendations.get(result.data.date)?.name ?? null,
+    recommendationDates.map((date) => [
+      date,
+      sequentialRecommendations.get(date)?.name ?? null,
     ] as const),
   );
 
@@ -212,10 +247,32 @@ export default async function CorosPage() {
         </section>
 
         <section className="ba-section ba-card" style={{ padding: "1.5rem" }}>
-          <p className="ba-eyebrow">Todos os treinos</p>
-          <h2 className="ba-title" style={{ fontSize: "1.7rem", marginTop: 4 }}>Treinos estruturados salvos</h2>
+          <p className="ba-eyebrow">Agenda integrada</p>
+          <h2 className="ba-title" style={{ fontSize: "1.7rem", marginTop: 4 }}>Treinos COROS + provas</h2>
+          <p className="ba-muted" style={{ marginTop: ".5rem" }}>
+            O calendário combina os treinos estruturados salvos do COROS com as provas cadastradas na página Provas. Quando os dois caem no mesmo dia, a prova tem prioridade na recomendação de tênis.
+          </p>
           <CorosSavedWorkoutsList
             todayDate={todayIso}
+            races={raceCalendar.races.map((race) => ({
+              id: race.id,
+              date: race.dateKey,
+              name: race.name,
+              location: race.location,
+              distanceKm: race.distanceKm,
+              objective: race.objective,
+              targetPaceSecPerKm: race.targetPaceSecPerKm,
+              isGoal: race.isGoal,
+              href: race.href,
+              actualKm: actualRunKmByDate.get(race.dateKey) ?? 0,
+              shoeName: recommendationByDate.get(race.dateKey) ?? null,
+              status: getWorkoutCompletionStatus({
+                date: race.dateKey,
+                plannedDistanceKm: race.distanceKm,
+                actualKm: actualRunKmByDate.get(race.dateKey) ?? 0,
+                todayIso,
+              }),
+            }))}
             workouts={savedWorkouts.map((result) => ({
               redisKey: result.key,
               date: result.data.date,

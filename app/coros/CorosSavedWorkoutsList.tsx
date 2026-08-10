@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import CorosCalendarDesktop from "./CorosCalendarDesktop";
 import CorosCalendarLegend from "./CorosCalendarLegend";
 import CorosCalendarMobile from "./CorosCalendarMobile";
-import type { CalendarCell, SavedWorkoutCard } from "./types";
+import type { CalendarCell, SavedRaceCard, SavedWorkoutCard } from "./types";
 import {
   buildCalendarCells,
   buildMonthOptions,
@@ -20,13 +20,13 @@ type DeleteResponse = {
   error?: string;
 };
 
-export default function CorosSavedWorkoutsList({ workouts, todayDate }: { workouts: SavedWorkoutCard[]; todayDate?: string }) {
+export default function CorosSavedWorkoutsList({ workouts, races, todayDate }: { workouts: SavedWorkoutCard[]; races: SavedRaceCard[]; todayDate?: string }) {
   const [items, setItems] = useState(workouts);
   const [adminSecret, setAdminSecret] = useState("");
   const [deletingDate, setDeletingDate] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  const monthOptions = useMemo(() => buildMonthOptions(items), [items]);
+  const monthOptions = useMemo(() => buildMonthOptions([...items, ...races]), [items, races]);
   const [currentMonthKey, setCurrentMonthKey] = useState(() => getInitialMonthKey(monthOptions, todayDate));
 
   const effectiveMonthKey = monthOptions.some((month) => month.key === currentMonthKey)
@@ -41,11 +41,21 @@ export default function CorosSavedWorkoutsList({ workouts, todayDate }: { workou
     [effectiveMonthKey, items],
   );
 
+  const monthRaces = useMemo(
+    () => races.filter((race) => race.date.startsWith(`${effectiveMonthKey}-`)).sort((a, b) => a.date.localeCompare(b.date)),
+    [effectiveMonthKey, races],
+  );
+
   const workoutByDate = useMemo(() => new Map(monthItems.map((item) => [item.date, item])), [monthItems]);
+  const racesByDate = useMemo(() => {
+    const map = new Map<string, SavedRaceCard[]>();
+    monthRaces.forEach((race) => map.set(race.date, [...(map.get(race.date) ?? []), race]));
+    return map;
+  }, [monthRaces]);
   const calendarCells = useMemo(() => {
     if (!activeMonth) return [] as CalendarCell[];
-    return buildCalendarCells(activeMonth.year, activeMonth.monthIndex, workoutByDate, todayDate);
-  }, [activeMonth, todayDate, workoutByDate]);
+    return buildCalendarCells(activeMonth.year, activeMonth.monthIndex, workoutByDate, racesByDate, todayDate);
+  }, [activeMonth, racesByDate, todayDate, workoutByDate]);
   const monthVisibleCells = useMemo(() => calendarCells.filter((cell) => cell.inCurrentMonth), [calendarCells]);
 
   async function handleDelete(workout: SavedWorkoutCard) {
@@ -81,10 +91,10 @@ export default function CorosSavedWorkoutsList({ workouts, todayDate }: { workou
     }
   }
 
-  if (items.length === 0) {
+  if (items.length === 0 && races.length === 0) {
     return (
       <p className="ba-muted" style={{ marginTop: "1rem", fontSize: 13 }}>
-        Nenhum treino estruturado salvo no Upstash. Importe a agenda COROS abaixo para preencher esta lista.
+        Nenhum treino estruturado do COROS nem prova cadastrada para exibir no calendário.
       </p>
     );
   }
@@ -112,7 +122,7 @@ export default function CorosSavedWorkoutsList({ workouts, todayDate }: { workou
               {activeMonth?.label ?? "Calendário"}
             </p>
             <p className="ba-muted" style={{ marginTop: 4, fontSize: 12 }}>
-              {monthItems.length} treino{monthItems.length === 1 ? "" : "s"} com distância exibida por dia.
+              {monthItems.length} treino{monthItems.length === 1 ? "" : "s"} COROS · {monthRaces.length} prova{monthRaces.length === 1 ? "" : "s"}.
             </p>
           </div>
 

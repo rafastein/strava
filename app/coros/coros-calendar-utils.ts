@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { CalendarCell, MonthOption, SavedWorkoutCard } from "./types";
+import type { CalendarCell, MonthOption, SavedRaceCard, SavedWorkoutCard } from "./types";
 
 export const WEEKDAY_HEADERS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
@@ -18,7 +18,7 @@ const MONTH_NAMES = [
   "Dezembro",
 ];
 
-export function buildMonthOptions(items: SavedWorkoutCard[]): MonthOption[] {
+export function buildMonthOptions(items: Array<{ date: string }>): MonthOption[] {
   const unique = Array.from(new Set(items.map((item) => item.date.slice(0, 7)))).sort();
 
   return unique.map((key) => {
@@ -71,9 +71,9 @@ export function formatPlannedWorkoutSummary(workout: SavedWorkoutCard) {
     .join(" · ");
 }
 
-export function formatCompletionRatio(workout: SavedWorkoutCard) {
-  const plannedKm = workout.distanceKm;
-  const actualKm = workout.actualKm;
+export function formatCompletionRatio(item: { distanceKm?: number | null; actualKm?: number | null }) {
+  const plannedKm = item.distanceKm;
+  const actualKm = item.actualKm;
 
   if (
     typeof plannedKm !== "number" ||
@@ -93,6 +93,7 @@ export function buildCalendarCells(
   year: number,
   monthIndex: number,
   workoutByDate: Map<string, SavedWorkoutCard>,
+  racesByDate: Map<string, SavedRaceCard[]>,
   todayDate?: string,
 ): CalendarCell[] {
   const firstOfMonth = new Date(year, monthIndex, 1);
@@ -106,6 +107,7 @@ export function buildCalendarCells(
   for (const date = new Date(gridStart); date <= gridEnd; date.setDate(date.getDate() + 1)) {
     const isoDate = formatIsoDate(date);
     const workout = workoutByDate.get(isoDate);
+    const races = racesByDate.get(isoDate) ?? [];
     const isToday = todayDate === isoDate;
     cells.push({
       isoDate,
@@ -113,8 +115,10 @@ export function buildCalendarCells(
       shortDateLabel: `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}`,
       inCurrentMonth: date.getMonth() === monthIndex,
       isToday,
-      status: workout?.status ?? "empty",
+      status: races[0]?.status ?? workout?.status ?? "empty",
       workout,
+      races,
+      shoeName: races[0]?.shoeName ?? workout?.shoeName ?? null,
     });
   }
 

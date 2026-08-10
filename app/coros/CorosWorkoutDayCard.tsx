@@ -1,4 +1,4 @@
-import type { CalendarCell, WorkoutDeleteHandler } from "./types";
+import type { CalendarCell, SavedRaceCard, WorkoutDeleteHandler } from "./types";
 import {
   deleteButtonStyle,
   formatCompletionRatio,
@@ -18,8 +18,43 @@ type Props = {
   onDelete: WorkoutDeleteHandler;
 };
 
+function RaceDetails({ race, compact = false }: { race: SavedRaceCard; compact?: boolean }) {
+  return (
+    <div
+      style={{
+        marginTop: compact ? 7 : 9,
+        borderRadius: 12,
+        border: "1px solid rgba(249,115,22,0.28)",
+        background: "rgba(249,115,22,0.08)",
+        padding: compact ? ".55rem .65rem" : ".65rem .75rem",
+      }}
+    >
+      <p style={{ color: "#fdba74", fontSize: 10, fontWeight: 900, letterSpacing: ".08em", textTransform: "uppercase" }}>
+        Prova{race.isGoal ? " · alvo" : ""}
+      </p>
+      <p style={{ marginTop: 3, color: "var(--text)", fontSize: compact ? 12 : 13, fontWeight: 800, lineHeight: 1.25 }}>
+        {race.name}
+      </p>
+      <p className="ba-muted" style={{ marginTop: 4, fontSize: 11, lineHeight: 1.35 }}>
+        {formatDistance(race.distanceKm)} · {race.location}
+      </p>
+      {race.objective && (
+        <p className="ba-muted" style={{ marginTop: 3, fontSize: 11, lineHeight: 1.35 }}>
+          Objetivo · {race.objective}
+        </p>
+      )}
+      {race.actualKm && race.actualKm > 0 && (
+        <p className="ba-muted" style={{ marginTop: 3, fontSize: 11 }}>
+          Feito · {formatDistance(race.actualKm)}{formatCompletionRatio(race)}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function CorosWorkoutDayCard({ cell, isDeleting, adminSecret, weekday, layout, onDelete }: Props) {
   const workout = cell.workout;
+  const hasRace = cell.races.length > 0;
   const isMobile = layout === "mobile";
 
   if (isMobile) {
@@ -32,22 +67,29 @@ export default function CorosWorkoutDayCard({ cell, isDeleting, adminSecret, wee
               {cell.isToday ? " · Hoje" : ""}
             </p>
             <p style={{ marginTop: 6, fontWeight: 800, color: "var(--text)", fontSize: 15, lineHeight: 1.3 }}>
-              {workout?.type ?? "Sem treino estruturado"}
+              {hasRace ? cell.races[0].name : workout?.type ?? "Sem treino estruturado"}
             </p>
           </div>
           {workout && <DeleteWorkoutButton workoutDateLabel={workout.dateLabel} disabled={!adminSecret || isDeleting} isDeleting={isDeleting} onClick={() => onDelete(workout)} />}
         </div>
 
+        {cell.races.map((race) => <RaceDetails key={race.id} race={race} />)}
+
         {workout ? (
           <div style={{ marginTop: 10, display: "grid", gap: 6 }}>
-            <p className="ba-muted" style={{ fontSize: 13 }}>Planejado · {formatPlannedWorkoutSummary(workout)}</p>
-            {workout.actualKm && workout.actualKm > 0 && (
+            <p className="ba-muted" style={{ fontSize: 13 }}>
+              COROS · <strong style={{ color: "var(--text)" }}>{workout.type}</strong> · {formatPlannedWorkoutSummary(workout)}
+            </p>
+            {workout.actualKm && workout.actualKm > 0 && !hasRace && (
               <p className="ba-muted" style={{ fontSize: 13 }}>Feito · {formatDistance(workout.actualKm)}{formatCompletionRatio(workout)}</p>
             )}
-            <p className="ba-muted" style={{ fontSize: 13 }}>Tênis · {workout.shoeName ?? "sem recomendação"}</p>
           </div>
-        ) : (
+        ) : !hasRace ? (
           <p className="ba-muted" style={{ marginTop: 10, fontSize: 13 }}>Dia sem treino estruturado.</p>
+        ) : null}
+
+        {(workout || hasRace) && (
+          <p className="ba-muted" style={{ marginTop: 8, fontSize: 13 }}>Tênis · {cell.shoeName ?? "sem recomendação"}</p>
         )}
       </div>
     );
@@ -64,29 +106,34 @@ export default function CorosWorkoutDayCard({ cell, isDeleting, adminSecret, wee
         {workout && <DeleteWorkoutButton workoutDateLabel={workout.dateLabel} disabled={!adminSecret || isDeleting} isDeleting={isDeleting} onClick={() => onDelete(workout)} />}
       </div>
 
+      {cell.races.map((race) => <RaceDetails key={race.id} race={race} compact />)}
+
       {workout ? (
-        <div style={{ marginTop: 10 }}>
+        <div style={{ marginTop: hasRace ? 8 : 10 }}>
           <p style={{ fontWeight: 800, color: "var(--text)", fontSize: 13, lineHeight: 1.3 }}>
-            {workout.type}
+            {hasRace ? `COROS · ${workout.type}` : workout.type}
           </p>
           <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
             Planejado · {formatPlannedWorkoutSummary(workout)}
           </p>
-          {workout.actualKm && workout.actualKm > 0 && (
+          {workout.actualKm && workout.actualKm > 0 && !hasRace && (
             <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
               Feito · {formatDistance(workout.actualKm)}{formatCompletionRatio(workout)}
             </p>
           )}
-          <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
-            Tênis · {workout.shoeName ?? "sem recomendação"}
-          </p>
         </div>
-      ) : (
+      ) : !hasRace ? (
         <div style={{ marginTop: 10 }}>
           <p className="ba-muted" style={{ fontSize: 12, color: cell.inCurrentMonth ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.2)" }}>
             Sem treino estruturado.
           </p>
         </div>
+      ) : null}
+
+      {(workout || hasRace) && (
+        <p className="ba-muted" style={{ marginTop: 6, fontSize: 12 }}>
+          Tênis · {cell.shoeName ?? "sem recomendação"}
+        </p>
       )}
     </div>
   );

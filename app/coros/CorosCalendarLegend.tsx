@@ -1,5 +1,12 @@
 const STATUS_LEGEND_ITEMS = [
   {
+    label: "Prova",
+    detail: "cadastro central de Provas",
+    color: "#fdba74",
+    background: "rgba(249,115,22,0.08)",
+    border: "rgba(249,115,22,0.28)",
+  },
+  {
     label: "Feito",
     detail: "80–120% do planejado",
     color: "#86efac",

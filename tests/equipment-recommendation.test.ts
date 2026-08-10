@@ -4,6 +4,7 @@ import {
   buildSequentialShoeRecommendations,
   classifyEquipmentWorkout,
   getTodayEquipmentWorkout,
+  getEquipmentWorkoutFromRace,
   inferShoeProfile,
   getShoeMaxKm,
   pickRecommendedShoeForWorkout,
@@ -18,6 +19,42 @@ const shoes: GearForRecommendation[] = [
   { gearId: "ap4", name: "Adidas Adios Pro 4", brand: "adidas", totalKm: 20, maxKm: 500 },
   { gearId: "cloud", name: "On Cloudsurfer Next", brand: "on", totalKm: 220, maxKm: 700 },
 ];
+
+test("prova cadastrada vira prova curta ou longa para recomendação de equipamento", () => {
+  const curta = getEquipmentWorkoutFromRace({
+    dateKey: "2026-08-22",
+    name: "Quatro Poderes 10K",
+    location: "Brasília",
+    distanceKm: 10,
+    objective: "Treino",
+  });
+  const longa = getEquipmentWorkoutFromRace({
+    dateKey: "2026-09-20",
+    name: "Buenos Aires",
+    location: "Buenos Aires, Argentina",
+    distanceKm: 42.195,
+    objective: "Sub-3:45",
+  });
+
+  assert.equal(curta.type, "prova_curta");
+  assert.equal(curta.source, "race-calendar");
+  assert.equal(longa.type, "prova_longa");
+  assert.equal(longa.distanceKm, 42.195);
+  assert.ok(longa.evidence.some((item) => item.includes("Buenos Aires")));
+});
+
+test("prova cadastrada pode comandar a recomendação de tênis do dia", () => {
+  const workout = getEquipmentWorkoutFromRace({
+    dateKey: "2026-08-16",
+    name: "Track & Field 15K",
+    location: "Brasília",
+    distanceKm: 15,
+    objective: "Prova",
+  });
+
+  const recommendation = pickRecommendedShoeForWorkout(shoes, workout);
+  assert.equal(recommendation?.name, "Adidas Adios Pro 4");
+});
 
 test("classifyEquipmentWorkout identifica longão por tipo ou distância", () => {
   assert.equal(
