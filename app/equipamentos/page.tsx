@@ -217,7 +217,7 @@ export default async function EquipamentosPage() {
             <p className="ba-eyebrow">Strava + COROS/treino estruturado + SisRUN</p>
             <h1 className="ba-title">Equipamentos</h1>
             <p className="ba-muted" style={{ marginTop: ".5rem" }}>
-              Quilometragem, desgaste, eficiência e recomendação dinâmica de tênis. O treino estruturado do Upstash/COROS tem prioridade; SisRUN entra como fallback.
+              Quilometragem, desgaste, eficiência e recomendação dinâmica de tênis. O motor também considera o tempo sem uso para equilibrar o rodízio entre modelos adequados ao mesmo treino. O treino estruturado do Upstash/COROS tem prioridade; SisRUN entra como fallback.
             </p>
           </div>
           <Link href="/" className="ba-back">← Voltar ao dashboard</Link>
@@ -252,7 +252,7 @@ export default async function EquipamentosPage() {
               <p className="ba-eyebrow">Motor de recomendação</p>
               <h2 className="ba-title" style={{ fontSize: "1.8rem", marginTop: 4 }}>Tênis por tipo de treino</h2>
               <p className="ba-muted" style={{ marginTop: ".4rem" }}>
-                Sugestão calculada pelo perfil do modelo, tipo do treino e desgaste acumulado. Tênis de prova são preservados automaticamente quando o dia não é prova/simulado.
+                Sugestão calculada pelo perfil do modelo, tipo do treino, desgaste acumulado e tempo desde o último uso. O rodízio só desempata modelos adequados ao treino; tênis de prova continuam preservados quando o dia não é prova/simulado.
               </p>
 
               <div className="mt-5 grid gap-3 md:grid-cols-3 lg:grid-cols-5">

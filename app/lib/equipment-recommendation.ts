@@ -535,6 +535,67 @@ export function getTodayEquipmentWorkout(
   };
 }
 
+export function getDaysSinceLastUse(
+  lastUse: string | null | undefined,
+  referenceDate = new Date(),
+): number | null {
+  if (!lastUse) return null;
+
+  const parsedLastUse = new Date(lastUse);
+  if (Number.isNaN(parsedLastUse.getTime()) || Number.isNaN(referenceDate.getTime())) {
+    return null;
+  }
+
+  const toBrazilDayOrdinal = (date: Date) => {
+    const parts = new Intl.DateTimeFormat("sv-SE", {
+      timeZone: "America/Sao_Paulo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(date);
+    const [year, month, day] = parts.split("-").map(Number);
+    return Date.UTC(year, month - 1, day) / 86_400_000;
+  };
+
+  return Math.max(0, Math.floor(toBrazilDayOrdinal(referenceDate) - toBrazilDayOrdinal(parsedLastUse)));
+}
+
+export function getShoeRotationScore(
+  lastUse: string | null | undefined,
+  referenceDate = new Date(),
+) {
+  const daysSinceLastUse = getDaysSinceLastUse(lastUse, referenceDate);
+
+  if (daysSinceLastUse === null) {
+    return { score: 0, daysSinceLastUse, reason: null as string | null };
+  }
+
+  if (daysSinceLastUse === 0) {
+    return { score: -8, daysSinceLastUse, reason: "usado hoje; o rodízio reduz a prioridade" };
+  }
+
+  if (daysSinceLastUse <= 2) {
+    return {
+      score: -4,
+      daysSinceLastUse,
+      reason: `usado há ${daysSinceLastUse} ${daysSinceLastUse === 1 ? "dia" : "dias"}; o rodízio reduz a prioridade`,
+    };
+  }
+
+  let score = 2;
+  if (daysSinceLastUse >= 45) score = 24;
+  else if (daysSinceLastUse >= 30) score = 18;
+  else if (daysSinceLastUse >= 21) score = 14;
+  else if (daysSinceLastUse >= 14) score = 10;
+  else if (daysSinceLastUse >= 7) score = 6;
+
+  return {
+    score,
+    daysSinceLastUse,
+    reason: `há ${daysSinceLastUse} dias sem uso; ganha prioridade no rodízio`,
+  };
+}
+
 function getWorkoutScoreReason(type: EquipmentWorkoutType) {
   const reasons: Record<EquipmentWorkoutType, string> = {
     regenerativo: "prioriza conforto e menor agressividade",
@@ -554,6 +615,7 @@ function getWorkoutScoreReason(type: EquipmentWorkoutType) {
 export function scoreShoeForWorkout(
   gear: GearForRecommendation,
   workoutType: EquipmentWorkoutType,
+  referenceDate = new Date(),
 ) {
   const profile = inferShoeProfile(gear.name);
   const reasons: string[] = [];
@@ -574,8 +636,21 @@ export function scoreShoeForWorkout(
     reasons.push(`também funciona bem para ${getWorkoutLabel(workoutType).toLowerCase()}`);
   }
 
-  if (!profile.strengths.includes(workoutType) && !profile.secondary?.includes(workoutType)) {
+  const isPrimaryFit = profile.strengths.includes(workoutType);
+  const isSecondaryFit = profile.secondary?.includes(workoutType) ?? false;
+
+  if (!isPrimaryFit && !isSecondaryFit) {
     score += 10;
+  }
+
+  const canUseRotationScore =
+    (isPrimaryFit || isSecondaryFit) &&
+    !(profile.raceOnly && !workoutType.startsWith("prova_"));
+
+  if (canUseRotationScore) {
+    const rotation = getShoeRotationScore(gear.lastUse, referenceDate);
+    score += rotation.score;
+    if (rotation.reason) reasons.push(rotation.reason);
   }
 
   const wearRatio = gear.totalKm / Math.max(gear.maxKm, 1);
@@ -607,12 +682,17 @@ export function scoreShoeForWorkout(
 export function pickRecommendedShoeForWorkout(
   gears: GearForRecommendation[],
   workout: EquipmentWorkout,
+  referenceDate = new Date(),
 ): ShoeRecommendation | null {
   if (workout.status !== "planned" || !workout.type) return null;
 
   const ranked = gears
     .map((gear) => {
-      const scored = scoreShoeForWorkout(gear, workout.type as EquipmentWorkoutType);
+      const scored = scoreShoeForWorkout(
+        gear,
+        workout.type as EquipmentWorkoutType,
+        referenceDate,
+      );
       return {
         ...gear,
         recommendationScore: scored.score,

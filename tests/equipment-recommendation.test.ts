@@ -6,6 +6,7 @@ import {
   inferShoeProfile,
   getShoeMaxKm,
   pickRecommendedShoeForWorkout,
+  scoreShoeForWorkout,
   type GearForRecommendation,
 } from "../app/lib/equipment-recommendation";
 import type { SisrunParsedData } from "../app/lib/sisrun-utils";
@@ -165,4 +166,100 @@ test("classifyEquipmentWorkout usa fallback de rodagem para treino genérico sem
     ),
     "rodagem",
   );
+});
+
+test("tempo sem uso prioriza o rodízio entre tênis igualmente adequados", () => {
+  const rotationShoes: GearForRecommendation[] = [
+    {
+      gearId: "novo",
+      name: "ASICS Novablast 4",
+      brand: "asics",
+      totalKm: 100,
+      maxKm: 800,
+      lastUse: "2026-08-09T08:00:00-03:00",
+    },
+    {
+      gearId: "parado",
+      name: "On Cloudsurfer Next",
+      brand: "on",
+      totalKm: 100,
+      maxKm: 700,
+      lastUse: "2026-07-20T08:00:00-03:00",
+    },
+  ];
+
+  const workout = {
+    status: "planned" as const,
+    type: "rodagem" as const,
+    label: "Rodagem",
+    dateLabel: "10/08/2026",
+    distanceKm: 10,
+    source: "sisrun-workout" as const,
+    evidence: [],
+  };
+
+  const recommendation = pickRecommendedShoeForWorkout(
+    rotationShoes,
+    workout,
+    new Date("2026-08-10T12:00:00-03:00"),
+  );
+
+  assert.equal(recommendation?.name, "On Cloudsurfer Next");
+  assert.ok(recommendation?.reasons.some((reason) => reason.includes("21 dias sem uso")));
+});
+
+test("tempo sem uso não faz opção secundária superar perfil forte sozinho", () => {
+  const rotationShoes: GearForRecommendation[] = [
+    {
+      gearId: "forte",
+      name: "Adidas Evo SL",
+      brand: "adidas",
+      totalKm: 100,
+      maxKm: 800,
+      lastUse: "2026-08-09T08:00:00-03:00",
+    },
+    {
+      gearId: "secundario",
+      name: "Adidas Boston 12",
+      brand: "adidas",
+      totalKm: 100,
+      maxKm: 700,
+      lastUse: "2026-05-01T08:00:00-03:00",
+    },
+  ];
+
+  const workout = {
+    status: "planned" as const,
+    type: "intervalado" as const,
+    label: "Intervalado",
+    dateLabel: "10/08/2026",
+    distanceKm: 9,
+    source: "sisrun-workout" as const,
+    evidence: [],
+  };
+
+  const recommendation = pickRecommendedShoeForWorkout(
+    rotationShoes,
+    workout,
+    new Date("2026-08-10T12:00:00-03:00"),
+  );
+
+  assert.equal(recommendation?.name, "Adidas Evo SL");
+});
+
+test("tênis sem histórico de último uso não recebe bônus artificial de rotação", () => {
+  const score = scoreShoeForWorkout(
+    {
+      gearId: "sem-data",
+      name: "ASICS Novablast 4",
+      brand: "asics",
+      totalKm: 0,
+      maxKm: 800,
+      lastUse: "",
+    },
+    "rodagem",
+    new Date("2026-08-10T12:00:00-03:00"),
+  );
+
+  assert.equal(score.reasons.some((reason) => reason.includes("sem uso")), false);
 });
