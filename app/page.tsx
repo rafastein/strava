@@ -6,7 +6,8 @@ import ActivitiesPanel from "./components/ActivitiesPanel";
 import WeeklyComparisonChart from "./components/WeeklyComparisonChart";
 import NextRaceCard from "./components/NextRaceCard";
 import SeasonCalendar from "./SeasonCalendar";
-import RaceCountdown from "./components/RaceCountdown";
+import BuenosAiresMilestone from "./components/BuenosAiresMilestone";
+import { findBuenosAiresMarathon } from "./lib/buenos-aires-archive";
 import TodayWorkoutCard from "./components/TodayWorkoutCard";
 import {
   buildWeeklyComparison,
@@ -19,7 +20,7 @@ import {
   type SisrunWeek,
 } from "./lib/sisrun-utils";
 import { getValidStravaAccessToken } from "./lib/strava-auth";
-import { BUENOS_AIRES_RACE_ISO, getRaceCalendarData } from "./lib/race-calendar";
+import { getRaceCalendarData } from "./lib/race-calendar";
 import {
   getStravaActivities,
   getStravaAthlete,
@@ -178,29 +179,24 @@ export default async function Home() {
         <div className="home-hero__inner">
           <div>
             <p className="ba-eyebrow" style={{ marginBottom: "1rem" }}>
-              Temporada 2026 · Buenos Aires 20/09
+              Temporada 2026 · A jornada continua
             </p>
             <h1 className="home-hero__title">
-              {athlete?.firstname ?? "Atleta"}<br />
+              {athlete?.firstname ?? "Rafael"}<br />
               <span className="home-hero__title-accent">Cabral</span>
             </h1>
             <p className="home-hero__sub">
-              Dashboard de treinos, projeções e análise de corrida. Powered by Strava + COROS/Upstash + SisRUN.
+              Treinos, evolução e próximos desafios. Cada corrida abre um novo capítulo da sua trajetória.
             </p>
             <div className="home-hero__actions">
-              <Link href="/buenos-aires" className="ba-cta">Modo maratona →</Link>
-              <Link href="/sisrun" className="ba-cta-ghost">SisRUN</Link>
+              <Link href="/provas" className="ba-cta">Próximas provas →</Link>
+              <Link href="/buenos-aires" className="ba-cta-ghost">Buenos Aires · concluído</Link>
             </div>
           </div>
 
-          {/* Countdown + Stats */}
+          {/* Conquista + estatísticas da temporada */}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div className="home-hero__countdown">
-              <p className="ba-eyebrow" style={{ marginBottom: "0.75rem", fontSize: 10 }}>
-                Buenos Aires — 20 set 2026
-              </p>
-              <RaceCountdown targetDate={BUENOS_AIRES_RACE_ISO} raceName="Buenos Aires" />
-            </div>
+            <BuenosAiresMilestone race={findBuenosAiresMarathon(activities)} />
 
             <div className="home-hero__stats-grid">
               {[

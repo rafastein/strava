@@ -1,0 +1,59 @@
+/* Buenos Aires is a completed milestone; the dashboard follows the season. */
+.home-milestone {
+  padding: 1.4rem 1.5rem;
+  border: 1px solid rgba(52, 211, 153, .24);
+  border-radius: 18px;
+  background: linear-gradient(120deg, rgba(16, 185, 129, .1), rgba(255, 255, 255, .025));
+}
+.home-milestone__heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.home-milestone__heading .ba-eyebrow { color: #6ee7b7; font-size: 10px; }
+.home-milestone__title { font-family: var(--font-display); font-size: clamp(28px, 3vw, 38px); margin: 14px 0 6px; line-height: 1.1; }
+.home-milestone__copy { font-size: 13px; line-height: 1.7; margin-bottom: 16px; }
+.ba-archive { max-width: 1200px; }
+.ba-archive-hero { display: grid; grid-template-columns: 1.35fr 1fr; align-items: center; gap: 3rem; padding: 2.5rem; margin-bottom: 1.6rem; border: 1px solid rgba(245,166,35,.22); border-radius: 24px; background: radial-gradient(ellipse at top right, rgba(245,166,35,.12), transparent 65%), rgba(255,255,255,.02); }
+.ba-archive-hero .ba-title { font-size: clamp(42px, 5.2vw, 70px); margin-top: 1rem; line-height: 1.02; }
+.ba-archive-hero .ba-title span { color: var(--accent); }
+.ba-archive-hero__copy { max-width: 530px; color: rgba(255,255,255,.62); font-size: 15px; line-height: 1.8; margin-top: 1rem; }
+.ba-archive-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .7rem; margin-top: 1.3rem; }
+.ba-archive-finish { padding: 2rem 1rem; text-align: center; border-left: 1px solid rgba(245,166,35,.2); }
+.ba-archive-finish__distance { font-family: var(--font-display); font-size: clamp(64px, 7vw, 96px); color: var(--accent); line-height: 1; margin: 24px 0 16px; }
+.ba-archive-finish__distance span { font-family: var(--font-mono); font-size: 18px; margin-left: 8px; }
+.ba-archive-finish > .ba-muted { margin-top: 8px; font-size: 12px; }
+.ba-archive-section { margin-bottom: 1.6rem; }
+.ba-card.ba-archive-section { padding: 1.6rem; }
+.ba-archive-section__head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.ba-archive h2 { color: var(--text); font-size: 21px; font-weight: 600; line-height: 1.4; margin: 5px 0; }
+.ba-archive-section__head .ba-muted { max-width: 800px; font-size: 13px; line-height: 1.7; margin-top: 8px; }
+.ba-archive-metrics > div { min-width: 0; padding: 1.15rem; }
+.ba-archive-metrics .ba-value { font-size: clamp(25px, 2.6vw, 34px); margin: 10px 0 4px; }
+.ba-archive-metrics .ba-muted { font-size: 11px; line-height: 1.6; }
+.ba-archive-note { font-size: 12px; margin-top: 1rem; line-height: 1.7; }
+.ba-archive-empty { padding: 1.2rem 0; font-size: 14px; line-height: 1.8; }
+.ba-archive-empty > p + p { margin-top: 8px; }
+.ba-card.ba-archive-empty { padding: 1.4rem; }
+.ba-archive-chart-legend { display: flex; flex-wrap: wrap; gap: 18px; font-size: 12px; margin-bottom: 1.5rem; color: var(--accent); }
+.ba-archive-chart-legend span:last-child { color: #34d399; }
+.ba-archive-chart-scroll { overflow-x: auto; padding-bottom: 8px; }
+.ba-archive-chart { min-width: 720px; display: grid; grid-template-columns: repeat(18, minmax(0, 1fr)); gap: 10px; }
+.ba-archive-week { font-family: var(--font-mono); font-size: 10px; text-align: center; color: rgba(255,255,255,.6); }
+.ba-archive-week__track { height: 170px; display: flex; flex-direction: column; justify-content: flex-end; margin: 10px 0; border-bottom: 1px solid var(--border); }
+.ba-archive-week__training { background: var(--accent); opacity: .82; border-radius: 3px 3px 0 0; }
+.ba-archive-week__race { background: #34d399; border-radius: 3px 3px 0 0; }
+.ba-archive-table-details { margin-top: 1.25rem; font-size: 13px; }
+.ba-archive-table-details summary { cursor: pointer; color: rgba(255,255,255,.7); padding: 8px 0; }
+.ba-archive-table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+.ba-archive-table th, .ba-archive-table td { padding: 10px; border-bottom: 1px solid var(--border); text-align: right; font-weight: 400; }
+.ba-archive-table th:first-child { text-align: left; }
+.ba-archive-table thead th { color: var(--accent); }
+.ba-archive-next > a { padding: 1.5rem; text-decoration: none; }
+.ba-archive-next .ba-muted { font-size: 13px; line-height: 1.8; margin-top: 10px; }
+#ciclo-buenos-aires { scroll-margin-top: 75px; }
+@media (max-width: 760px) {
+  .ba-archive-hero { grid-template-columns: 1fr; gap: 1.5rem; padding: 1.5rem; }
+  .ba-archive-finish { border-left: 0; border-top: 1px solid rgba(245,166,35,.2); padding: 1.5rem 0 .25rem; }
+  .ba-card.ba-archive-section { padding: 1.2rem; }
+  .ba-archive-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 380px) {
+  .ba-archive-metrics { grid-template-columns: 1fr; }
+}

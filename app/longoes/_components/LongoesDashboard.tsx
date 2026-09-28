@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BUENOS_AIRES_DATE_KEY, getActivityLocalDateKey } from "../../lib/buenos-aires-archive";
 import Navbar from "../../components/Navbar";
 import { getStravaActivities, isRunActivity, type StravaActivitySummary } from "../../lib/strava-client";
 import { combineSameDayRuns, type SameDayRunActivity } from "../../lib/strava-same-day-runs";
@@ -515,7 +516,11 @@ export default async function LongoesPage() {
   const allLongRuns = await getLongRunsFromActivities(activities);
   const longRuns = allLongRuns.filter((run) => getBRDateKey(run.date) >= LONG_RUN_CYCLE_START_KEY);
   const summary = getLongRunSummary(longRuns);
-  const marathonLongRunPlan = buildMarathonLongRunPlan(activities, structuredWorkouts, raceCalendarData.marathonCycleRaces);
+  const cycleActivities = activities.filter((activity) => {
+    const dateKey = getActivityLocalDateKey(activity);
+    return dateKey >= LONG_RUN_CYCLE_START_KEY && dateKey < BUENOS_AIRES_DATE_KEY;
+  });
+  const marathonLongRunPlan = buildMarathonLongRunPlan(cycleActivities, structuredWorkouts, raceCalendarData.marathonCycleRaces);
   const cyclePlanStats = getCyclePlanStats(marathonLongRunPlan);
 
   const lastLongRun = longRuns[0] ?? null;
@@ -575,9 +580,9 @@ export default async function LongoesPage() {
         <div className="ba-page-header">
           <div>
             <p className="ba-eyebrow">Treinos</p>
-            <h1 className="ba-title">Longões — ciclo Buenos Aires</h1>
+            <h1 className="ba-title">Longões</h1>
             <p className="ba-muted" style={{ marginTop: ".5rem" }}>
-              Plano do ciclo específico, comparação planejado × executado e histórico completo com ritmo, FC, elevação, eficiência e splits.
+              Evolução dos longões e histórico com ritmo, FC, elevação, eficiência e splits. O ciclo de Buenos Aires permanece arquivado abaixo.
             </p>
           </div>
 
@@ -587,35 +592,24 @@ export default async function LongoesPage() {
         </div>
 
 
-        <section className="longoes-section longoes-cycle-section" style={{ marginBottom: "3.5rem" }}>
+        <section id="ciclo-buenos-aires" className="longoes-section longoes-cycle-section" style={{ marginBottom: "3.5rem" }}>
           <div className="ba-card ba-card--accent longoes-cycle-hero" style={{ padding: "2rem", marginBottom: "1rem" }}>
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <p className="ba-eyebrow" style={{ marginBottom: ".75rem" }}>Road to Buenos Aires</p>
+                <p className="ba-eyebrow" style={{ marginBottom: ".75rem" }}>Buenos Aires 2026 · ciclo concluído</p>
                 <h2 className="text-3xl font-semibold tracking-[-0.04em] text-white/95 md:text-4xl">
-                  Central dos longões do ciclo específico
+                  Memória dos longões da preparação
                 </h2>
                 <p className="mt-3 max-w-3xl text-sm leading-6 text-white/55">
-                  A timeline usa exclusivamente os treinos planejados importados do COROS a partir de 13/06.
+                  Planejamento de 13/06 a 20/09/2026, preservado para comparar o que foi planejado com o que foi realizado.
                 </p>
               </div>
 
-              {cyclePlanStats.nextLongRun ? (
-                <div className="ba-card-soft longoes-next-card" style={{ padding: "1rem 1.15rem", minWidth: "220px" }}>
-                  <p className="ba-label">Próximo longão</p>
-                  <p className="mt-2 text-2xl font-bold text-white/90">{formatKm(cyclePlanStats.nextLongRun.plannedKm, 0)}</p>
-                  <p className="mt-1 text-sm text-white/45">
-                    {cyclePlanStats.nextLongRun.weekday ? `${cyclePlanStats.nextLongRun.weekday} · ` : ""}
-                    {cyclePlanStats.nextLongRun.dateLabel}
-                  </p>
-                </div>
-              ) : (
-                <div className="ba-card-soft longoes-next-card" style={{ padding: "1rem 1.15rem", minWidth: "220px" }}>
-                  <p className="ba-label">Próximo longão</p>
-                  <p className="mt-2 text-2xl font-bold text-white/90">—</p>
-                  <p className="mt-1 text-sm text-white/45">Sem próximos longões válidos no COROS.</p>
-                </div>
-              )}
+              <div className="ba-card-soft longoes-next-card" style={{ padding: "1rem 1.15rem", minWidth: "220px" }}>
+                <p className="ba-label">Projeto concluído</p>
+                <p className="mt-2 text-2xl font-bold text-white/90">20/09/2026</p>
+                <Link href="/buenos-aires" className="ba-pill ba-pill-dark" style={{ marginTop: "1rem" }}>Rever a conquista →</Link>
+              </div>
             </div>
           </div>
 
@@ -623,7 +617,7 @@ export default async function LongoesPage() {
             <InfoCard
               title="Longões do ciclo"
               value={`${cyclePlanStats.completed}/${cyclePlanStats.total}`}
-              sub={cyclePlanStats.remaining > 0 ? `${cyclePlanStats.remaining} pela frente` : "ciclo concluído"}
+              sub="planejamento encerrado"
               accent="accent"
             />
             <InfoCard
@@ -633,7 +627,7 @@ export default async function LongoesPage() {
               accent="blue"
             />
             <InfoCard
-              title="Executado até agora"
+              title="Executado no ciclo"
               value={formatKm(cyclePlanStats.executedKm, 1)}
               sub={cyclePlanStats.adherencePct !== null ? `${Math.round(cyclePlanStats.adherencePct)}% do previsto vencido` : "sem vencidos ainda"}
               accent="success"
@@ -649,7 +643,7 @@ export default async function LongoesPage() {
           <div className="ba-card longoes-plan-card-wrapper" style={{ padding: "1.5rem 1.5rem 1.75rem" }}>
             <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="ba-eyebrow" style={{ marginBottom: ".75rem" }}>Timeline planejada</p>
+                <p className="ba-eyebrow" style={{ marginBottom: ".75rem" }}>Histórico do planejamento</p>
                 <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white/90">
                   Planejado × executado
                 </h2>
@@ -768,7 +762,7 @@ export default async function LongoesPage() {
 
                 <div className="pt-4">
                   <PaceBar paceSecPerKm={lastLongRun.paceSecPerKm} best={bestPace} worst={worstPace} />
-                  <p className="mt-3 text-xs text-white/35">Posição relativa de ritmo no ciclo.</p>
+                  <p className="mt-3 text-xs text-white/35">Posição relativa de ritmo no histórico.</p>
                 </div>
               </div>
             ) : (
@@ -812,19 +806,19 @@ export default async function LongoesPage() {
         <section className="ba-card longoes-history-card" style={{ padding: "2rem", marginTop: "0" }}>
           <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="ba-eyebrow" style={{ marginBottom: ".75rem" }}>Histórico do ciclo</p>
+              <p className="ba-eyebrow" style={{ marginBottom: ".75rem" }}>Histórico de longões</p>
               <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white/90">
-                Longões registrados no ciclo
+                Longões registrados
               </h2>
               <p className="mt-1 text-sm text-white/45">
-                Do mais recente ao mais antigo no ciclo — distância, ritmo, FC, elevação, eficiência e splits.
+                Do mais recente ao mais antigo — distância, ritmo, FC, elevação, eficiência e splits.
               </p>
             </div>
             <span className="badge badge--accent">{summary.totalLongRuns} longões</span>
           </div>
 
           {longRuns.length === 0 ? (
-            <p className="text-sm text-white/50">Nenhuma atividade com nome “Longão” foi encontrada no ciclo.</p>
+            <p className="text-sm text-white/50">Nenhuma atividade com nome “Longão” foi encontrada no período.</p>
           ) : (
             <div className="longoes-history-list" style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
               {longRuns.map((run, index) => {
@@ -883,7 +877,7 @@ export default async function LongoesPage() {
                             activityId={run.id}
                             activityName={run.name}
                             targetPaceSecPerKm={run.paceSecPerKm ?? undefined}
-                            goalPaceSecPerKm={BUENOS_AIRES_GOAL_PACE_SEC_PER_KM}
+                            goalPaceSecPerKm={getActivityLocalDateKey({ start_date_local: run.date }) < BUENOS_AIRES_DATE_KEY ? BUENOS_AIRES_GOAL_PACE_SEC_PER_KM : undefined}
                           />
                         ) : (
                           <span className="badge badge--blue">Consolidado por dia</span>

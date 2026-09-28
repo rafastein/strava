@@ -1,545 +1,167 @@
 export const dynamic = "force-dynamic";
 
+import Link from "next/link";
 import Navbar from "../components/Navbar";
-import MarathonProjection from "../components/MarathonProjection";
-import WeeklyPlanVsActualChart from "../components/WeeklyPlanVsActualChart";
-import ZonesAggregate from "../components/ZonesAggregate";
-import TodayWorkoutCard, {
-  getTodayWorkoutStatus,
-} from "../components/TodayWorkoutCard";
-import WeeklyGoalCard from "../components/WeeklyGoalCard";
+import ActivitySplitsChart from "../components/ActivitySplitsChart";
+import { getStravaActivities } from "../lib/strava-client";
+import { MARATHON_CYCLE_START_DATE, MARATHON_CYCLE_END_DATE } from "../lib/race-calendar";
+import { buildBuenosAiresArchive, formatArchiveDuration, formatArchivePace } from "../lib/buenos-aires-archive";
 
-import { getValidStravaAccessToken } from "../lib/strava-auth";
-import { BUENOS_AIRES_GOAL } from "../lib/race-calendar";
-import { isLongRunActivityName } from "../lib/strava-long-runs";
-import { combineSameDayRuns } from "../lib/strava-same-day-runs";
-import { getDynamicAthleteProfile } from "../lib/strava-prs";
-import { trainingPacesFromVdot } from "../lib/vdot";
-import {
-  getSisrunData,
-  getCurrentWeek,
-  getTodaySisrunRow,
-  getTodayStravaKm,
-  getCurrentWeekStravaKm,
-  getCurrentWeekLongestRunKm,
-  getWeekStart,
-  formatWeekLabel,
-  buildWeeklyComparison,
-  type SisrunWeek,
-} from "../lib/sisrun-utils";
-import { getBRDate, getActivityDate } from "../lib/date-utils";
-import {
-  getAllStructuredPlannedWorkouts,
-  getStructuredPlannedWorkout,
-} from "../lib/planned-workout";
-import { isRunActivity } from "../lib/strava-client";
-import {
-  buildStructuredWeeklyComparison,
-  getStructuredCurrentWeekSummary,
-} from "../lib/planned-weekly-comparison";
-
-import BuenosAiresHero from "./_components/BuenosAiresHero";
-import CyclePhaseSection, {
-  getMarathonCyclePhase,
-} from "./_components/CyclePhaseSection";
-import PerformanceSection from "./_components/PerformanceSection";
-import ProjectionSection from "./_components/ProjectionSection";
-import RecentLongRunsSection from "./_components/RecentLongRunsSection";
-import ReadinessSection from "./_components/ReadinessSection";
-import StrategicSummarySection from "./_components/StrategicSummarySection";
-import {
-  PROJECTION_LONG_RUN_MIN_KM,
-  STRONG_LONG_RUN_MIN_KM,
-  buildMarathonAlerts,
-  buildProjectionLongRuns,
-  daysUntil,
-  formatDate,
-  formatDurationShort,
-  formatFullDuration,
-  formatSecondsPerKm,
-  getActivities,
-  getActivityDetail,
-  getIdealWeeklyVolume,
-  getManualPredictions,
-  getReadinessStatus,
-  marathonTimeFromPace,
-  predictBySiteModelDetails,
-  predictFromHalf,
-  getLongRunPredictionDetails,
-} from "./_buenosAiresUtils";
+function km(value: number, digits = 1) {
+  return value.toLocaleString("pt-BR", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+}
 
 export default async function BuenosAiresPage() {
-  const accessToken = await getValidStravaAccessToken();
-
-  const [
-    activities,
-    manualPredictions,
-    sisrunData,
-    athleteProfile,
-    structuredWorkoutResult,
-    allStructuredPlannedWorkouts,
-  ] = await Promise.all([
-    getActivities(),
-    getManualPredictions(),
-    getSisrunData(),
-    accessToken ? getDynamicAthleteProfile(accessToken) : Promise.resolve(null),
-    getStructuredPlannedWorkout(),
-    getAllStructuredPlannedWorkouts(),
-  ]);
-
-  const sisrunWeek = getCurrentWeek(sisrunData) as SisrunWeek | null;
-  const todaySisrunRow = getTodaySisrunRow(sisrunData);
-
-  const marathonGoal = BUENOS_AIRES_GOAL;
-
-  const daysToRace = daysUntil(marathonGoal.date);
-  const weeksToRace = Math.max(1, Math.ceil(daysToRace / 7));
-  const marathonCycle = getMarathonCyclePhase({
-    raceDate: marathonGoal.date,
-    weeksToRace,
+  // Query the fixed cycle, so newer activities cannot displace this history.
+  const activities = await getStravaActivities({
+    after: Math.floor(MARATHON_CYCLE_START_DATE.getTime() / 1000) - 1,
+    before: Math.floor(MARATHON_CYCLE_END_DATE.getTime() / 1000) + 1,
+    maxPages: 20,
   });
-
-  const runs = activities.filter(isRunActivity);
-  const consolidatedRuns = combineSameDayRuns(activities).filter(isRunActivity);
-
-  const namedLongRuns = consolidatedRuns.filter((activity) =>
-    isLongRunActivityName(activity.name) || Boolean(activity.isMergedSameDayRun && activity.distance / 1000 >= PROJECTION_LONG_RUN_MIN_KM),
-  );
-
-  const longestRun = namedLongRuns.length
-    ? namedLongRuns.reduce((max, activity) =>
-        activity.distance > max.distance ? activity : max,
-      )
-    : null;
-
-  const longestRunKm = longestRun ? longestRun.distance / 1000 : 0;
-
-  const weekMap = new Map<
-    string,
-    {
-      label: string;
-      distanceKm: number;
-    }
-  >();
-
-  runs.forEach((activity) => {
-    const date = getBRDate(getActivityDate(activity));
-    if (!date) return;
-
-    const weekStart = getWeekStart(date);
-    const key = weekStart.toISOString();
-    const current = weekMap.get(key);
-
-    if (current) {
-      current.distanceKm += activity.distance / 1000;
-    } else {
-      weekMap.set(key, {
-        label: formatWeekLabel(weekStart),
-        distanceKm: activity.distance / 1000,
-      });
-    }
-  });
-
-  const weeklyData = Array.from(weekMap.entries())
-    .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime())
-    .slice(-10)
-    .map(([, value]) => ({
-      label: value.label,
-      distanceKm: Number(value.distanceKm.toFixed(1)),
-    }));
-
-  const structuredWeeklyComparison = buildStructuredWeeklyComparison(
-    allStructuredPlannedWorkouts,
-    activities,
-    6,
-    new Date(),
-    { onlyWeeksTouchingReferenceMonth: true },
-  );
-  const weeklyComparison = structuredWeeklyComparison.length
-    ? structuredWeeklyComparison
-    : buildWeeklyComparison(sisrunData, activities, 16).slice().reverse();
-  const weeklyPlanSourceLabel = structuredWeeklyComparison.length
-    ? "COROS/Upstash"
-    : "SisRUN";
-
-  const currentWeekKm = getCurrentWeekStravaKm(activities);
-  const currentWeekLongestRunKm = getCurrentWeekLongestRunKm(activities);
-  const todayStravaKm = getTodayStravaKm(activities);
-
-  const structuredCurrentWeekSummary = getStructuredCurrentWeekSummary(
-    allStructuredPlannedWorkouts,
-  );
-  const hasStructuredCurrentWeekPlan =
-    structuredCurrentWeekSummary.workoutCount > 0;
-  const plannedWeekKm = hasStructuredCurrentWeekPlan
-    ? structuredCurrentWeekSummary.plannedKm
-    : (sisrunWeek?.totalPlannedKm ?? 0);
-  const weeklyAdherencePct =
-    plannedWeekKm > 0 ? (currentWeekKm / plannedWeekKm) * 100 : 0;
-
-  const targetPaceLabel = formatSecondsPerKm(
-    marathonGoal.targetPaceSecondsPerKm,
-  );
-  const targetPredictionSeconds = marathonTimeFromPace(
-    marathonGoal.targetPaceSecondsPerKm,
-  );
-
-  const longRuns28Plus = runs.filter((activity) => activity.distance >= 28000);
-  const idealWeekKm = getIdealWeeklyVolume(daysToRace);
-
-  const readiness = getReadinessStatus({
-    currentWeekKm,
-    idealWeekKm,
-    longestRunKm,
-    longRuns28Plus: longRuns28Plus.length,
-  });
-
-  const bestHalf =
-    runs
-      .filter((activity) => {
-        const km = activity.distance / 1000;
-        return km >= 20 && km <= 22;
-      })
-      .sort((a, b) => a.moving_time - b.moving_time)[0] ?? null;
-
-  const racePointsForProjection = runs
-    .filter((activity) => {
-      const km = activity.distance / 1000;
-      return km >= 9.5 && km <= 22.5;
-    })
-    .map((activity) => ({
-      date: activity.start_date_local,
-      name: activity.name,
-      distanceKm: activity.distance / 1000,
-      paceSeconds: Math.round(
-        activity.moving_time / (activity.distance / 1000),
-      ),
-    }))
-    .filter((race) => race.paceSeconds > 200 && race.paceSeconds < 500)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-  const predictedFromHalf = predictFromHalf(bestHalf);
-  const longRunPrediction = getLongRunPredictionDetails(longestRun);
-  const predictedFromLongRun = longRunPrediction?.seconds ?? null;
-  const sitePrediction = predictBySiteModelDetails({
-    bestHalf,
-    longestRun,
-    weeklyData,
-  });
-
-  const vdot = athleteProfile?.vdot ?? null;
-  const vo2max = athleteProfile?.vo2max ?? null;
-  const marathonPaces = athleteProfile?.paces.marathon ?? null;
-  const trainingPaces = vdot ? trainingPacesFromVdot(vdot) : null;
-
-  const recentLongRunsBase = consolidatedRuns
-    .filter(
-      (activity) =>
-        activity.distance >= 14000 && (isLongRunActivityName(activity.name) || Boolean(activity.isMergedSameDayRun)),
-    )
-    .sort(
-      (a, b) =>
-        new Date(getActivityDate(b)).getTime() -
-        new Date(getActivityDate(a)).getTime(),
-    )
-    .slice(0, 5);
-
-  const recentLongRuns = await Promise.all(
-    recentLongRunsBase.map(async (run) => {
-      if (run.average_heartrate) return run;
-
-      if (accessToken && typeof run.id === "number") {
-        const detail = await getActivityDetail(run.id, accessToken);
-        if (detail?.average_heartrate) return { ...run, ...detail };
-      }
-
-      return run;
-    }),
-  );
-
-  const projRunsBase = consolidatedRuns
-    .filter(
-      (activity) =>
-        activity.distance / 1000 >= PROJECTION_LONG_RUN_MIN_KM &&
-        (isLongRunActivityName(activity.name) || Boolean(activity.isMergedSameDayRun)),
-    )
-    .sort(
-      (a, b) =>
-        new Date(getActivityDate(a)).getTime() -
-        new Date(getActivityDate(b)).getTime(),
-    );
-
-  const projRunsEnriched = await Promise.all(
-    projRunsBase.map(async (run) => {
-      if (run.average_heartrate) return run;
-
-      if (accessToken && typeof run.id === "number") {
-        const detail = await getActivityDetail(run.id, accessToken);
-        if (detail?.average_heartrate) return { ...run, ...detail };
-      }
-
-      return run;
-    }),
-  );
-
-  const projectionLongRuns = buildProjectionLongRuns(
-    projRunsBase,
-    projRunsEnriched,
-  );
-
-  const todayStatus = getTodayWorkoutStatus(
-    todaySisrunRow,
-    todayStravaKm,
-    structuredWorkoutResult.data,
-  );
-
-  const alerts = buildMarathonAlerts({
-    hasPlan: plannedWeekKm > 0,
-    plannedWeekKm,
-    currentWeekKm,
-    adherencePct: weeklyAdherencePct,
-    plannedLongRunKm: hasStructuredCurrentWeekPlan
-      ? structuredCurrentWeekSummary.longRunPlannedKm
-      : (sisrunWeek?.longRunPlannedKm ?? 0),
-    currentWeekLongestRunKm,
-    todayStatus,
-    marathonPaceMin: marathonPaces?.min ?? null,
-    vdot,
-    goalPaceSecPerKm: marathonGoal.targetPaceSecondsPerKm,
-    planSourceLabel: weeklyPlanSourceLabel,
-  });
-
-  const weeklyGoalAlerts = alerts.map((alert) => ({
-    title: alert.title,
-    text: alert.text,
-    ok:
-      alert.title.toLowerCase().includes("bem encaminhado") ||
-      alert.title.toLowerCase().includes("ok"),
-  }));
-
-  const weeklyAdherenceForUi = Number.isFinite(weeklyAdherencePct)
-    ? Math.min(weeklyAdherencePct, 100)
-    : 0;
-
-  const trainingPaceItems = trainingPaces
-    ? [
-        {
-          label: "Regenerativo / Fácil",
-          value: `${formatSecondsPerKm(trainingPaces.easy.min)}–${formatSecondsPerKm(
-            trainingPaces.easy.max,
-          )}`,
-        },
-        {
-          label: "Pace de maratona",
-          value: `${formatSecondsPerKm(trainingPaces.marathon.min)}–${formatSecondsPerKm(
-            trainingPaces.marathon.max,
-          )}`,
-        },
-        {
-          label: "Limiar",
-          value: `${formatSecondsPerKm(trainingPaces.threshold.min)}–${formatSecondsPerKm(
-            trainingPaces.threshold.max,
-          )}`,
-        },
-        {
-          label: "Intervalado",
-          value: formatSecondsPerKm(trainingPaces.interval),
-        },
-      ]
-    : [];
-
-  const recentLongRunItems = recentLongRuns.slice(0, 4).map((run) => {
-    const km = run.distance / 1000;
-    const heartRate = run.average_heartrate;
-
-    return {
-      id: run.id,
-      name: run.name,
-      dateLabel: formatDate(run.start_date_local),
-      distanceLabel: `${km.toFixed(1)} km`,
-      paceLabel: formatSecondsPerKm(run.moving_time / km),
-      heartRateLabel: heartRate ? `${Math.round(heartRate)} bpm` : undefined,
-      elevationLabel:
-        run.total_elevation_gain > 0
-          ? `+${Math.round(run.total_elevation_gain)} m`
-          : undefined,
-    };
-  });
-
-  const weekSummaryText =
-    plannedWeekKm > 0
-      ? `${currentWeekKm.toFixed(1)} km executados de ${plannedWeekKm.toFixed(
-          1,
-        )} km planejados no ${weeklyPlanSourceLabel}.`
-      : "Sem planejamento carregado para a semana.";
+  const archive = buildBuenosAiresArchive(activities);
+  const { race, elapsedSeconds, trainingRuns, weeks } = archive;
+  const hasTrainingData = trainingRuns.length > 0;
+  const pace = race && elapsedSeconds ? elapsedSeconds / (race.distance / 1000) : null;
+  const maxWeekKm = Math.max(1, ...weeks.map((week) => week.trainingKm + week.raceKm));
 
   return (
     <>
       <Navbar />
-
-      <main className="ba-page">
-        <BuenosAiresHero
-          targetPaceLabel={targetPaceLabel}
-          targetPredictionLabel={formatDurationShort(targetPredictionSeconds)}
-          cyclePhaseName={marathonCycle.phase.label}
-          targetDateIso={marathonGoal.dateIso}
-        />
-
-        <CyclePhaseSection
-          raceDate={marathonGoal.date}
-          daysToRace={daysToRace}
-          weeksToRace={weeksToRace}
-          currentWeekKm={currentWeekKm}
-          plannedWeekKm={plannedWeekKm}
-          currentWeekLongestRunKm={currentWeekLongestRunKm}
-          longestRunKm={longestRunKm}
-          longRuns28Plus={longRuns28Plus.length}
-          weeklyAdherencePct={weeklyAdherencePct}
-        />
-
-        <section className="ba-grid-2 ba-week-overview">
-          <div className="ba-today-readiness-stack">
-            <TodayWorkoutCard
-              todaySisrunRow={todaySisrunRow}
-              todayStravaKm={todayStravaKm}
-              structuredWorkout={structuredWorkoutResult.data}
-              structuredWorkoutSourceLabel={structuredWorkoutResult.sourceLabel}
-            />
-
-            <ReadinessSection
-              dotClassName={readiness.dot}
-              label={readiness.label}
-              title={readiness.title}
-              description={readiness.description}
-              cycleDescription={marathonCycle.phase.description}
-            />
+      <main className="ba-page ba-archive">
+        <section className="ba-archive-hero">
+          <div>
+            <p className="ba-eyebrow">Arquivo da temporada · 2026</p>
+            <h1 className="ba-title">Buenos Aires.<br /><span>Missão cumprida.</span></h1>
+            <p className="ba-archive-hero__copy">
+              A linha de chegada virou parte da história. Aqui ficam a maratona
+              de 20 de setembro e o caminho percorrido até ela.
+            </p>
+            <div className="ba-archive-actions">
+              <Link href="/" className="ba-pill ba-pill-orange">Voltar à temporada →</Link>
+              <Link href="/longoes#ciclo-buenos-aires" className="ba-pill ba-pill-dark">Rever os longões</Link>
+            </div>
           </div>
-
-          <WeeklyGoalCard
-            currentKm={currentWeekKm}
-            plannedKm={plannedWeekKm}
-            progressPct={weeklyAdherenceForUi}
-            alerts={weeklyGoalAlerts}
-            eyebrow={`${weeklyPlanSourceLabel} x Strava`}
-            title="Meta semanal"
-            subtitle="Volume planejado contra execução real da semana."
-          />
+          <div className="ba-archive-finish">
+            <span className="badge badge--success">Projeto concluído</span>
+            <p className="ba-archive-finish__distance">42,195<span>km</span></p>
+            <p>Maratona de Buenos Aires</p>
+            <p className="ba-muted">20 de setembro de 2026 · Argentina</p>
+          </div>
         </section>
 
-        <section className="ba-performance-projection-grid ba-section">
-          {vdot && trainingPaces && (
-            <PerformanceSection
-              vdot={vdot}
-              vo2max={vo2max}
-              marathonPaceLabel={
-                marathonPaces
-                  ? `${formatSecondsPerKm(marathonPaces.min)}–${formatSecondsPerKm(
-                      marathonPaces.max,
-                    )}`
-                  : targetPaceLabel
-              }
-              trainingPaces={trainingPaceItems}
-            />
+        <section className="ba-card ba-archive-section" aria-labelledby="race-result-title">
+          <div className="ba-archive-section__head">
+            <div>
+              <p className="ba-eyebrow">A conquista</p>
+              <h2 id="race-result-title">Registro da maratona</h2>
+            </div>
+            <span className="badge badge--success">Concluída</span>
+          </div>
+          {race ? (
+            <>
+              <div className="ba-grid-4 ba-archive-metrics">
+                {[
+                  { label: "Tempo decorrido", value: formatArchiveDuration(elapsedSeconds), detail: "registrado no Strava" },
+                  { label: "Pace médio", value: formatArchivePace(pace), detail: "tempo decorrido / distância GPS" },
+                  { label: "Distância GPS", value: `${km(race.distance / 1000, 2)} km`, detail: "distância oficial: 42,195 km" },
+                  { label: "FC média", value: race.average_heartrate ? `${Math.round(race.average_heartrate)} bpm` : "—", detail: "registrada na atividade" },
+                ].map((metric) => (
+                  <div className="ba-card-soft" key={metric.label}>
+                    <p className="ba-label">{metric.label}</p>
+                    <p className="ba-value">{metric.value}</p>
+                    <p className="ba-muted">{metric.detail}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="ba-muted ba-archive-note">Dados da atividade no Strava; o tempo oficial da organização pode ser diferente.</p>
+              <div className="ba-archive-actions">
+                <a href={`https://www.strava.com/activities/${race.id}`} target="_blank" rel="noopener noreferrer" className="ba-pill ba-pill-dark">Abrir atividade no Strava ↗</a>
+                <ActivitySplitsChart activityId={race.id} activityName={race.name} />
+              </div>
+            </>
+          ) : (
+            <div className="ba-archive-empty">
+              <p>A conquista está registrada. Os números da prova ainda não estão disponíveis.</p>
+              <p className="ba-muted">O tempo, o ritmo e os splits aparecerão aqui quando a atividade de 20/09 estiver disponível na sincronização com o Strava.</p>
+            </div>
           )}
-
-          <ProjectionSection
-            targetPredictionLabel={formatFullDuration(targetPredictionSeconds)}
-            targetPaceLabel={targetPaceLabel}
-            bestHalfPredictionLabel={
-              predictedFromHalf ? formatFullDuration(predictedFromHalf) : "—"
-            }
-            bestHalfCaption={
-              bestHalf
-                ? `${formatDate(bestHalf.start_date_local)} · ${(
-                    bestHalf.distance / 1000
-                  ).toFixed(1)} km`
-                : "Sem meia identificada"
-            }
-            longRunPredictionLabel={
-              predictedFromLongRun
-                ? formatFullDuration(predictedFromLongRun)
-                : "—"
-            }
-            longRunCaption={
-              longestRun
-                ? longRunPrediction
-                  ? `${longestRunKm.toFixed(1)} km · ${formatSecondsPerKm(
-                      longRunPrediction.sourcePaceSecondsPerKm,
-                    )} · Riegel ${longRunPrediction.exponent.toFixed(3)}`
-                  : `${longestRunKm.toFixed(1)} km · abaixo do corte de ${STRONG_LONG_RUN_MIN_KM} km`
-                : "Sem longão identificado"
-            }
-            sitePredictionLabel={
-              sitePrediction.seconds
-                ? formatFullDuration(sitePrediction.seconds)
-                : "—"
-            }
-            sitePredictionCaption={sitePrediction.caption}
-            sitePredictionPaceLabel={
-              sitePrediction.seconds
-                ? formatSecondsPerKm(sitePrediction.seconds / 42.195)
-                : ""
-            }
-            bestHalfPaceLabel={
-              predictedFromHalf
-                ? formatSecondsPerKm(predictedFromHalf / 42.195)
-                : ""
-            }
-            longRunPaceLabel={
-              predictedFromLongRun
-                ? formatSecondsPerKm(predictedFromLongRun / 42.195)
-                : ""
-            }
-            manualPredictionInitialValue={
-              manualPredictions.stravaMarathonPrediction
-            }
-          />
         </section>
 
-        <RecentLongRunsSection recentLongRuns={recentLongRunItems} />
+        <section className="ba-archive-section" aria-labelledby="cycle-summary-title">
+          <div className="ba-archive-section__head">
+            <div>
+              <p className="ba-eyebrow">O caminho até a largada</p>
+              <h2 id="cycle-summary-title">Preparação em números</h2>
+              <p className="ba-muted">Corridas registradas de 18/05 a 19/09/2026. A maratona e os treinos posteriores ficam fora destes totais.</p>
+            </div>
+          </div>
+          {hasTrainingData ? (
+            <div className="ba-grid-4 ba-archive-metrics">
+              {[
+                { label: "Volume de preparação", value: `${km(archive.trainingKm, 0)} km` },
+                { label: "Corridas registradas", value: String(trainingRuns.length) },
+                { label: "Maior corrida", value: `${km(archive.longestRunKm)} km` },
+                { label: "Maior semana", value: `${km(archive.peakWeekKm)} km` },
+              ].map((metric) => (
+                <div className="ba-card" key={metric.label}>
+                  <p className="ba-label">{metric.label}</p>
+                  <p className="ba-value">{metric.value}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="ba-card ba-archive-empty">
+              <p className="ba-muted">O histórico da preparação será exibido quando as atividades do ciclo estiverem disponíveis no Strava.</p>
+            </div>
+          )}
+        </section>
 
-        {projectionLongRuns.length >= 1 && (
-          <section style={{ marginBottom: "1rem" }}>
-            <MarathonProjection
-              longRuns={projectionLongRuns}
-              races={racePointsForProjection}
-            />
+        {(hasTrainingData || race) && (
+          <section className="ba-card ba-archive-section" aria-labelledby="cycle-volume-title">
+            <div className="ba-archive-section__head">
+              <div>
+                <p className="ba-eyebrow">18 semanas · maio a setembro</p>
+                <h2 id="cycle-volume-title">O volume que construiu a jornada</h2>
+                <p className="ba-muted">Semanas iniciadas nas datas abaixo. A maratona aparece separada na última semana.</p>
+              </div>
+            </div>
+            <div className="ba-archive-chart-legend"><span>● Preparação</span><span>● Maratona</span></div>
+            <div className="ba-archive-chart-scroll" role="region" aria-label="Volume semanal do ciclo" tabIndex={0}>
+              <div className="ba-archive-chart" role="img" aria-label="Gráfico de volume semanal. Os valores exatos estão na tabela abaixo.">
+                {weeks.map((week) => (
+                  <div className="ba-archive-week" key={week.dateKey} title={`${week.label}: ${km(week.trainingKm)} km de preparação; ${km(week.raceKm)} km na maratona`}>
+                    <span className="ba-archive-week__value">{km(week.trainingKm + week.raceKm, 0)}</span>
+                    <div className="ba-archive-week__track">
+                      {week.raceKm > 0 && <div className="ba-archive-week__race" style={{ height: `${week.raceKm / maxWeekKm * 100}%` }} />}
+                      <div className="ba-archive-week__training" style={{ height: `${week.trainingKm / maxWeekKm * 100}%` }} />
+                    </div>
+                    <span>{week.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <details className="ba-archive-table-details">
+              <summary>Ver os valores por semana</summary>
+              <table className="ba-archive-table">
+                <thead><tr><th scope="col">Semana de</th><th scope="col">Preparação</th><th scope="col">Maratona</th></tr></thead>
+                <tbody>{weeks.map((week) => <tr key={week.dateKey}><th scope="row">{week.label}</th><td>{km(week.trainingKm)} km</td><td>{week.raceKm ? `${km(week.raceKm, 2)} km` : "—"}</td></tr>)}</tbody>
+              </table>
+            </details>
           </section>
         )}
 
-        {weeklyComparison.length > 0 && (
-          <section style={{ marginBottom: "1rem" }}>
-            <WeeklyPlanVsActualChart
-              weeks={weeklyComparison.map((week) => ({
-                label: week.label,
-                planned: week.plannedKm,
-                actual: week.executedKm,
-                plannedSegments: (week.plannedSegments ?? []).map((segment) => ({
-                  dayLabel: segment.dayLabel,
-                  distance: segment.distanceKm,
-                })),
-              }))}
-              title="Volume semanal — planejado vs. executado"
-              subtitle={`Volume planejado no ${weeklyPlanSourceLabel} comparado com o executado no Strava.`}
-            />
-          </section>
-        )}
-
-        <section style={{ marginBottom: "1rem" }}>
-          <ZonesAggregate />
+        <section className="ba-grid-2 ba-archive-next">
+          <Link href="/longoes#ciclo-buenos-aires" className="ba-card">
+            <p className="ba-eyebrow">Memória do ciclo</p><h2>Os longões até Buenos Aires →</h2>
+            <p className="ba-muted">Reveja o planejamento, a execução e os treinos que fizeram parte dessa preparação.</p>
+          </Link>
+          <Link href="/provas" className="ba-card">
+            <p className="ba-eyebrow">A jornada continua</p><h2>Próximas provas →</h2>
+            <p className="ba-muted">Acompanhe os compromissos cadastrados no calendário e os próximos capítulos da temporada.</p>
+          </Link>
         </section>
-
-        <StrategicSummarySection
-          cyclePhaseName={marathonCycle.phase.label}
-          readinessLabel={readiness.label}
-          targetPaceLabel={targetPaceLabel}
-          weekText={weekSummaryText}
-        />
       </main>
-
-      <footer className="site-footer">
-        STRAVA · RAFAEL CABRAL · BUENOS AIRES 2026
-      </footer>
+      <footer className="site-footer">RAFAEL CABRAL · BUENOS AIRES 2026 · PROJETO CONCLUÍDO</footer>
     </>
   );
 }

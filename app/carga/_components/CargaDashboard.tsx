@@ -339,10 +339,10 @@ export default function CargaPage() {
         {/* Header */}
         <div className="ba-page-header">
           <div>
-            <p className="ba-eyebrow">Buenos Aires · 20 set 2026</p>
+            <p className="ba-eyebrow">Acompanhamento de treinos</p>
             <h1 className="ba-title">CARGA</h1>
             <p className="ba-muted" style={{ marginTop: 8, maxWidth: 760, lineHeight: 1.55 }}>
-              Esta página mostra se o ciclo está construindo forma, acumulando fadiga ou pedindo recuperação.
+              Esta página acompanha a evolução da forma, da fadiga e da recuperação ao longo da temporada.
               A leitura principal é sempre: forma de longo prazo, fadiga recente e frescor para render — com 30 dias de aquecimento antes da janela visível.
             </p>
           </div>

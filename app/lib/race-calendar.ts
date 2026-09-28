@@ -290,7 +290,10 @@ export function toMarathonCycleRaces(races: ManagedRace[]): MarathonCycleRace[] 
     }));
 }
 
-export function toSeasonRaceMonths(races: ManagedRace[]): SeasonMonth[] {
+export function toSeasonRaceMonths(
+  races: ManagedRace[],
+  todayKey = getRaceCalendarTodayKey(),
+): SeasonMonth[] {
   const sorted = sortRaces(races);
   const groups = new Map<string, SeasonRaceDef[]>();
 
@@ -306,7 +309,8 @@ export function toSeasonRaceMonths(races: ManagedRace[]): SeasonMonth[] {
       distanceKm: race.distanceKm,
       featured: race.featured,
       badge: race.badge,
-      fixedStatus: race.fixedStatus,
+      // Saved mission/simulation flags describe the plan, not a past event.
+      fixedStatus: race.dateKey < todayKey ? undefined : race.fixedStatus,
     };
     groups.set(label, [...(groups.get(label) ?? []), raceDef]);
   });

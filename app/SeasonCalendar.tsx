@@ -1,3 +1,4 @@
+import { getActivityLocalDateKey } from "./lib/buenos-aires-archive";
 import { isFirstSemesterMonthLabel, type SeasonMonth, type SeasonRaceDef, type SeasonRaceStatus } from "./lib/race-calendar";
 
 type StravaActivity = {
@@ -5,6 +6,7 @@ type StravaActivity = {
   name: string;
   distance: number;
   moving_time: number;
+  elapsed_time?: number;
   type: string;
   start_date_local: string;
 };
@@ -50,13 +52,12 @@ function prKeyFor(km: number): keyof AthletePersonalRecords | null {
 
 function findMatchingActivity(race: SeasonRaceDef, activities: StravaActivity[]): StravaActivity | null {
   const { month, day } = parseRaceDate(race.date);
-  const raceTs = new Date(2026, month - 1, day).getTime();
-  const ONE_DAY = 86_400_000;
+  const dateKey = `2026-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
   return activities.find((a) => {
     if (a.type !== "Run") return false;
-    const actTs = new Date(a.start_date_local).getTime();
-    if (Math.abs(actTs - raceTs) > ONE_DAY) return false;
-    return a.distance / 1000 >= race.distanceKm * 0.9;
+    if (getActivityLocalDateKey(a) !== dateKey) return false;
+    const distanceKm = a.distance / 1000;
+    return distanceKm >= race.distanceKm * 0.9 && distanceKm <= race.distanceKm * 1.1;
   }) ?? null;
 }
 
@@ -83,15 +84,6 @@ function resolveEvents(
 
   for (const m of seasonMonths) {
     for (const race of m.races) {
-      if (race.fixedStatus) {
-        result.push({
-          number: race.number, name: race.name, date: race.date,
-          location: race.location, month: m.label,
-          semester: isFirstSemesterMonthLabel(m.label) ? 1 : 2,
-          status: race.fixedStatus, isPR: false, badge: race.badge,
-        });
-        continue;
-      }
 
       const match = findMatchingActivity(race, activities);
       const key = prKeyFor(race.distanceKm);
@@ -105,7 +97,17 @@ function resolveEvents(
           number: race.number, name: race.name, date: race.date,
           location: race.location, month: m.label,
           semester: isFirstSemesterMonthLabel(m.label) ? 1 : 2,
-          status: "completed", result: formatTime(match.moving_time), isPR, badge: race.badge,
+          status: "completed", result: formatTime(match.elapsed_time && match.elapsed_time > 0 ? match.elapsed_time : match.moving_time), isPR, badge: race.badge,
+        });
+        continue;
+      }
+
+      if (race.fixedStatus) {
+        result.push({
+          number: race.number, name: race.name, date: race.date,
+          location: race.location, month: m.label,
+          semester: isFirstSemesterMonthLabel(m.label) ? 1 : 2,
+          status: race.fixedStatus, isPR: false, badge: race.badge,
         });
         continue;
       }

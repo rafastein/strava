@@ -45,3 +45,14 @@ test("página de provas mantém apenas corridas de hoje em diante", () => {
 test("data atual do calendário respeita o fuso de São Paulo", () => {
   assert.equal(getRaceCalendarTodayKey(new Date("2026-08-04T01:30:00Z")), "2026-08-03");
 });
+
+test("missão salva antes da prova deixa de fixar Buenos Aires no futuro", () => {
+  const before = toSeasonRaceMonths(DEFAULT_MANAGED_RACES, "2026-09-19");
+  const after = toSeasonRaceMonths(DEFAULT_MANAGED_RACES, "2026-09-28");
+  const findBuenosAires = (months: ReturnType<typeof toSeasonRaceMonths>) =>
+    months.flatMap((month) => month.races).find((race) => race.name === "Buenos Aires");
+  assert.equal(findBuenosAires(before)?.fixedStatus, "mission");
+  assert.equal(findBuenosAires(after)?.fixedStatus, undefined);
+  assert.equal(DEFAULT_MANAGED_RACES.find((race) => race.name === "Buenos Aires")?.fixedStatus, "mission");
+  assert.ok(!getUpcomingManagedRaces(DEFAULT_MANAGED_RACES, "2026-09-28").some((race) => race.name === "Buenos Aires"));
+});

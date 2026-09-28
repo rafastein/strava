@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
-  { href: "/buenos-aires", label: "Buenos Aires" },
   { href: "/longoes", label: "Longões" },
   { href: "/treinos-qualidade", label: "Qualidade" },
   { href: "/meias", label: "Meias" },
@@ -13,6 +12,7 @@ const NAV_LINKS = [
   { href: "/27-capitais", label: "27 Capitais" },
   { href: "/corridas-brasil", label: "Brasil" },
   { href: "/corridas-mundo", label: "Mundo" },
+  { href: "/buenos-aires", label: "Buenos Aires · histórico" },
   { href: "/equipamentos", label: "Tênis" },
   { href: "/coros", label: "COROS" },
   { href: "/sisrun", label: "SisRUN" },
