@@ -1,7 +1,8 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminRequest } from "../../lib/admin-auth";
 import { clearQualityWorkoutsSnapshot } from "../../lib/quality-workouts-cache";
+import { STRAVA_CACHE_TAG } from "../../lib/strava-client";
 
 const PATHS = [
   "/",
@@ -22,6 +23,9 @@ const PATHS = [
 export async function POST(req: NextRequest) {
   const unauthorized = requireAdminRequest(req);
   if (unauthorized) return unauthorized;
+
+  // Descarta na hora tudo o que veio do Strava: a próxima visita busca dados novos.
+  revalidateTag(STRAVA_CACHE_TAG, { expire: 0 });
 
   const { searchParams } = new URL(req.url);
   const path = searchParams.get("path");

@@ -1,4 +1,5 @@
-export const dynamic = "force-dynamic";
+// Sempre renderiza na hora; só as chamadas ao Strava usam o cache de dados (lib/strava-client).
+export const revalidate = 0;
 
 import Link from "next/link";
 import Navbar from "../components/Navbar";
@@ -17,6 +18,7 @@ import {
 import { KNOWN_GEAR_NAME_FALLBACKS } from "../lib/equipment-recommendation";
 import HalfMarathonComparison from "../components/HalfMarathonComparison";
 import type { HalfMarathonEntry } from "../components/HalfMarathonComparison";
+import { getCurrentSeasonYear } from "../lib/season";
 
 type StravaActivity = StravaActivitySummary;
 type HalfSplitSource = "splits_metric" | "laps" | "estimated";
@@ -299,7 +301,7 @@ export default async function MeiasPage() {
           </>
         )}
     </main>
-    <footer className="site-footer">STRAVA · RAFAEL CABRAL · 2026</footer>
+    <footer className="site-footer">STRAVA · RAFAEL CABRAL · {getCurrentSeasonYear()}</footer>
     </div>
   );
 }

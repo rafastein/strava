@@ -26,6 +26,7 @@ import {
 } from "../../lib/strava-long-runs";
 import LongRunCharts from "../../components/LongRunCharts";
 import ActivitySplitsChart from "../../components/ActivitySplitsChart";
+import { getCurrentSeasonYear } from "../../lib/season";
 
 type StravaActivity = StravaActivitySummary;
 type LongRunMatchedActivity = SameDayRunActivity;
@@ -900,7 +901,7 @@ export default async function LongoesPage() {
           )}
         </section>
       </div>
-      <footer className="site-footer">STRAVA · RAFAEL CABRAL · 2026</footer>
+      <footer className="site-footer">STRAVA · RAFAEL CABRAL · {getCurrentSeasonYear()}</footer>
     </main>
   );
 }

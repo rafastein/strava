@@ -172,7 +172,9 @@ export default function WeeklyComparisonChart({
               isCurrentWeekLabel(label),
           );
 
-          const isDone = adherencePct >= 100;
+          // Semana sem treino planejado: não existe aderência nem "falta" a calcular.
+          const hasPlan = plannedKm > 0;
+          const isDone = hasPlan && adherencePct >= 100;
           const isPartial = adherencePct >= 70 && adherencePct < 100;
 
           const barColor = isDone
@@ -270,7 +272,9 @@ export default function WeeklyComparisonChart({
                       display: "block",
                     }}
                   >
-                    {executedKm.toFixed(1)} / {plannedKm.toFixed(1)} km
+                    {hasPlan
+                      ? `${executedKm.toFixed(1)} / ${plannedKm.toFixed(1)} km`
+                      : `${executedKm.toFixed(1)} km`}
                   </strong>
 
                   <span
@@ -281,7 +285,7 @@ export default function WeeklyComparisonChart({
                       marginTop: 6,
                     }}
                   >
-                    {Math.round(adherencePct)}% de aderência
+                    {hasPlan ? `${Math.round(adherencePct)}% de aderência` : "sem plano cadastrado"}
                   </span>
                 </div>
               </div>
@@ -317,9 +321,9 @@ export default function WeeklyComparisonChart({
                   marginBottom: 20,
                 }}
               >
-                <MiniMetric label="Planejado" value={`${plannedKm.toFixed(1)} km`} />
+                <MiniMetric label="Planejado" value={hasPlan ? `${plannedKm.toFixed(1)} km` : "—"} />
                 <MiniMetric label="Executado" value={`${executedKm.toFixed(1)} km`} />
-                <MiniMetric label="Aderência" value={`${Math.round(adherencePct)}%`} />
+                <MiniMetric label="Aderência" value={hasPlan ? `${Math.round(adherencePct)}%` : "—"} />
               </div>
 
               <p
@@ -330,7 +334,9 @@ export default function WeeklyComparisonChart({
                   margin: 0,
                 }}
               >
-                {isDone
+                {!hasPlan
+                  ? "Nenhum treino planejado para esta semana. Cadastre o plano para comparar com o executado."
+                  : isDone
                   ? `Meta semanal cumprida. Excedente de ${(
                       executedKm - plannedKm
                     ).toFixed(1)} km.`

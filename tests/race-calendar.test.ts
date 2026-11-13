@@ -23,7 +23,7 @@ test("calendário de provas gera dashboard ordenado por data", () => {
 });
 
 test("calendário de provas gera meses da temporada e ciclo de maratona", () => {
-  const months = toSeasonRaceMonths(DEFAULT_MANAGED_RACES);
+  const months = toSeasonRaceMonths(DEFAULT_MANAGED_RACES, "2026-06-01");
   const cycle = toMarathonCycleRaces(DEFAULT_MANAGED_RACES);
 
   assert.ok(months.some((month) => month.label === "JUN"));
@@ -55,4 +55,24 @@ test("missão salva antes da prova deixa de fixar Buenos Aires no futuro", () =>
   assert.equal(findBuenosAires(after)?.fixedStatus, undefined);
   assert.equal(DEFAULT_MANAGED_RACES.find((race) => race.name === "Buenos Aires")?.fixedStatus, "mission");
   assert.ok(!getUpcomingManagedRaces(DEFAULT_MANAGED_RACES, "2026-09-28").some((race) => race.name === "Buenos Aires"));
+});
+
+test("calendário da temporada não mistura provas de outros anos", () => {
+  const races = sanitizeRaces([
+    { name: "Meia de Berlim", dateKey: "2026-03-29", location: "Berlim", distanceKm: 21.1, objective: "Prova", featured: true },
+    { name: "Meia de Curitiba", dateKey: "2026-11-15", location: "Curitiba", distanceKm: 21.1, objective: "Prova", featured: true },
+    { name: "Meia Maratona do Recife", dateKey: "2027-03-07", location: "Recife", distanceKm: 21.1, objective: "Prova", featured: true },
+  ]);
+  const names = (months: ReturnType<typeof toSeasonRaceMonths>) =>
+    months.flatMap((month) => month.races).map((race) => race.name);
+
+  const season2026 = toSeasonRaceMonths(races, "2026-11-13");
+  assert.deepEqual(names(season2026), ["Meia de Berlim", "Meia de Curitiba"]);
+  assert.equal(season2026.find((month) => month.label === "MAR")?.races.length, 1);
+  assert.equal(season2026[0].races[0].dateKey, "2026-03-29");
+
+  // Na virada do ano a temporada acompanha a data de hoje.
+  assert.deepEqual(names(toSeasonRaceMonths(races, "2027-01-02")), ["Meia Maratona do Recife"]);
+  // E dá para pedir uma temporada específica.
+  assert.deepEqual(names(toSeasonRaceMonths(races, "2027-01-02", 2026)), ["Meia de Berlim", "Meia de Curitiba"]);
 });

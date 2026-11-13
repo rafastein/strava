@@ -100,8 +100,27 @@ export type StravaStream = {
 
 export type StravaStreams = Record<string, StravaStream | undefined>;
 
+/** Tag de todas as respostas do Strava guardadas no cache de dados do Next. */
+export const STRAVA_CACHE_TAG = "strava";
+/** Janela em que uma resposta do Strava é reaproveitada entre páginas e visitas. */
+export const STRAVA_CACHE_WINDOW_SECONDS = 300;
+
+/**
+ * Número da janela de cache atual. Ele entra na chave do cache, então a primeira
+ * chamada de cada janela busca no Strava e espera a resposta nova. Sem isso o Next
+ * devolveria o dado vencido e só atualizaria em segundo plano — ao abrir o site
+ * depois de um treino, a corrida ainda não apareceria.
+ */
+export function getStravaCacheWindow(nowMs: number = Date.now()) {
+  return Math.floor(nowMs / (STRAVA_CACHE_WINDOW_SECONDS * 1000));
+}
+
+// Opções do fetch estendido pelo Next, declaradas aqui para compilar também nos testes.
+type NextFetchInit = RequestInit & { next?: { revalidate?: number; tags?: string[] } };
+
 type FetchOptions = {
   accessToken?: string | null;
+  /** Passe "no-store" para ignorar o cache e ler direto do Strava. */
   cache?: RequestCache;
 };
 
@@ -128,10 +147,16 @@ export async function fetchStravaApi<T>(
     if (!token) return null;
 
     const url = path.startsWith("http") ? path : `${STRAVA_API_BASE_URL}${path}`;
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: options.cache ?? "no-store",
-    });
+    const init: NextFetchInit = options.cache
+      ? { headers: { Authorization: `Bearer ${token}` }, cache: options.cache }
+      : {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "x-cache-window": String(getStravaCacheWindow()),
+          },
+          next: { revalidate: STRAVA_CACHE_WINDOW_SECONDS, tags: [STRAVA_CACHE_TAG] },
+        };
+    const res = await fetch(url, init);
 
     if (!res.ok) return null;
     return (await res.json()) as T;

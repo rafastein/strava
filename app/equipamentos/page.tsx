@@ -1,4 +1,5 @@
-export const dynamic = "force-dynamic";
+// Sempre renderiza na hora; só as chamadas ao Strava usam o cache de dados (lib/strava-client).
+export const revalidate = 0;
 
 import Link from "next/link";
 import Navbar from "../components/Navbar";
@@ -42,6 +43,7 @@ import {
   type GearForRecommendation,
   type ShoeRecommendation,
 } from "../lib/equipment-recommendation";
+import { getCurrentSeasonYear } from "../lib/season";
 
 type StravaActivity = StravaActivitySummary;
 
@@ -413,7 +415,7 @@ export default async function EquipamentosPage() {
           </>
         )}
     </main>
-    <footer className="site-footer">STRAVA · RAFAEL CABRAL · 2026</footer>
+    <footer className="site-footer">STRAVA · RAFAEL CABRAL · {getCurrentSeasonYear()}</footer>
     </div>
   );
 }

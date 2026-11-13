@@ -1,4 +1,5 @@
-export const dynamic = "force-dynamic";
+// Sempre renderiza na hora; só as chamadas ao Strava usam o cache de dados (lib/strava-client).
+export const revalidate = 0;
 
 import Link from "next/link";
 import Navbar from "../components/Navbar";
@@ -22,6 +23,7 @@ import {
   getEquipmentWorkoutFromStructuredWorkout,
 } from "../lib/equipment-recommendation";
 import { getRaceCalendarData, type ManagedRace } from "../lib/race-calendar";
+import { getCurrentSeasonYear } from "../lib/season";
 
 type WorkoutCompletionStatus = "done" | "off_target" | "today" | "missed" | "future";
 
@@ -330,7 +332,7 @@ Content-Type: application/json
           </pre>
         </section>
       </main>
-      <footer className="site-footer">STRAVA · RAFAEL CABRAL · 2026</footer>
+      <footer className="site-footer">STRAVA · RAFAEL CABRAL · {getCurrentSeasonYear()}</footer>
     </div>
   );
 }

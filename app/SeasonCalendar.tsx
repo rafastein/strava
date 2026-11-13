@@ -1,5 +1,5 @@
 import { getActivityLocalDateKey } from "./lib/buenos-aires-archive";
-import { isFirstSemesterMonthLabel, type SeasonMonth, type SeasonRaceDef, type SeasonRaceStatus } from "./lib/race-calendar";
+import { getRaceCalendarTodayKey, isFirstSemesterMonthLabel, type SeasonMonth, type SeasonRaceDef, type SeasonRaceStatus } from "./lib/race-calendar";
 
 type StravaActivity = {
   id: number;
@@ -37,11 +37,6 @@ function formatTime(seconds: number) {
   return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-function parseRaceDate(ddmm: string): { month: number; day: number } {
-  const [day, month] = ddmm.split("/").map(Number);
-  return { month, day };
-}
-
 function prKeyFor(km: number): keyof AthletePersonalRecords | null {
   if (km >= 4.8  && km <= 5.3)   return "km5";
   if (km >= 9.7  && km <= 10.4)  return "km10";
@@ -51,11 +46,9 @@ function prKeyFor(km: number): keyof AthletePersonalRecords | null {
 }
 
 function findMatchingActivity(race: SeasonRaceDef, activities: StravaActivity[]): StravaActivity | null {
-  const { month, day } = parseRaceDate(race.date);
-  const dateKey = `2026-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
   return activities.find((a) => {
     if (a.type !== "Run") return false;
-    if (getActivityLocalDateKey(a) !== dateKey) return false;
+    if (getActivityLocalDateKey(a) !== race.dateKey) return false;
     const distanceKm = a.distance / 1000;
     return distanceKm >= race.distanceKm * 0.9 && distanceKm <= race.distanceKm * 1.1;
   }) ?? null;
@@ -78,8 +71,8 @@ function resolveEvents(
   activities: StravaActivity[],
   prs: AthletePersonalRecords | null,
   seasonMonths: SeasonMonth[],
+  todayKey: string,
 ): ResolvedEvent[] {
-  const now = Date.now();
   const result: ResolvedEvent[] = [];
 
   for (const m of seasonMonths) {
@@ -112,9 +105,8 @@ function resolveEvents(
         continue;
       }
 
-      const { month: mo, day } = parseRaceDate(race.date);
-      const raceTs = new Date(2026, mo - 1, day).getTime();
-      const isPast = raceTs < now - 86_400_000;
+      // Chaves YYYY-MM-DD comparam em ordem cronológica; o dia da prova ainda conta como "próxima".
+      const isPast = race.dateKey < todayKey;
 
       result.push({
         number: race.number, name: race.name, date: race.date,
@@ -206,12 +198,14 @@ export default function SeasonCalendar({
   activities,
   prs,
   seasonMonths,
+  seasonYear,
 }: {
   activities: StravaActivity[];
   prs: AthletePersonalRecords | null;
   seasonMonths: SeasonMonth[];
+  seasonYear: number;
 }) {
-  const events = resolveEvents(activities, prs, seasonMonths);
+  const events = resolveEvents(activities, prs, seasonMonths, getRaceCalendarTodayKey());
   const s1 = events.filter((e) => e.semester === 1);
   const s2 = events.filter((e) => e.semester === 2);
 
@@ -507,7 +501,7 @@ export default function SeasonCalendar({
       `}</style>
 
       <div className="season-clean-header">
-        <p className="ba-eyebrow">Calendário da temporada 2026</p>
+        <p className="ba-eyebrow">Calendário da temporada {seasonYear}</p>
       </div>
 
       <Timeline events={s1} label="1º semestre" />

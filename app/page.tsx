@@ -1,4 +1,5 @@
-export const dynamic = "force-dynamic";
+// Sempre renderiza na hora; só as chamadas ao Strava usam o cache de dados (lib/strava-client).
+export const revalidate = 0;
 
 import Link from "next/link";
 import Navbar from "./components/Navbar";
@@ -21,6 +22,8 @@ import {
 } from "./lib/sisrun-utils";
 import { getValidStravaAccessToken } from "./lib/strava-auth";
 import { getRaceCalendarData } from "./lib/race-calendar";
+import { getCurrentSeasonYear, getSeasonEpochRange, getYearFromDateKey } from "./lib/season";
+import { getActivityLocalDateKey } from "./lib/buenos-aires-archive";
 import {
   getStravaActivities,
   getStravaAthlete,
@@ -44,14 +47,17 @@ import {
 type StravaActivity = StravaActivitySummary;
 type Athlete = StravaAthlete;
 
-const YEAR_SUMMARY = 2026;
-const YEAR_START_EPOCH = Math.floor(new Date(`${YEAR_SUMMARY}-01-01T00:00:00Z`).getTime() / 1000);
-const YEAR_END_EPOCH   = Math.floor(new Date(`${YEAR_SUMMARY + 1}-01-01T00:00:00Z`).getTime() / 1000);
+// Semanas recentes que a home compara (planejado × executado, atividades recentes).
+const RECENT_WINDOW_DAYS = 42;
 
-async function getActivities(): Promise<StravaActivity[]> {
+async function getActivities(seasonYear: number): Promise<StravaActivity[]> {
+  const season = getSeasonEpochRange(seasonYear);
+  // Em janeiro a janela recente começa em dezembro: sem isso a semana da virada
+  // e a lista de atividades ficariam vazias.
+  const recentStart = Math.floor(Date.now() / 1000) - RECENT_WINDOW_DAYS * 86_400;
   return getStravaActivities({
-    after: YEAR_START_EPOCH,
-    before: YEAR_END_EPOCH,
+    after: Math.min(season.after, recentStart),
+    before: season.before,
     maxPages: 20,
   });
 }
@@ -101,6 +107,7 @@ function buildAlerts(params: {
 
 export default async function Home() {
   const accessToken = await getValidStravaAccessToken();
+  const seasonYear = getCurrentSeasonYear();
   const [
     athlete,
     activities,
@@ -111,7 +118,7 @@ export default async function Home() {
     raceCalendarData,
   ] = await Promise.all([
     getAthlete(),
-    getActivities(),
+    getActivities(seasonYear),
     getSisrunData(),
     accessToken ? getDynamicAthleteProfile(accessToken) : Promise.resolve(null),
     getStructuredPlannedWorkout(),
@@ -121,7 +128,10 @@ export default async function Home() {
 
   const sisrunWeek = getCurrentWeek(sisrunData) as SisrunWeek | null;
   const todaySisrunRow = getTodaySisrunRow(sisrunData);
-  const runs = activities.filter(isRunActivity);
+  // Os números do ano contam só a temporada; `activities` pode incluir dezembro anterior.
+  const runs = activities
+    .filter(isRunActivity)
+    .filter((a) => getYearFromDateKey(getActivityLocalDateKey(a)) === seasonYear);
   const totalKm = runs.reduce((acc, a) => acc + a.distance, 0) / 1000;
   const totalTime = runs.reduce((acc, a) => acc + a.moving_time, 0);
   const totalElevation = runs.reduce((acc, a) => acc + a.total_elevation_gain, 0);
@@ -149,10 +159,20 @@ export default async function Home() {
   const weeklyPlanSourceLabel = hasStructuredCurrentWeekPlan ? "COROS/Upstash" : "SisRUN";
   const weeklyAdherencePct = plannedWeekKm > 0 ? Math.min((currentWeekKm / plannedWeekKm) * 100, 100) : 0;
   const structuredWeeklyComparison = buildStructuredWeeklyComparison(allStructuredPlannedWorkouts, activities, 6);
-  const weeklyComparison = structuredWeeklyComparison.length
+  // O plano estruturado só é a fonte quando tem algum volume planejado; semanas montadas
+  // apenas com atividades do Strava não contam como plano.
+  const hasStructuredWeeklyPlan = structuredWeeklyComparison.some((week) => week.plannedKm > 0);
+  const sisrunWeeklyComparison = hasStructuredWeeklyPlan ? [] : buildWeeklyComparison(sisrunData, activities, 6);
+  const weeklyComparison = hasStructuredWeeklyPlan
     ? structuredWeeklyComparison
-    : buildWeeklyComparison(sisrunData, activities, 6);
-  const weeklyComparisonSourceLabel = structuredWeeklyComparison.length ? "COROS/Upstash" : "SisRUN";
+    : sisrunWeeklyComparison.length
+      ? sisrunWeeklyComparison
+      : structuredWeeklyComparison;
+  const weeklyComparisonSourceLabel = hasStructuredWeeklyPlan
+    ? "COROS/Upstash"
+    : sisrunWeeklyComparison.length
+      ? "SisRUN"
+      : weeklyPlanSourceLabel;
   const longRuns = await getLongRunsFromActivities(activities);
   const longRunSummary = getLongRunSummary(longRuns);
 
@@ -179,7 +199,7 @@ export default async function Home() {
         <div className="home-hero__inner">
           <div>
             <p className="ba-eyebrow" style={{ marginBottom: "1rem" }}>
-              Temporada 2026 · A jornada continua
+              Temporada {seasonYear} · A jornada continua
             </p>
             <h1 className="home-hero__title">
               {athlete?.firstname ?? "Rafael"}<br />
@@ -200,7 +220,7 @@ export default async function Home() {
 
             <div className="home-hero__stats-grid">
               {[
-                { label: "km em 2026", value: totalKm.toFixed(0) },
+                { label: `km em ${seasonYear}`, value: totalKm.toFixed(0) },
                 { label: "corridas", value: String(runs.length) },
                 { label: "distância média", value: `${avgDistanceKm.toFixed(1)} km` },
                 { label: "pace médio", value: pace },
@@ -219,7 +239,7 @@ export default async function Home() {
 
       <div className="home-content">
 
-        <SeasonCalendar activities={activities} prs={athleteProfile?.prs ?? null} seasonMonths={raceCalendarData.seasonMonths} />
+        <SeasonCalendar activities={activities} prs={athleteProfile?.prs ?? null} seasonMonths={raceCalendarData.seasonMonths} seasonYear={raceCalendarData.seasonYear} />
 
         {/* ── SEMANA ATUAL ── */}
         <section style={{ marginBottom: "1.75rem" }}>
@@ -330,7 +350,7 @@ export default async function Home() {
 
       {/* ── FOOTER ── */}
       <footer className="site-footer">
-        STRAVA × SISRUN · {athlete?.firstname ?? "RAFAEL"} CABRAL · 2026
+        STRAVA × SISRUN · {athlete?.firstname ?? "RAFAEL"} CABRAL · {seasonYear}
       </footer>
     </div>
   );

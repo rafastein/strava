@@ -1,4 +1,5 @@
-export const dynamic = "force-dynamic";
+// Sempre renderiza na hora; só as chamadas ao Strava usam o cache de dados (lib/strava-client).
+export const revalidate = 0;
 
 import Link from "next/link";
 import Navbar from "../components/Navbar";
@@ -13,6 +14,7 @@ import {
   formatRacePace,
   formatRaceEfficiency,
 } from "../lib/strava-races";
+import { getCurrentSeasonYear } from "../lib/season";
 
 const HALF_MARATHON_KM = 21;
 
@@ -475,7 +477,7 @@ export default async function CorridasMundoPage() {
           )}
         </section>
       </main>
-      <footer className="site-footer">STRAVA · RAFAEL CABRAL · 2026</footer>
+      <footer className="site-footer">STRAVA · RAFAEL CABRAL · {getCurrentSeasonYear()}</footer>
     </div>
   );
 }

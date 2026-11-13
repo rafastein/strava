@@ -1,4 +1,5 @@
 import { getRedisClient } from "./redis-client";
+import { getCurrentSeasonYear, getYearFromDateKey } from "./season";
 
 export type RaceObjective = "Treino" | "Simulado" | "Prova" | "Missão";
 
@@ -19,6 +20,8 @@ export type SeasonRaceDef = {
   name: string;
   /** DD/MM */
   date: string;
+  /** YYYY-MM-DD — fonte da verdade para ano, status e casamento com o Strava */
+  dateKey: string;
   location: string;
   distanceKm: number;
   fixedStatus?: SeasonRaceStatus;
@@ -63,6 +66,7 @@ export type ManagedRaceResult = {
 export type RaceCalendarData = ManagedRaceResult & {
   dashboardRaces: DashboardRace[];
   seasonMonths: SeasonMonth[];
+  seasonYear: number;
   marathonCycleRaces: MarathonCycleRace[];
 };
 
@@ -293,8 +297,12 @@ export function toMarathonCycleRaces(races: ManagedRace[]): MarathonCycleRace[] 
 export function toSeasonRaceMonths(
   races: ManagedRace[],
   todayKey = getRaceCalendarTodayKey(),
+  seasonYear: number = getYearFromDateKey(todayKey) ?? getCurrentSeasonYear(),
 ): SeasonMonth[] {
-  const sorted = sortRaces(races);
+  // Só a temporada pedida: provas de outros anos têm o mesmo DD/MM e se misturariam.
+  const sorted = sortRaces(races).filter(
+    (race) => getYearFromDateKey(race.dateKey) === seasonYear,
+  );
   const groups = new Map<string, SeasonRaceDef[]>();
 
   sorted.forEach((race, index) => {
@@ -305,6 +313,7 @@ export function toSeasonRaceMonths(
       number: String(index + 1).padStart(2, "0"),
       name: race.name,
       date: toSeasonDate(race.dateKey),
+      dateKey: race.dateKey,
       location: race.location,
       distanceKm: race.distanceKm,
       featured: race.featured,
@@ -326,7 +335,7 @@ export function isFirstSemesterMonthLabel(label: string) {
 }
 
 export const DASHBOARD_RACES = toDashboardRaces(DEFAULT_MANAGED_RACES);
-export const SEASON_RACE_MONTHS = toSeasonRaceMonths(DEFAULT_MANAGED_RACES);
+export const SEASON_RACE_MONTHS = toSeasonRaceMonths(DEFAULT_MANAGED_RACES, getRaceCalendarTodayKey(), 2026);
 export const MARATHON_CYCLE_RACES = toMarathonCycleRaces(DEFAULT_MANAGED_RACES);
 
 export async function getManagedRaces(): Promise<ManagedRaceResult> {
@@ -390,10 +399,13 @@ export async function resetManagedRaces() {
 
 export async function getRaceCalendarData(): Promise<RaceCalendarData> {
   const result = await getManagedRaces();
+  const todayKey = getRaceCalendarTodayKey();
+  const seasonYear = getYearFromDateKey(todayKey) ?? getCurrentSeasonYear();
   return {
     ...result,
     dashboardRaces: toDashboardRaces(result.races),
-    seasonMonths: toSeasonRaceMonths(result.races),
+    seasonMonths: toSeasonRaceMonths(result.races, todayKey, seasonYear),
+    seasonYear,
     marathonCycleRaces: toMarathonCycleRaces(result.races),
   };
 }
