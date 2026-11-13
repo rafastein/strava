@@ -3,54 +3,70 @@ export const revalidate = 0;
 
 import Link from "next/link";
 import Navbar from "./components/Navbar";
-import ActivitiesPanel from "./components/ActivitiesPanel";
-import WeeklyComparisonChart from "./components/WeeklyComparisonChart";
-import NextRaceCard from "./components/NextRaceCard";
-import SeasonCalendar from "./SeasonCalendar";
-import BuenosAiresMilestone from "./components/BuenosAiresMilestone";
-import { findBuenosAiresMarathon } from "./lib/buenos-aires-archive";
+import RevalidateButton from "./components/RevalidateButton";
 import TodayWorkoutCard from "./components/TodayWorkoutCard";
+import WeeklyComparisonChart from "./components/WeeklyComparisonChart";
+import {
+  formatDayMonth,
+  formatDuration,
+  formatKm,
+  formatLongDate,
+  formatNumber,
+  formatPace,
+  formatPaceFromDistance,
+  formatWeekdayLong,
+  formatWeekdayShort,
+} from "./lib/format";
+import {
+  buildWeekDays,
+  daysBetweenDateKeys,
+  formatCountdown,
+  getPrKeyForRaceDistance,
+  type RacePrKey,
+} from "./lib/home-week";
+import { getAllStructuredPlannedWorkouts, getStructuredPlannedWorkout } from "./lib/planned-workout";
+import {
+  buildStructuredWeeklyComparison,
+  getStructuredCurrentWeekSummary,
+} from "./lib/planned-weekly-comparison";
+import {
+  getRaceCalendarData,
+  getRaceCalendarTodayKey,
+  getUpcomingManagedRaces,
+} from "./lib/race-calendar";
+import { getSeasonEpochRange, getYearFromDateKey } from "./lib/season";
 import {
   buildWeeklyComparison,
   getCurrentWeek,
   getCurrentWeekLongestRunKm,
-  getCurrentWeekStravaKm,
   getSisrunData,
   getTodaySisrunRow,
   getTodayStravaKm,
   type SisrunWeek,
 } from "./lib/sisrun-utils";
 import { getValidStravaAccessToken } from "./lib/strava-auth";
-import { getRaceCalendarData } from "./lib/race-calendar";
-import { getCurrentSeasonYear, getSeasonEpochRange, getYearFromDateKey } from "./lib/season";
-import { getActivityLocalDateKey } from "./lib/buenos-aires-archive";
 import {
   getStravaActivities,
   getStravaAthlete,
   isRunActivity,
   type StravaActivitySummary,
-  type StravaAthlete,
 } from "./lib/strava-client";
-import { getDynamicAthleteProfile } from "./lib/strava-prs";
-import {
-  formatEfficiency,
-  formatLongRunPace,
-  getLongRunSummary,
-  getLongRunsFromActivities,
-} from "./lib/strava-long-runs";
-import { getAllStructuredPlannedWorkouts, getStructuredPlannedWorkout } from "./lib/planned-workout";
-import {
-  buildStructuredWeeklyComparison,
-  getStructuredCurrentWeekSummary,
-} from "./lib/planned-weekly-comparison";
-
-type StravaActivity = StravaActivitySummary;
-type Athlete = StravaAthlete;
+import { formatPrTime, getDynamicAthleteProfile } from "./lib/strava-prs";
+import { STATUS_META, getCurrentLoad } from "./lib/training-load";
+import { getTrainingLoadSnapshot } from "./lib/training-load-snapshot";
 
 // Semanas recentes que a home compara (planejado × executado, atividades recentes).
 const RECENT_WINDOW_DAYS = 42;
+const RECENT_ACTIVITIES = 5;
 
-async function getActivities(seasonYear: number): Promise<StravaActivity[]> {
+const PR_LABELS: Record<RacePrKey, string> = {
+  km5: "Seus melhores 5 km",
+  km10: "Seus melhores 10 km",
+  half: "Sua melhor meia",
+  marathon: "Sua melhor maratona",
+};
+
+async function getActivities(seasonYear: number): Promise<StravaActivitySummary[]> {
   const season = getSeasonEpochRange(seasonYear);
   // Em janeiro a janela recente começa em dezembro: sem isso a semana da virada
   // e a lista de atividades ficariam vazias.
@@ -62,52 +78,15 @@ async function getActivities(seasonYear: number): Promise<StravaActivity[]> {
   });
 }
 
-async function getAthlete(): Promise<Athlete | null> {
-  return getStravaAthlete();
-}
-
-function formatPace(distance: number, time: number) {
-  if (!distance || !time) return "-";
-  const pace = time / (distance / 1000);
-  const min = Math.floor(pace / 60);
-  const sec = Math.round(pace % 60);
-  return `${min}:${String(sec).padStart(2, "0")}/km`;
-}
-
-function buildAlerts(params: {
-  hasPlannedWeek: boolean;
-  plannedWeekKm: number;
-  currentWeekKm: number;
-  adherencePct: number;
-  longRunPlannedKm: number;
-  longRunDoneKm: number;
-}) {
-  const alerts: { title: string; text: string; ok: boolean }[] = [];
-  if (!params.hasPlannedWeek) {
-    alerts.push({ title: "Planejamento ausente", text: "Cadastre treinos no COROS/Upstash para comparar planejamento e execução.", ok: false });
-    return alerts;
-  }
-  if (params.adherencePct < 70) {
-    alerts.push({ title: "Semana abaixo da meta", text: "O volume executado ainda está bem abaixo do planejado.", ok: false });
-  } else if (params.adherencePct < 90) {
-    alerts.push({ title: "Semana em construção", text: "Você está no caminho, mas ainda falta volume.", ok: false });
-  } else {
-    alerts.push({ title: "Boa aderência semanal ✓", text: "A execução está acompanhando bem o volume planejado.", ok: true });
-  }
-  if (params.longRunPlannedKm > 0) {
-    const done = params.longRunDoneKm >= params.longRunPlannedKm;
-    alerts.push({
-      title: done ? "Longão cumprido ✓" : "Longão não cumprido",
-      text: `${params.longRunDoneKm.toFixed(1)} km feitos · previsto ${params.longRunPlannedKm.toFixed(1)} km`,
-      ok: done,
-    });
-  }
-  return alerts;
+function getLocalDateKey(activity: StravaActivitySummary) {
+  return (activity.start_date_local ?? activity.start_date ?? "").slice(0, 10);
 }
 
 export default async function Home() {
   const accessToken = await getValidStravaAccessToken();
-  const seasonYear = getCurrentSeasonYear();
+  const todayKey = getRaceCalendarTodayKey();
+  const seasonYear = getYearFromDateKey(todayKey) ?? new Date().getFullYear();
+
   const [
     athlete,
     activities,
@@ -116,251 +95,321 @@ export default async function Home() {
     structuredWorkoutResult,
     allStructuredPlannedWorkouts,
     raceCalendarData,
+    loadSnapshot,
   ] = await Promise.all([
-    getAthlete(),
+    getStravaAthlete(),
     getActivities(seasonYear),
     getSisrunData(),
     accessToken ? getDynamicAthleteProfile(accessToken) : Promise.resolve(null),
     getStructuredPlannedWorkout(),
     getAllStructuredPlannedWorkouts(),
     getRaceCalendarData(),
+    // A carga é um resumo: se falhar, a home continua sem essa linha.
+    accessToken ? getTrainingLoadSnapshot(accessToken).catch(() => null) : Promise.resolve(null),
   ]);
 
-  const sisrunWeek = getCurrentWeek(sisrunData) as SisrunWeek | null;
-  const todaySisrunRow = getTodaySisrunRow(sisrunData);
-  // Os números do ano contam só a temporada; `activities` pode incluir dezembro anterior.
-  const runs = activities
-    .filter(isRunActivity)
-    .filter((a) => getYearFromDateKey(getActivityLocalDateKey(a)) === seasonYear);
-  const totalKm = runs.reduce((acc, a) => acc + a.distance, 0) / 1000;
-  const totalTime = runs.reduce((acc, a) => acc + a.moving_time, 0);
-  const totalElevation = runs.reduce((acc, a) => acc + a.total_elevation_gain, 0);
-  const pace = formatPace(totalKm * 1000, totalTime);
-  const avgDistanceKm = runs.length > 0 ? totalKm / runs.length : 0;
-  const heartRateRuns = runs.filter(
-    (a) => typeof a.average_heartrate === "number" && a.average_heartrate > 0
-  );
-  const heartRateWeightedTime = heartRateRuns.reduce((acc, a) => acc + a.moving_time, 0);
-  const avgHeartRate =
-    heartRateWeightedTime > 0
-      ? heartRateRuns.reduce(
-          (acc, a) => acc + (a.average_heartrate ?? 0) * a.moving_time,
-          0
-        ) / heartRateWeightedTime
-      : null;
-  const currentWeekKm = getCurrentWeekStravaKm(activities);
-  const currentWeekLongestRunKm = getCurrentWeekLongestRunKm(activities);
-  const todayStravaKm = getTodayStravaKm(activities);
-  const structuredCurrentWeekSummary = getStructuredCurrentWeekSummary(allStructuredPlannedWorkouts);
-  const hasStructuredCurrentWeekPlan = structuredCurrentWeekSummary.workoutCount > 0;
-  const plannedWeekKm = hasStructuredCurrentWeekPlan
-    ? structuredCurrentWeekSummary.plannedKm
-    : sisrunWeek?.totalPlannedKm ?? 0;
-  const weeklyPlanSourceLabel = hasStructuredCurrentWeekPlan ? "COROS/Upstash" : "SisRUN";
-  const weeklyAdherencePct = plannedWeekKm > 0 ? Math.min((currentWeekKm / plannedWeekKm) * 100, 100) : 0;
-  const structuredWeeklyComparison = buildStructuredWeeklyComparison(allStructuredPlannedWorkouts, activities, 6);
-  // O plano estruturado só é a fonte quando tem algum volume planejado; semanas montadas
-  // apenas com atividades do Strava não contam como plano.
-  const hasStructuredWeeklyPlan = structuredWeeklyComparison.some((week) => week.plannedKm > 0);
-  const sisrunWeeklyComparison = hasStructuredWeeklyPlan ? [] : buildWeeklyComparison(sisrunData, activities, 6);
-  const weeklyComparison = hasStructuredWeeklyPlan
-    ? structuredWeeklyComparison
-    : sisrunWeeklyComparison.length
-      ? sisrunWeeklyComparison
-      : structuredWeeklyComparison;
-  const weeklyComparisonSourceLabel = hasStructuredWeeklyPlan
-    ? "COROS/Upstash"
-    : sisrunWeeklyComparison.length
-      ? "SisRUN"
-      : weeklyPlanSourceLabel;
-  const longRuns = await getLongRunsFromActivities(activities);
-  const longRunSummary = getLongRunSummary(longRuns);
+  // ── Próxima prova ──
+  const upcomingRaces = getUpcomingManagedRaces(raceCalendarData.races, todayKey);
+  const nextRace = upcomingRaces[0] ?? null;
+  const daysToRace = nextRace ? daysBetweenDateKeys(todayKey, nextRace.dateKey) : null;
+  const countdown = daysToRace !== null ? formatCountdown(daysToRace) : null;
+  const prKey = nextRace ? getPrKeyForRaceDistance(nextRace.distanceKm) : null;
+  const pr = prKey ? athleteProfile?.prs[prKey] ?? null : null;
 
-  const alerts = buildAlerts({
-    hasPlannedWeek: plannedWeekKm > 0,
-    plannedWeekKm,
-    currentWeekKm,
-    adherencePct: weeklyAdherencePct,
-    longRunPlannedKm: hasStructuredCurrentWeekPlan
-      ? structuredCurrentWeekSummary.longRunPlannedKm
-      : sisrunWeek?.longRunPlannedKm ?? 0,
-    longRunDoneKm: currentWeekLongestRunKm,
-  });
+  // ── Semana ──
+  const weekDays = buildWeekDays(activities, todayKey, raceCalendarData.races.map((race) => race.dateKey));
+  const weekKm = weekDays.reduce((sum, day) => sum + day.km, 0);
+  const weekRuns = weekDays.reduce((sum, day) => sum + day.runs, 0);
+  const weekMaxKm = Math.max(...weekDays.map((day) => day.km), 1);
+
+  const sisrunWeek = getCurrentWeek(sisrunData) as SisrunWeek | null;
+  const structuredWeek = getStructuredCurrentWeekSummary(allStructuredPlannedWorkouts);
+  const hasStructuredWeek = structuredWeek.workoutCount > 0;
+  const plannedWeekKm = hasStructuredWeek ? structuredWeek.plannedKm : sisrunWeek?.totalPlannedKm ?? 0;
+  const planSource = hasStructuredWeek ? "COROS" : "SisRUN";
+  const plannedLongRunKm = hasStructuredWeek ? structuredWeek.longRunPlannedKm : sisrunWeek?.longRunPlannedKm ?? 0;
+  const longestRunKm = getCurrentWeekLongestRunKm(activities);
+  const adherencePct = plannedWeekKm > 0 ? Math.min((weekKm / plannedWeekKm) * 100, 100) : 0;
+
+  // ── Treino de hoje ──
+  const todaySisrunRow = getTodaySisrunRow(sisrunData);
+  const hasWorkoutToday = Boolean(structuredWorkoutResult.data || todaySisrunRow);
+
+  // ── Carga ──
+  const load = loadSnapshot ? getCurrentLoad(loadSnapshot.days) : null;
+  const loadMeta = load ? STATUS_META[load.status] : null;
+
+  // ── Temporada ──
+  // Os números do ano contam só a temporada; `activities` pode incluir dezembro anterior.
+  const runs = activities.filter(isRunActivity);
+  const seasonRuns = runs.filter((a) => getYearFromDateKey(getLocalDateKey(a)) === seasonYear);
+  const seasonKm = seasonRuns.reduce((sum, a) => sum + a.distance, 0) / 1000;
+  const seasonTime = seasonRuns.reduce((sum, a) => sum + a.moving_time, 0);
+  const seasonElevation = seasonRuns.reduce((sum, a) => sum + a.total_elevation_gain, 0);
+  const hrRuns = seasonRuns.filter((a) => typeof a.average_heartrate === "number" && a.average_heartrate > 0);
+  const hrTime = hrRuns.reduce((sum, a) => sum + a.moving_time, 0);
+  const avgHeartRate =
+    hrTime > 0 ? hrRuns.reduce((sum, a) => sum + (a.average_heartrate ?? 0) * a.moving_time, 0) / hrTime : null;
+
+  const seasonStats = [
+    { label: "no ano", value: formatKm(seasonKm, 0) },
+    { label: "corridas", value: formatNumber(seasonRuns.length) },
+    { label: "pace médio", value: seasonKm > 0 ? formatPace(seasonTime / seasonKm) : "—" },
+    { label: "por corrida", value: seasonRuns.length ? formatKm(seasonKm / seasonRuns.length) : "—" },
+    { label: "FC média", value: avgHeartRate ? `${formatNumber(avgHeartRate)} bpm` : "—" },
+    { label: "de subida", value: `${formatNumber(seasonElevation)} m` },
+  ];
+
+  // ── Planejado × executado ──
+  const structuredComparison = buildStructuredWeeklyComparison(allStructuredPlannedWorkouts, activities, 6);
+  // O plano estruturado só é a fonte quando tem algum volume planejado.
+  const hasStructuredPlan = structuredComparison.some((week) => week.plannedKm > 0);
+  const weeklyComparison = hasStructuredPlan ? structuredComparison : buildWeeklyComparison(sisrunData, activities, 6);
+  const hasAnyPlan = weeklyComparison.some((week) => week.plannedKm > 0);
+  const comparisonSource = hasStructuredPlan ? "COROS" : "SisRUN";
+
+  // ── Atividades recentes ──
+  const recentRuns = [...runs]
+    .sort((a, b) => getLocalDateKey(b).localeCompare(getLocalDateKey(a)) || b.id - a.id)
+    .slice(0, RECENT_ACTIVITIES);
+
+  const firstName = athlete?.firstname ?? "Rafael";
 
   return (
-    <div className="page">
-      {/* ── NAV ── */}
+    <div className="ui-page">
       <Navbar athleteName={athlete?.firstname} athleteAvatar={athlete?.profile_medium ?? undefined} />
 
-      {/* ── HERO ── */}
-      <section className="home-hero">
-        <div className="home-hero__glow-1" />
-        <div className="home-hero__glow-2" />
-        <div className="home-hero__inner">
+      <main className="ui-container">
+        <header className="ui-header">
           <div>
-            <p className="ba-eyebrow" style={{ marginBottom: "1rem" }}>
-              Temporada {seasonYear} · A jornada continua
-            </p>
-            <h1 className="home-hero__title">
-              {athlete?.firstname ?? "Rafael"}<br />
-              <span className="home-hero__title-accent">Cabral</span>
-            </h1>
-            <p className="home-hero__sub">
-              Treinos, evolução e próximos desafios. Cada corrida abre um novo capítulo da sua trajetória.
-            </p>
-            <div className="home-hero__actions">
-              <Link href="/provas" className="ba-cta">Próximas provas →</Link>
-              <Link href="/buenos-aires" className="ba-cta-ghost">Buenos Aires · concluído</Link>
-            </div>
+            <p className="ui-header__eyebrow">{formatLongDate(todayKey)}</p>
+            <h1 className="ui-title">Olá, {firstName}</h1>
+          </div>
+          <RevalidateButton variant="icon" label="Atualizar dados do Strava" />
+        </header>
+
+        <div className="hoje-grid">
+          <div className="hoje-col">
+            {/* ── Próxima prova ── */}
+            {nextRace && countdown ? (
+              <section className="ui-card ui-card--pad ui-stack" aria-label="Próxima prova">
+                <div className="ui-section__head" style={{ padding: 0, alignItems: "center" }}>
+                  <p className="ui-label-accent">Próxima prova</p>
+                  {nextRace.badge ? <span className="ui-chip">{nextRace.badge}</span> : null}
+                </div>
+                <div>
+                  <h2 className="hoje-race__title">{nextRace.name}</h2>
+                  <p className="ui-muted" style={{ fontSize: 14, marginTop: 4 }}>
+                    {formatWeekdayLong(nextRace.dateKey)}, {formatDayMonth(nextRace.dateKey)} · {nextRace.location} ·{" "}
+                    {formatKm(nextRace.distanceKm)}
+                  </p>
+                </div>
+                <div className="hoje-race__row">
+                  <p className="hoje-race__count">
+                    <span className="hoje-race__count-value">{countdown.value}</span>
+                    {countdown.unit ? <span className="hoje-race__count-unit">{countdown.unit}</span> : null}
+                  </p>
+                  {pr && prKey ? (
+                    <p className="hoje-race__pr">
+                      <span className="ui-muted" style={{ fontSize: 12 }}>{PR_LABELS[prKey]}</span>
+                      <span className="hoje-race__pr-value">{formatPrTime(pr.timeSec)}</span>
+                      <span className="ui-muted" style={{ fontSize: 12 }}>
+                        {pr.name} · {formatDayMonth(pr.startDate)}
+                      </span>
+                    </p>
+                  ) : nextRace.targetPaceSecPerKm ? (
+                    <p className="hoje-race__pr">
+                      <span className="ui-muted" style={{ fontSize: 12 }}>Pace alvo</span>
+                      <span className="hoje-race__pr-value">{formatPace(nextRace.targetPaceSecPerKm)}</span>
+                    </p>
+                  ) : null}
+                </div>
+                <Link href="/provas" className="ui-btn">Ver calendário de provas</Link>
+              </section>
+            ) : (
+              <section className="ui-card ui-card--pad ui-stack" aria-label="Próxima prova">
+                <p className="ui-label-accent">Próxima prova</p>
+                <p style={{ fontSize: 15 }}>Nenhuma prova cadastrada daqui para frente.</p>
+                <Link href="/provas" className="ui-btn">Cadastrar prova</Link>
+              </section>
+            )}
+
+            {/* ── Esta semana ── */}
+            <section className="ui-card ui-card--pad ui-stack" aria-label="Esta semana">
+              <div className="ui-section__head" style={{ padding: 0 }}>
+                <h2 className="ui-h2">Esta semana</h2>
+                <span className="ui-muted">
+                  {formatDayMonth(weekDays[0].dateKey)} – {formatDayMonth(weekDays[6].dateKey)}
+                </span>
+              </div>
+
+              <p className="hoje-week__total">
+                <span className="hoje-week__km">{formatKm(weekKm)}</span>
+                <span className="ui-muted" style={{ fontSize: 14 }}>
+                  {weekRuns === 0 ? "nenhuma corrida ainda" : weekRuns === 1 ? "em 1 corrida" : `em ${weekRuns} corridas`}
+                </span>
+              </p>
+
+              <ul className="hoje-week__days" style={{ listStyle: "none" }}>
+                {weekDays.map((day) => {
+                  const upcomingRace = day.isRaceDay && day.km === 0 && day.dateKey >= todayKey;
+                  return (
+                    <li key={day.dateKey} className="hoje-day">
+                      <span className={`hoje-day__value${day.km > 0 ? "" : " hoje-day__value--muted"}`}>
+                        {day.km > 0 ? formatNumber(day.km, 1) : upcomingRace ? "prova" : ""}
+                      </span>
+                      <span className="hoje-day__track">
+                        {day.km > 0 ? (
+                          <span className="hoje-day__bar" style={{ height: `${Math.max((day.km / weekMaxKm) * 100, 8)}%` }} />
+                        ) : (
+                          <span className={`hoje-day__bar ${upcomingRace ? "hoje-day__bar--race" : "hoje-day__bar--empty"}`} />
+                        )}
+                      </span>
+                      <span className={`hoje-day__label${day.isToday ? " hoje-day__label--today" : ""}`}>
+                        {day.weekday}
+                        {day.isToday ? <span className="sr-only"> (hoje)</span> : null}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {plannedWeekKm > 0 ? (
+                <div className="ui-stack" style={{ gap: 8 }}>
+                  <div className="ui-section__head" style={{ padding: 0 }}>
+                    <span style={{ fontSize: 14, fontWeight: 600 }}>
+                      {formatNumber(adherencePct)}% do plano
+                    </span>
+                    <span className="ui-muted">
+                      {formatKm(plannedWeekKm)} planejados · {planSource}
+                    </span>
+                  </div>
+                  <div className="hoje-progress" role="img" aria-label={`${formatNumber(adherencePct)}% do volume planejado`}>
+                    <div className="hoje-progress__fill" style={{ width: `${adherencePct}%` }} />
+                  </div>
+                  {plannedLongRunKm > 0 ? (
+                    <p className="ui-muted">
+                      Longão: {formatKm(longestRunKm)} de {formatKm(plannedLongRunKm)}
+                      {longestRunKm >= plannedLongRunKm ? " · cumprido" : ""}
+                    </p>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="hoje-notice">
+                  <div>
+                    <p className="hoje-notice__title">Sem plano nesta semana</p>
+                    <p className="ui-muted">Importe do COROS para comparar planejado × executado.</p>
+                  </div>
+                  <Link href="/coros" className="ui-btn ui-btn--ghost">Importar</Link>
+                </div>
+              )}
+            </section>
+
+            {hasWorkoutToday ? (
+              <TodayWorkoutCard
+                todaySisrunRow={todaySisrunRow}
+                todayStravaKm={getTodayStravaKm(activities)}
+                structuredWorkout={structuredWorkoutResult.data}
+                structuredWorkoutSourceLabel={structuredWorkoutResult.sourceLabel}
+              />
+            ) : null}
           </div>
 
-          {/* Conquista + estatísticas da temporada */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <BuenosAiresMilestone race={findBuenosAiresMarathon(activities)} />
+          <div className="hoje-col">
+            {/* ── Carga ── */}
+            {load && loadMeta ? (
+              <Link href="/carga" className="ui-card hoje-load" aria-label="Carga de treino: ver detalhes">
+                <span className="ui-row__main">
+                  <span className="ui-muted">Carga de treino</span>
+                  <span className="hoje-load__status" style={{ color: loadMeta.color }}>{loadMeta.label}</span>
+                  <span className="ui-muted">Ratio ATL/CTL {formatNumber(load.ratio, 2)}</span>
+                </span>
+                <span className="hoje-load__nums">
+                  {[
+                    { label: "Forma", value: formatNumber(load.ctl, 1) },
+                    { label: "Fadiga", value: formatNumber(load.atl, 1) },
+                    { label: "Frescor", value: `${load.tsb > 0 ? "+" : ""}${formatNumber(load.tsb, 1)}` },
+                  ].map((item) => (
+                    <span key={item.label} className="hoje-load__num">
+                      <span className="ui-muted" style={{ fontSize: 12 }}>{item.label}</span>
+                      <span className="hoje-load__num-value">{item.value}</span>
+                    </span>
+                  ))}
+                  <svg className="ui-row__chevron" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 5l7 7-7 7" />
+                  </svg>
+                </span>
+              </Link>
+            ) : null}
 
-            <div className="home-hero__stats-grid">
-              {[
-                { label: `km em ${seasonYear}`, value: totalKm.toFixed(0) },
-                { label: "corridas", value: String(runs.length) },
-                { label: "distância média", value: `${avgDistanceKm.toFixed(1)} km` },
-                { label: "pace médio", value: pace },
-                { label: "fc média", value: avgHeartRate ? `${avgHeartRate.toFixed(0)} bpm` : "—" },
-                { label: "elevação", value: `${totalElevation.toFixed(0)} Metros` },
-              ].map((s) => (
-                <div key={s.label} className="home-stat-card">
-                  <p className="ba-label" style={{ marginBottom: 4 }}>{s.label}</p>
-                  <p className="ba-value home-stat-card__value">{s.value}</p>
+            {/* ── Temporada ── */}
+            <section className="ui-section" aria-label={`Temporada ${seasonYear}`}>
+              <div className="ui-section__head">
+                <h2 className="ui-h2">Temporada {seasonYear}</h2>
+              </div>
+              <div className="ui-stat-grid">
+                {seasonStats.map((stat) => (
+                  <div key={stat.label} className="ui-stat">
+                    <span className="ui-stat__value">{stat.value}</span>
+                    <span className="ui-stat__label">{stat.label}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* ── Atividades recentes ── */}
+            <section className="ui-section" aria-label="Atividades recentes">
+              <div className="ui-section__head">
+                <h2 className="ui-h2">Atividades recentes</h2>
+              </div>
+              {recentRuns.length ? (
+                <div className="ui-card ui-list">
+                  {recentRuns.map((activity) => {
+                    const dateKey = getLocalDateKey(activity);
+                    return (
+                      <a
+                        key={activity.id}
+                        href={`https://www.strava.com/activities/${activity.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ui-row"
+                      >
+                        <span className="ui-row__main">
+                          <span className="ui-row__title">{activity.name}</span>
+                          <span className="ui-muted">
+                            {formatWeekdayShort(dateKey)}, {formatDayMonth(dateKey)} · {formatDuration(activity.moving_time)}
+                          </span>
+                        </span>
+                        <span className="ui-row__side">
+                          <span className="ui-row__value">{formatKm(activity.distance / 1000, 2)}</span>
+                          <span className="ui-muted">{formatPaceFromDistance(activity.distance, activity.moving_time)}</span>
+                        </span>
+                      </a>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
+              ) : (
+                <p className="ui-card ui-card--pad ui-muted">Nenhuma corrida encontrada no Strava.</p>
+              )}
+            </section>
           </div>
         </div>
-      </section>
 
-      <div className="home-content">
+        {/* ── Planejado × executado (só quando existe plano) ── */}
+        {hasAnyPlan ? (
+          <section className="ui-section" style={{ marginTop: 12 }}>
+            <WeeklyComparisonChart
+              items={weeklyComparison}
+              title="Planejado × executado por semana"
+              subtitle={`Volume planejado no ${comparisonSource} comparado com o executado no Strava.`}
+              orderLabel={hasStructuredPlan ? "Da semana atual para as próximas" : "Da semana mais recente para a mais antiga"}
+              dark
+            />
+          </section>
+        ) : null}
+      </main>
 
-        <SeasonCalendar activities={activities} prs={athleteProfile?.prs ?? null} seasonMonths={raceCalendarData.seasonMonths} seasonYear={raceCalendarData.seasonYear} />
-
-        {/* ── SEMANA ATUAL ── */}
-        <section style={{ marginBottom: "1.75rem" }}>
-          <p className="ba-label" style={{ marginBottom: "0.75rem" }}>Esta semana</p>
-          <div className="ba-grid-4">
-            {[
-              { label: `Planejado (${weeklyPlanSourceLabel})`, value: plannedWeekKm > 0 ? `${plannedWeekKm.toFixed(1)} km` : "—", accent: false },
-              { label: "Executado (Strava)", value: `${currentWeekKm.toFixed(1)} km`, accent: true },
-              { label: "Aderência", value: plannedWeekKm > 0 ? `${weeklyAdherencePct.toFixed(0)}%` : "—", accent: weeklyAdherencePct >= 90 },
-              {
-                label: "Longão",
-                value: plannedWeekKm > 0
-                  ? `${currentWeekLongestRunKm.toFixed(1)} / ${(hasStructuredCurrentWeekPlan ? structuredCurrentWeekSummary.longRunPlannedKm : sisrunWeek?.longRunPlannedKm ?? 0).toFixed(1)} km`
-                  : `${currentWeekLongestRunKm.toFixed(1)} km`,
-                accent: false,
-              },
-            ].map((c) => (
-              <MetricCard key={c.label} label={c.label} value={c.value} accent={c.accent} />
-            ))}
-          </div>
-        </section>
-
-        {/* ── HOJE + ALERTAS ── */}
-        <section className="home-today-section">
-          <TodayWorkoutCard
-            todaySisrunRow={todaySisrunRow}
-            todayStravaKm={todayStravaKm}
-            structuredWorkout={structuredWorkoutResult.data}
-            structuredWorkoutSourceLabel={structuredWorkoutResult.sourceLabel}
-          />
-
-          <div className="ba-grid-2">
-            {alerts.map((a, i) => (
-              <div key={i} className="ba-card" style={{ padding: "1.25rem 1.5rem", background: a.ok ? "rgba(16,185,129,0.06)" : "rgba(245,166,35,0.06)", border: `1px solid ${a.ok ? "rgba(16,185,129,0.15)" : "rgba(245,166,35,0.15)"}` }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: a.ok ? "#10b981" : "#f5a623", marginBottom: 4 }}>{a.title}</p>
-                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.5 }}>{a.text}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ── PRÓXIMA PROVA ── */}
-        <section style={{ marginBottom: "1.75rem" }}>
-          <p className="ba-label" style={{ marginBottom: "0.75rem" }}>Calendário de provas</p>
-          <NextRaceCard races={raceCalendarData.dashboardRaces} dark />
-        </section>
-
-        {/* ── LONGÕES ── */}
-        <section style={{ marginBottom: "1.75rem" }}>
-          <p className="ba-label" style={{ marginBottom: "0.75rem" }}>Longões</p>
-          <div className="ba-grid-4">
-            {[
-              { label: "Total de longões", value: String(longRunSummary.totalLongRuns) },
-              { label: "Pace médio", value: formatLongRunPace(longRunSummary.averagePaceSecPerKm) },
-              { label: "Melhor eficiência", value: formatEfficiency(longRunSummary.bestEfficiency) },
-            ].map((c) => (
-              <MetricCard key={c.label} label={c.label} value={c.value} accent={false} />
-            ))}
-            <Link href="/longoes" className="ba-card" style={{ padding: "1.5rem", textDecoration: "none", display: "flex", flexDirection: "column", justifyContent: "space-between", background: "rgba(245,166,35,0.08)", borderColor: "rgba(245,166,35,0.2)" }}>
-              <p className="ba-eyebrow">Análise completa</p>
-              <p className="ba-value" style={{ fontSize: 22, marginTop: 8 }}>Ver longões →</p>
-            </Link>
-          </div>
-        </section>
-
-        {/* ── GRÁFICO SEMANAL ── */}
-        <section style={{ marginBottom: "1.75rem" }}>
-          <p className="ba-label" style={{ marginBottom: "0.75rem" }}>Planejado × executado</p>
-          <WeeklyComparisonChart
-            items={weeklyComparison}
-            title="Planejado x executado por semana"
-            subtitle={`Volume planejado no ${weeklyComparisonSourceLabel} comparado com o executado no Strava.`}
-            orderLabel={weeklyComparisonSourceLabel === "COROS/Upstash" ? "Da semana atual para as próximas" : "Da semana mais recente para a mais antiga"}
-            dark
-          />
-        </section>
-
-        {/* ── NAVEGAÇÃO ── */}
-        <section style={{ marginBottom: "1.75rem" }}>
-          <p className="ba-label" style={{ marginBottom: "0.75rem" }}>Explorar</p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-            {[
-              { href: "/treinos-qualidade", label: "Treinos de qualidade", desc: "Intervalados, fartleks e progressivos.", tag: "Treinos" },
-              { href: "/meias", label: "Meias maratonas", desc: "Splits sobrepostos, prova a prova.", tag: "Análise" },
-              { href: "/corridas-brasil", label: "Corridas pelo Brasil", desc: "Mapa com corridas por estado.", tag: "Mapas" },
-              { href: "/corridas-mundo", label: "Corridas pelo mundo", desc: "Mapa-múndi com corridas por país.", tag: "Mapas" },
-              { href: "/equipamentos", label: "Equipamentos", desc: "Km, desgaste e eficiência por tênis.", tag: "Strava" },
-              { href: "/coros", label: "COROS", desc: "Treinos estruturados e calendário planejado.", tag: "Planejamento" },
-            ].map((c) => (
-              <Link key={c.href} href={c.href} className="ba-card-soft explore-card" style={{ padding: ".85rem 1rem", textDecoration: "none", display: "block" }}>
-                <p className="ba-eyebrow" style={{ marginBottom: "0.6rem", fontSize: 9 }}>{c.tag}</p>
-                <p style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: "0.35rem" }}>{c.label}</p>
-                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", lineHeight: 1.5 }}>{c.desc}</p>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        {/* ── ATIVIDADES ── */}
-        <section style={{ marginBottom: "1.75rem" }}>
-          <p className="ba-label" style={{ marginBottom: "0.75rem" }}>Atividades recentes</p>
-          <div className="ba-card" style={{ overflow: "hidden", padding: 0 }}>
-            <ActivitiesPanel activities={activities} dark />
-          </div>
-        </section>
-
-      </div>
-
-      {/* ── FOOTER ── */}
-      <footer className="site-footer">
-        STRAVA × SISRUN · {athlete?.firstname ?? "RAFAEL"} CABRAL · {seasonYear}
-      </footer>
-    </div>
-  );
-}
-
-function MetricCard({ label, value, accent }: { label: string; value: string; accent: boolean }) {
-  return (
-    <div className="ba-card" style={{ padding: "1rem 1.25rem", borderColor: accent ? "rgba(245,166,35,0.25)" : undefined }}>
-      <p className="ba-label" style={{ marginBottom: 6 }}>{label}</p>
-      <p className="ba-value" style={{ fontSize: 24, color: accent ? "var(--accent)" : undefined }}>{value}</p>
+      <footer className="ui-footer">Strava × SisRUN · {firstName} Cabral · {seasonYear}</footer>
     </div>
   );
 }

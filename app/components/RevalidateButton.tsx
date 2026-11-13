@@ -6,9 +6,11 @@ import { fetchWithAdminRetry } from "../lib/admin-client";
 type Props = {
   path?: string;
   label?: string;
+  /** "icon": botão redondo só com ícone, para o cabeçalho das páginas novas. */
+  variant?: "pill" | "icon";
 };
 
-export default function RevalidateButton({ path, label = "Atualizar dados" }: Props) {
+export default function RevalidateButton({ path, label = "Atualizar dados", variant = "pill" }: Props) {
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
 
   async function handleClick() {
@@ -30,6 +32,26 @@ export default function RevalidateButton({ path, label = "Atualizar dados" }: Pr
       setStatus("error");
       setTimeout(() => setStatus("idle"), 3000);
     }
+  }
+
+  if (variant === "icon") {
+    const statusLabel =
+      status === "loading" ? "Atualizando dados" : status === "done" ? "Dados atualizados" : status === "error" ? "Erro ao atualizar — tente novamente" : label;
+    return (
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={status === "loading" || status === "done"}
+        aria-label={statusLabel}
+        title={statusLabel}
+        className={`ui-icon-btn${status === "loading" ? " ui-icon-btn--spin" : ""}`}
+        style={status === "error" ? { color: "#ff8a7a" } : status === "done" ? { color: "var(--ui-good)" } : undefined}
+      >
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          {status === "done" ? <path d="M5 12l5 5 9-10" /> : (<><path d="M20 12a8 8 0 1 1-2.6-5.9" /><path d="M20 4v5h-5" /></>)}
+        </svg>
+      </button>
+    );
   }
 
   return (

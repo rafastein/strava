@@ -165,6 +165,16 @@ export async function fetchStravaApi<T>(
   }
 }
 
+const HOUR_SECONDS = 3600;
+
+export function floorToHour(epochSeconds: number) {
+  return Math.floor(epochSeconds / HOUR_SECONDS) * HOUR_SECONDS;
+}
+
+export function ceilToHour(epochSeconds: number) {
+  return Math.ceil(epochSeconds / HOUR_SECONDS) * HOUR_SECONDS;
+}
+
 export async function getStravaAthlete(accessToken?: string | null) {
   return fetchStravaApi<StravaAthlete>("/athlete", { accessToken });
 }
@@ -178,6 +188,12 @@ export async function getStravaActivities({
 }: ActivitiesParams = {}): Promise<StravaActivitySummary[]> {
   const token = await resolveAccessToken(accessToken);
   if (!token) return [];
+
+  // Janelas móveis ("últimos 180 dias") chegam com o segundo atual e mudariam a URL a
+  // cada visita, o que anularia o cache. Arredondar para a hora cheia mantém a URL estável;
+  // o intervalo só fica até uma hora mais largo, nunca mais estreito.
+  after = after ? floorToHour(after) : after;
+  before = before ? ceilToHour(before) : before;
 
   const allActivities: StravaActivitySummary[] = [];
 
