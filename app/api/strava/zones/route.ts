@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { STRAVA_DETAIL_LIMIT, enforceRateLimit, parseActivityId } from "../../../lib/rate-limit";
 import { getValidStravaAccessToken } from "../../../lib/strava-auth";
 import { getStravaActivityStreams, getStravaAthleteZones } from "../../../lib/strava-client";
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const id = searchParams.get("id");
+  const limited = await enforceRateLimit(req, STRAVA_DETAIL_LIMIT);
+  if (limited) return limited;
 
-  if (!id || isNaN(Number(id))) {
+  const { searchParams } = new URL(req.url);
+  const id = parseActivityId(searchParams.get("id"));
+
+  if (id === null) {
     return NextResponse.json({ error: "id inválido" }, { status: 400 });
   }
 
@@ -15,7 +19,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const [streams, zonesData] = await Promise.all([
-      getStravaActivityStreams(Number(id), ["velocity_smooth", "time"], token),
+      getStravaActivityStreams(id, ["velocity_smooth", "time"], token),
       getStravaAthleteZones(token),
     ]);
 

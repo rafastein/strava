@@ -878,3 +878,29 @@
     gap: 16px;
   }
 }
+
+/* ── Linha que expande (histórico) ── */
+.ui-acc + .ui-acc {
+  border-top: 1px solid var(--ui-border);
+}
+
+.ui-acc > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.ui-acc > summary::-webkit-details-marker {
+  display: none;
+}
+
+.ui-acc[open] > summary {
+  background: var(--ui-surface-2);
+}
+
+.ui-acc__body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 20px 20px;
+  border-top: 1px solid var(--ui-border);
+}

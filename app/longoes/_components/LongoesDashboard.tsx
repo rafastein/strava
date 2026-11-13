@@ -10,7 +10,8 @@ import {
   getRaceCalendarData,
   type MarathonCycleRace,
 } from "../../lib/race-calendar";
-import { formatBRDate, getBRDateKey } from "../../lib/date-utils";
+import { getBRDateKey } from "../../lib/date-utils";
+import { formatDayMonth, formatKm, formatNumber, formatWeekdayLong } from "../../lib/format";
 import {
   getAllStructuredPlannedWorkouts,
   isCorosPlannedWorkout,
@@ -18,7 +19,6 @@ import {
   type StructuredPlannedWorkout,
 } from "../../lib/planned-workout";
 import {
-  formatEfficiency,
   formatLongRunDuration,
   formatLongRunPace,
   getLongRunSummary,
@@ -42,111 +42,37 @@ async function getActivities(): Promise<StravaActivity[]> {
   return getStravaActivities({ maxPages: 20 });
 }
 
-function getEfficiencyBadge(efficiency: number | null): {
-  label: string;
-  badge: string;
-} {
-  if (!efficiency) return { label: "Sem dados", badge: "badge badge--muted" };
-  if (efficiency >= 16) return { label: "Alta eficiência", badge: "badge badge--success" };
-  if (efficiency >= 14) return { label: "Boa eficiência", badge: "badge badge--blue" };
-  return { label: "Eficiência moderada", badge: "badge badge--orange" };
-}
-
 function getEfficiencyTrend(
   current?: number | null,
   previous?: number | null,
-): { emoji: string; label: string; detail: string; tone: string } {
+): { label: string; detail: string; direction: "up" | "down" | "flat" } {
   if (!current || !previous)
-    return {
-      emoji: "➖",
-      label: "Sem base anterior",
-      detail: "Ainda não há longão anterior com eficiência para comparar.",
-      tone: "text-white/45",
-    };
+    return { label: "Sem base anterior", detail: "Ainda não há longão anterior com eficiência para comparar.", direction: "flat" };
 
   const diff = current - previous;
-  if (Math.abs(diff) < 1)
-    return {
-      emoji: "➖",
-      label: "Estável",
-      detail: `Variação de ${diff >= 0 ? "+" : ""}${diff.toFixed(0)} ponto.`,
-      tone: "text-white/55",
-    };
-
-  if (diff > 0)
-    return {
-      emoji: "📈",
-      label: "Melhorou",
-      detail: `+${diff.toFixed(0)} pontos em relação ao longão anterior.`,
-      tone: "text-emerald-400",
-    };
-
-  return {
-    emoji: "📉",
-    label: "Piorou",
-    detail: `${diff.toFixed(0)} pontos em relação ao longão anterior.`,
-    tone: "text-red-400",
-  };
+  const points = formatNumber(Math.abs(diff), 1);
+  if (Math.abs(diff) < 1) return { label: "Estável", detail: "Variação menor que 1 ponto contra o longão anterior.", direction: "flat" };
+  if (diff > 0) return { label: "Melhorou", detail: `${points} pontos acima do longão anterior.`, direction: "up" };
+  return { label: "Piorou", detail: `${points} pontos abaixo do longão anterior.`, direction: "down" };
 }
 
-function InfoCard({
-  title,
-  value,
-  sub,
-  accent,
-}: {
-  title: string;
-  value: React.ReactNode;
-  sub?: string;
-  accent?: "accent" | "blue" | "success" | "danger";
-}) {
-  const valueClass = {
-    accent: "ba-value--accent",
-    blue: "ba-value--blue",
-    success: "ba-value--success",
-    danger: "ba-value--danger",
-  }[accent ?? "accent"];
+function formatEff(value: number | null | undefined) {
+  return value && Number.isFinite(value) ? formatNumber(value, 1) : "—";
+}
 
+function formatKmValue(value: number | null | undefined, digits = 1) {
+  return typeof value === "number" && Number.isFinite(value) ? formatKm(value, digits) : "—";
+}
+
+function DateBlock({ dateKey }: { dateKey: string }) {
+  const [day, month] = formatDayMonth(dateKey).split(" ");
   return (
-    <div className="ba-card longoes-info-card" style={{ padding: "1.2rem 1.4rem", textAlign: "center" }}>
-      <p className="ba-label">{title}</p>
-      <h2 className={`ba-value ${accent ? valueClass : ""}`} style={{ marginTop: ".4rem", fontSize: "clamp(1.4rem, 2.5vw, 2rem)" }}>{value}</h2>
-      {sub && <p className="ba-muted" style={{ marginTop: ".3rem" }}>{sub}</p>}
-    </div>
+    <span className="ui-date">
+      <span className="ui-date__day">{day}</span>
+      <span className="ui-muted" style={{ fontSize: 12 }}>{month}</span>
+    </span>
   );
 }
-
-function MetricPill({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="ba-card-soft longoes-metric-pill" style={{ padding: ".65rem 1rem" }}>
-      <p className="ba-label">{label}</p>
-      <p style={{ marginTop: ".25rem", fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{value}</p>
-    </div>
-  );
-}
-
-function PaceBar({
-  paceSecPerKm,
-  best,
-  worst,
-}: {
-  paceSecPerKm: number | null;
-  best: number;
-  worst: number;
-}) {
-  if (!paceSecPerKm || worst === best) return null;
-  const pct = Math.min(
-    100,
-    Math.max(0, ((worst - paceSecPerKm) / (worst - best)) * 100),
-  );
-
-  return (
-    <div className="ba-progress mt-3">
-      <div className="ba-progress-fill" style={{ width: `${pct}%` }} />
-    </div>
-  );
-}
-
 
 type PlanStatus = "done" | "partial" | "missed" | "future" | "today" | "review";
 
@@ -227,11 +153,6 @@ function formatPlanWeekday(date: Date) {
     .replace(".", "");
 }
 
-function formatKm(value: number | null | undefined, digits = 1) {
-  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
-  return `${value.toFixed(digits).replace(".", ",")} km`;
-}
-
 function isRaceDistanceCompatible(plannedKm: number, raceDistanceKm: number) {
   if (!Number.isFinite(plannedKm) || plannedKm <= 0) return false;
   if (!Number.isFinite(raceDistanceKm) || raceDistanceKm <= 0) return false;
@@ -262,12 +183,12 @@ function isLongRunDistance(plannedKm: number) {
 }
 
 function getPlanStatusMeta(status: PlanStatus) {
-  if (status === "done") return { label: "Cumprido", badge: "badge badge--success" };
-  if (status === "partial") return { label: "Parcial", badge: "badge badge--orange" };
-  if (status === "missed") return { label: "Perdido", badge: "badge badge--danger" };
-  if (status === "today") return { label: "Hoje", badge: "badge badge--accent" };
-  if (status === "review") return { label: "Revisar COROS", badge: "badge badge--purple" };
-  return { label: "Futuro", badge: "badge badge--blue" };
+  if (status === "done") return { label: "Cumprido", color: "var(--ui-good)" };
+  if (status === "partial") return { label: "Parcial", color: "var(--ui-accent)" };
+  if (status === "missed") return { label: "Perdido", color: "#ff8a7a" };
+  if (status === "today") return { label: "Hoje", color: "var(--ui-accent)" };
+  if (status === "review") return { label: "Revisar COROS", color: "#b9a6ff" };
+  return { label: "Futuro", color: "var(--ui-blue)" };
 }
 
 function getLongRunTypeLabel(plannedKm: number, isRaceGoal: boolean, isRace: boolean) {
@@ -490,16 +411,6 @@ function getCyclePlanStats(items: MarathonLongRunPlanItem[]) {
   };
 }
 
-function PlanMetric({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="longoes-plan-metric">
-      <p className="ba-label">{label}</p>
-      <p>{value}</p>
-      {sub && <span>{sub}</span>}
-    </div>
-  );
-}
-
 export default async function LongoesPage() {
   const [activities, structuredPlanResults, raceCalendarData] = await Promise.all([
     getActivities(),
@@ -535,7 +446,6 @@ export default async function LongoesPage() {
     .map((r) => r.paceSecPerKm)
     .filter((p): p is number => p !== null && Number.isFinite(p));
   const bestPace = validPaces.length ? Math.min(...validPaces) : 0;
-  const worstPace = validPaces.length ? Math.max(...validPaces) : 0;
   const bestPaceRun = bestPace
     ? longRuns.find((r) => r.paceSecPerKm === bestPace)
     : null;
@@ -574,334 +484,206 @@ export default async function LongoesPage() {
     efficiency: r.efficiency,
   }));
 
+  const trendColor = { up: "var(--ui-good)", down: "#ff8a7a", flat: "var(--ui-text-2)" }[efficiencyTrend.direction];
+  const lastDateKey = lastLongRun ? getBRDateKey(lastLongRun.date) : "";
+
   return (
-    <main className="page longoes-page">
+    <div className="ui-page">
       <Navbar />
-      <div className="ba-page">
-        <div className="ba-page-header">
+
+      <main className="ui-container">
+        <header className="ui-header">
           <div>
-            <p className="ba-eyebrow">Treinos</p>
-            <h1 className="ba-title">Longões</h1>
-            <p className="ba-muted" style={{ marginTop: ".5rem" }}>
-              Evolução dos longões e histórico com ritmo, FC, elevação, eficiência e splits. O ciclo de Buenos Aires permanece arquivado abaixo.
+            <h1 className="ui-title">Longões</h1>
+            <p className="ui-muted">
+              {summary.totalLongRuns} {summary.totalLongRuns === 1 ? "longão" : "longões"} desde {LONG_RUN_CYCLE_START_LABEL}
             </p>
           </div>
+        </header>
 
-          <Link href="/" className="ba-back">
-            ← Voltar ao dashboard
-          </Link>
+        <div className="hoje-grid">
+          <div className="hoje-col">
+            {/* ── Último longão ── */}
+            <section className="ui-card ui-card--pad ui-stack" aria-label="Último longão">
+              <p className="ui-label-accent">Último longão</p>
+              {lastLongRun ? (
+                <>
+                  <div>
+                    <h2 className="hoje-race__title" style={{ fontSize: 24 }}>{lastLongRun.name}</h2>
+                    <p className="ui-muted" style={{ fontSize: 14, marginTop: 4 }}>
+                      {formatWeekdayLong(lastDateKey)}, {formatDayMonth(lastDateKey)} · {formatLongRunDuration(lastLongRun.movingTimeSec)}
+                    </p>
+                  </div>
+                  <dl className="ui-dl" style={{ paddingTop: 16, borderTop: "1px solid var(--ui-border)" }}>
+                    <div><dt>Distância</dt><dd>{formatKmValue(lastLongRun.distanceKm, 2)}</dd></div>
+                    <div><dt>Ritmo</dt><dd>{formatLongRunPace(lastLongRun.paceSecPerKm)}</dd></div>
+                    <div><dt>FC média</dt><dd>{lastLongRun.averageHeartrate ? `${formatNumber(lastLongRun.averageHeartrate)} bpm` : "—"}</dd></div>
+                    <div><dt>Eficiência</dt><dd>{formatEff(lastLongRun.efficiency)}</dd></div>
+                  </dl>
+                  <p style={{ fontSize: 14 }}>
+                    <strong style={{ color: trendColor }}>Eficiência: {efficiencyTrend.label.toLowerCase()}.</strong>{" "}
+                    <span className="ui-muted" style={{ fontSize: 14 }}>{efficiencyTrend.detail}</span>
+                  </p>
+                </>
+              ) : (
+                <p className="ui-muted">Nenhuma atividade com “Longão” no nome foi encontrada no período.</p>
+              )}
+            </section>
+
+            {/* ── Resumo ── */}
+            <section className="ui-section" aria-label="Resumo">
+              <div className="ui-section__head">
+                <h2 className="ui-h2">Resumo</h2>
+              </div>
+              <div className="ui-stat-grid">
+                {[
+                  { label: "maior distância", value: longestDistanceRun ? formatKmValue(summary.longestRunKm) : "—", sub: longestDistanceRun ? formatDayMonth(getBRDateKey(longestDistanceRun.date)) : null },
+                  { label: "melhor ritmo", value: bestPace ? formatLongRunPace(bestPace) : "—", sub: bestPaceRun ? formatDayMonth(getBRDateKey(bestPaceRun.date)) : null },
+                  { label: "melhor eficiência", value: formatEff(bestEffValue), sub: bestEffRun ? formatDayMonth(getBRDateKey(bestEffRun.date)) : null },
+                  { label: "distância média", value: summary.totalLongRuns ? formatKmValue(avgDistance) : "—", sub: null },
+                  { label: "FC média", value: summary.averageHeartrate ? `${formatNumber(summary.averageHeartrate)} bpm` : "—", sub: null },
+                  { label: "subida média", value: summary.totalLongRuns ? `${formatNumber(summary.averageElevationGain)} m` : "—", sub: null },
+                ].map((stat) => (
+                  <div key={stat.label} className="ui-stat">
+                    <span className="ui-stat__value">{stat.value}</span>
+                    <span className="ui-stat__label">{stat.label}{stat.sub ? ` · ${stat.sub}` : ""}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="ui-muted" style={{ padding: "0 4px" }}>
+                {longRuns25Plus} de 25 km ou mais · {progressiveRuns} com eficiência melhor que o anterior
+              </p>
+            </section>
+          </div>
+
+          <div className="hoje-col">
+            {/* ── Evolução ── */}
+            <section className="ui-section" style={{ paddingTop: 0 }} aria-label="Evolução">
+              <LongRunCharts longRuns={chartData} />
+            </section>
+          </div>
         </div>
 
-
-        <section id="ciclo-buenos-aires" className="longoes-section longoes-cycle-section" style={{ marginBottom: "3.5rem" }}>
-          <div className="ba-card ba-card--accent longoes-cycle-hero" style={{ padding: "2rem", marginBottom: "1rem" }}>
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <p className="ba-eyebrow" style={{ marginBottom: ".75rem" }}>Buenos Aires 2026 · ciclo concluído</p>
-                <h2 className="text-3xl font-semibold tracking-[-0.04em] text-white/95 md:text-4xl">
-                  Memória dos longões da preparação
-                </h2>
-                <p className="mt-3 max-w-3xl text-sm leading-6 text-white/55">
-                  Planejamento de 13/06 a 20/09/2026, preservado para comparar o que foi planejado com o que foi realizado.
-                </p>
-              </div>
-
-              <div className="ba-card-soft longoes-next-card" style={{ padding: "1rem 1.15rem", minWidth: "220px" }}>
-                <p className="ba-label">Projeto concluído</p>
-                <p className="mt-2 text-2xl font-bold text-white/90">20/09/2026</p>
-                <Link href="/buenos-aires" className="ba-pill ba-pill-dark" style={{ marginTop: "1rem" }}>Rever a conquista →</Link>
-              </div>
-            </div>
+        {/* ── Histórico ── */}
+        <section className="ui-section" style={{ marginTop: 12 }} aria-label="Histórico de longões">
+          <div className="ui-section__head">
+            <h2 className="ui-h2">Histórico</h2>
+            <span className="ui-muted">toque para ver detalhes e splits</span>
           </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 longoes-cycle-kpis" style={{ marginBottom: "1rem" }}>
-            <InfoCard
-              title="Longões do ciclo"
-              value={`${cyclePlanStats.completed}/${cyclePlanStats.total}`}
-              sub="planejamento encerrado"
-              accent="accent"
-            />
-            <InfoCard
-              title="Planejado"
-              value={formatKm(cyclePlanStats.plannedKm, 0)}
-              sub="somando longões válidos"
-              accent="blue"
-            />
-            <InfoCard
-              title="Executado no ciclo"
-              value={formatKm(cyclePlanStats.executedKm, 1)}
-              sub={cyclePlanStats.adherencePct !== null ? `${Math.round(cyclePlanStats.adherencePct)}% do previsto vencido` : "sem vencidos ainda"}
-              accent="success"
-            />
-            <InfoCard
-              title="Maior estímulo"
-              value={cyclePlanStats.biggestLongRun ? formatKm(cyclePlanStats.biggestLongRun.plannedKm, 0) : "—"}
-              sub={cyclePlanStats.biggestLongRun ? cyclePlanStats.biggestLongRun.dateLabel : undefined}
-              accent="danger"
-            />
-          </div>
-
-          <div className="ba-card longoes-plan-card-wrapper" style={{ padding: "1.5rem 1.5rem 1.75rem" }}>
-            <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="ba-eyebrow" style={{ marginBottom: ".75rem" }}>Histórico do planejamento</p>
-                <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white/90">
-                  Planejado × executado
-                </h2>
-                <p className="mt-1 text-sm text-white/45">
-                  Status por data a partir de {LONG_RUN_CYCLE_START_LABEL}, usando exclusivamente o planejamento importado do COROS.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <span className="badge badge--accent">Buenos Aires</span>
-                {cyclePlanStats.reviewCount > 0 && <span className="badge badge--purple">{cyclePlanStats.reviewCount} para revisar</span>}
-              </div>
-            </div>
-
-            {marathonLongRunPlan.length === 0 ? (
-              <p className="text-sm text-white/50">Nenhum longão planejado foi encontrado no COROS para o ciclo específico.</p>
-            ) : (
-              <div className="longoes-plan-grid">
-                {marathonLongRunPlan.map((item) => {
-                  const statusMeta = getPlanStatusMeta(item.status);
-                  const diffLabel = item.diffKm !== null
-                    ? `${item.diffKm >= 0 ? "+" : ""}${item.diffKm.toFixed(1).replace(".", ",")} km`
-                    : "—";
-
-                  return (
-                    <article
-                      key={item.key}
-                      className={`ba-card-soft longoes-plan-card ${item.status === "today" || item.status === "future" ? "longoes-plan-card--upcoming" : ""} ${item.isKeyWorkout ? "longoes-plan-card--key" : ""}`}
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="ba-label">
-                          {item.weekday ? `${item.weekday} · ` : ""}{item.shortDateLabel}
-                        </p>
-                        <span className={statusMeta.badge}>{statusMeta.label}</span>
-                      </div>
-
-                      <div className="mt-4">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className={`badge ${item.isRaceGoal || item.isRace ? "badge--accent" : item.isKeyWorkout ? "badge--orange" : "badge--muted"}`}>
-                            {item.typeLabel}
-                          </span>
-                          <span className="badge badge--muted">{item.sourceLabel}</span>
-                          {item.matchedActivity && (
-                            <span className="badge badge--blue">
-                              {item.matchedActivity.isMergedSameDayRun ? "Strava consolidado" : "Strava encontrado"}
-                            </span>
-                          )}
-                        </div>
-                        <h3 className="mt-3 text-lg font-semibold leading-snug text-white/90">{item.title}</h3>
-                        <p className="mt-2 text-xs leading-5 text-white/42">{item.note}</p>
-                      </div>
-
-                      <div className="longoes-plan-metrics">
-                        <PlanMetric label="Previsto" value={formatKm(item.plannedKm, item.plannedKm % 1 === 0 ? 0 : 1)} />
-                        <PlanMetric label="Feito" value={item.actualKm !== null ? formatKm(item.actualKm, 1) : "—"} />
-                        <PlanMetric label="Saldo" value={diffLabel} />
-                      </div>
-
-                      {item.matchedActivity && (
-                        <p className="mt-3 truncate text-xs text-white/35" title={item.matchedActivity.name}>
-                          {item.matchedActivity.name}
-                        </p>
-                      )}
-                    </article>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </section>
-
-        <section className="longoes-section longoes-summary-section" style={{ marginBottom: "4rem" }}>
-          <p className="ba-eyebrow" style={{ marginBottom: ".75rem" }}>Resumo do ciclo</p>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5 longoes-summary-grid">
-            <InfoCard title="Total de longões" value={String(summary.totalLongRuns)} sub={`desde ${LONG_RUN_CYCLE_START_LABEL}`} />
-            <InfoCard
-              title="Maior distância"
-              value={`${summary.longestRunKm.toFixed(1)} km`}
-              sub={longestDistanceRun ? formatBRDate(longestDistanceRun.date) : undefined}
-              accent="accent"
-            />
-            <InfoCard
-              title="Melhor ritmo"
-              value={formatLongRunPace(bestPace)}
-              sub={bestPaceRun ? formatBRDate(bestPaceRun.date) : undefined}
-              accent="blue"
-            />
-            <InfoCard
-              title="Melhor eficiência"
-              value={formatEfficiency(summary.bestEfficiency)}
-              sub={bestEffRun ? formatBRDate(bestEffRun.date) : undefined}
-              accent="success"
-            />
-            <InfoCard title="FC média geral" value={summary.averageHeartrate ? `${summary.averageHeartrate.toFixed(0)} bpm` : "—"} />
-          </div>
-        </section>
-
-        <section className="grid gap-8 lg:grid-cols-3 longoes-section longoes-insights-grid" style={{ marginBottom: "3.5rem" }}>
-          <div className="ba-card ba-card--accent min-h-[340px] longoes-insight-card" style={{ padding: "2rem" }}>
-            <p className="ba-eyebrow ba-section">Último longão</p>
-            {lastLongRun ? (
-              <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", height: "calc(100% - 2rem)" }}>
-                <div>
-                  <h2 className="max-w-[92%] text-xl font-semibold leading-snug text-white/90">
-                    {lastLongRun.name}
-                  </h2>
-                  <p className="mt-3 text-sm text-white/45">{formatBRDate(lastLongRun.date)}</p>
-                </div>
-
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <span className="badge badge--accent">{lastLongRun.distanceKm.toFixed(2)} km</span>
-                  <span className="badge badge--blue">{formatLongRunPace(lastLongRun.paceSecPerKm)}</span>
-                  {lastLongRun.averageHeartrate && (
-                    <span className="badge badge--danger">{lastLongRun.averageHeartrate.toFixed(0)} bpm</span>
-                  )}
-                </div>
-
-                <div className="pt-4">
-                  <PaceBar paceSecPerKm={lastLongRun.paceSecPerKm} best={bestPace} worst={worstPace} />
-                  <p className="mt-3 text-xs text-white/35">Posição relativa de ritmo no histórico.</p>
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-white/50">Nenhum longão encontrado.</p>
-            )}
-          </div>
-
-          <div className="ba-card min-h-[340px] longoes-insight-card" style={{ padding: "2rem" }}>
-            <p className="ba-eyebrow" style={{ marginBottom: "1.25rem" }}>Tendência de eficiência</p>
-            <div className="flex items-center gap-4">
-              <span className="text-3xl">{efficiencyTrend.emoji}</span>
-              <div>
-                <p className={`text-xl font-bold ${efficiencyTrend.tone}`}>{efficiencyTrend.label}</p>
-                <p className="mt-1 text-sm text-white/45">{efficiencyTrend.detail}</p>
-              </div>
-            </div>
-
-            <div className="mt-8 space-y-4">
-              <div className="flex justify-between text-sm"><span className="text-white/45">Último</span><span className="font-semibold text-white/85">{formatEfficiency(lastLongRun?.efficiency ?? null)}</span></div>
-              <div className="flex justify-between text-sm"><span className="text-white/45">Anterior</span><span className="font-semibold text-white/85">{formatEfficiency(previousLongRun?.efficiency ?? null)}</span></div>
-              <div className="flex justify-between text-sm"><span className="text-white/45">Melhor</span><span className="font-semibold text-emerald-400">{formatEfficiency(summary.bestEfficiency)}</span></div>
-            </div>
-          </div>
-
-          <div className="ba-card min-h-[340px] longoes-insight-card longoes-pattern-card" style={{ padding: "2rem" }}>
-            <p className="ba-eyebrow" style={{ marginBottom: "1.25rem" }}>Padrões identificados</p>
-            <div className="space-y-5">
-              <MetricPill label="Longões com melhora" value={`${progressiveRuns} em relação ao anterior`} />
-              <MetricPill label="Longões 25 km+" value={`${longRuns25Plus} treinos`} />
-              <MetricPill label="Distância média" value={`${avgDistance.toFixed(1)} km por longão`} />
-              <MetricPill label="Elevação média" value={`${summary.averageElevationGain.toFixed(0)} m por longão`} />
-            </div>
-          </div>
-        </section>
-
-        <section className="ba-card longoes-section longoes-evolution-section" style={{ marginBottom: "3.5rem", padding: "1.5rem 2rem" }}>
-          <p className="ba-eyebrow" style={{ marginBottom: "1.25rem" }}>Evolução</p>
-          <LongRunCharts longRuns={chartData} />
-        </section>
-
-        <section className="ba-card longoes-history-card" style={{ padding: "2rem", marginTop: "0" }}>
-          <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="ba-eyebrow" style={{ marginBottom: ".75rem" }}>Histórico de longões</p>
-              <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white/90">
-                Longões registrados
-              </h2>
-              <p className="mt-1 text-sm text-white/45">
-                Do mais recente ao mais antigo — distância, ritmo, FC, elevação, eficiência e splits.
-              </p>
-            </div>
-            <span className="badge badge--accent">{summary.totalLongRuns} longões</span>
-          </div>
-
           {longRuns.length === 0 ? (
-            <p className="text-sm text-white/50">Nenhuma atividade com nome “Longão” foi encontrada no período.</p>
+            <p className="ui-card ui-card--pad ui-muted">Nenhuma atividade com “Longão” no nome foi encontrada no período.</p>
           ) : (
-            <div className="longoes-history-list" style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+            <div className="ui-card ui-list">
               {longRuns.map((run, index) => {
                 const previous = longRuns[index + 1];
                 const trend = getEfficiencyTrend(run.efficiency, previous?.efficiency);
-                const effBadge = getEfficiencyBadge(run.efficiency);
-                const isBest = run.efficiency === bestEffValue;
+                const isBest = run.efficiency !== null && run.efficiency === bestEffValue;
+                const dateKey = getBRDateKey(run.date);
+                const place = run.city && run.city !== "Não identificado" ? `${run.city}${run.state ? `, ${run.state}` : ""}` : null;
 
                 return (
-                  <div key={run.id} className={`ba-card longoes-run-card ${isBest ? "ba-card--accent" : ""}`} style={{ padding: "1.25rem 1.5rem 1.5rem" }}>
-                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-sm font-bold text-white/35">
-                          {longRuns.length - index}
-                        </div>
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-semibold text-white/90">{run.name}</p>
-                            {isBest && <span className="badge badge--accent">Melhor eficiência</span>}
-                          </div>
-                          <p className="mt-1 text-sm text-white/45">
-                            {formatBRDate(run.date)}
-                            {run.city && run.city !== "Não identificado"
-                              ? ` · ${run.city}${run.state ? `, ${run.state}` : ""}`
-                              : ""}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="badge badge--accent">{run.distanceKm.toFixed(2)} km</span>
-                        <span className={effBadge.badge}>{effBadge.label}</span>
-                      </div>
+                  <details key={run.id} className="ui-acc">
+                    <summary className="ui-row ui-row--date">
+                      <DateBlock dateKey={dateKey} />
+                      <span className="ui-row__main">
+                        <span className="ui-row__title">{run.name}</span>
+                        <span className="ui-muted" style={{ fontSize: 12 }}>
+                          {[formatLongRunDuration(run.movingTimeSec), place, isBest ? "melhor eficiência" : null].filter(Boolean).join(" · ")}
+                        </span>
+                      </span>
+                      <span className="ui-row__side">
+                        <span className="ui-row__value">{formatKmValue(run.distanceKm, 2)}</span>
+                        <span className="ui-muted">{formatLongRunPace(run.paceSecPerKm)}</span>
+                      </span>
+                    </summary>
+                    <div className="ui-acc__body">
+                      <dl className="ui-dl">
+                        <div><dt>Ritmo ajustado</dt><dd>{formatLongRunPace(run.adjustedPaceSecPerKm)}</dd></div>
+                        <div><dt>FC média</dt><dd>{run.averageHeartrate ? `${formatNumber(run.averageHeartrate)} bpm` : "—"}</dd></div>
+                        <div><dt>FC máxima</dt><dd>{run.maxHeartrate ? `${formatNumber(run.maxHeartrate)} bpm` : "—"}</dd></div>
+                        <div><dt>Subida</dt><dd>{formatNumber(run.elevationGain)} m</dd></div>
+                        <div><dt>Eficiência</dt><dd>{formatEff(run.efficiency)}</dd></div>
+                        <div><dt>Contra o anterior</dt><dd style={{ fontSize: 14 }}>{trend.label}</dd></div>
+                      </dl>
+                      {typeof run.id === "number" && !run.name.includes("consolidado") ? (
+                        <ActivitySplitsChart
+                          activityId={run.id}
+                          activityName={run.name}
+                          targetPaceSecPerKm={run.paceSecPerKm ?? undefined}
+                          goalPaceSecPerKm={getActivityLocalDateKey({ start_date_local: run.date }) < BUENOS_AIRES_DATE_KEY ? BUENOS_AIRES_GOAL_PACE_SEC_PER_KM : undefined}
+                        />
+                      ) : (
+                        <p className="ui-muted">Corridas do mesmo dia somadas; sem splits.</p>
+                      )}
                     </div>
-
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 longoes-run-metrics" style={{ marginTop: "1.75rem" }}>
-                      <MetricPill label="Tempo" value={formatLongRunDuration(run.movingTimeSec)} />
-                      <MetricPill label="Ritmo" value={formatLongRunPace(run.paceSecPerKm)} />
-                      <MetricPill label="Ritmo ajustado" value={formatLongRunPace(run.adjustedPaceSecPerKm)} />
-                      <MetricPill label="FC média" value={run.averageHeartrate ? `${run.averageHeartrate.toFixed(0)} bpm` : "—"} />
-                      <MetricPill label="FC máxima" value={run.maxHeartrate ? `${run.maxHeartrate} bpm` : "—"} />
-                      <MetricPill label="Elevação" value={`${run.elevationGain.toFixed(0)} m`} />
-                    </div>
-
-                    <div
-                      className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 longoes-efficiency-row"
-                      style={{ marginTop: "1rem", paddingTop: "1rem" }}
-                    >
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-white/35">Eficiência:</span>
-                          <span className="text-sm font-bold text-white/90">{formatEfficiency(run.efficiency)}</span>
-                        </div>
-                        {typeof run.id === "number" && !run.name.includes("consolidado") ? (
-                          <ActivitySplitsChart
-                            activityId={run.id}
-                            activityName={run.name}
-                            targetPaceSecPerKm={run.paceSecPerKm ?? undefined}
-                            goalPaceSecPerKm={getActivityLocalDateKey({ start_date_local: run.date }) < BUENOS_AIRES_DATE_KEY ? BUENOS_AIRES_GOAL_PACE_SEC_PER_KM : undefined}
-                          />
-                        ) : (
-                          <span className="badge badge--blue">Consolidado por dia</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 text-right">
-                        <span className="text-sm">{trend.emoji}</span>
-                        <span className={`text-xs font-medium ${trend.tone}`}>{trend.label}</span>
-                        <span className="hidden text-xs text-white/35 sm:inline">{trend.detail}</span>
-                      </div>
-                    </div>
-
-                    <div className="longoes-pace-block" style={{ marginTop: ".5rem", marginBottom: ".25rem" }}>
-                      <PaceBar paceSecPerKm={run.paceSecPerKm} best={bestPace} worst={worstPace} />
-                    </div>
-                  </div>
+                  </details>
                 );
               })}
             </div>
           )}
         </section>
-      </div>
-      <footer className="site-footer">STRAVA · RAFAEL CABRAL · {getCurrentSeasonYear()}</footer>
-    </main>
+
+        {/* ── Ciclo de Buenos Aires, arquivado ── */}
+        <details id="ciclo-buenos-aires" className="ui-card ui-details" style={{ marginTop: 24 }}>
+          <summary>
+            Ciclo Buenos Aires 2026 · planejado × executado
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </summary>
+          <div className="ui-details__body">
+            <p>
+              Planejamento de {LONG_RUN_CYCLE_START_LABEL} a 20/09/2026, importado do COROS e preservado para comparar com o que foi feito.{" "}
+              <Link href="/buenos-aires" style={{ color: "var(--ui-accent)" }}>Rever a maratona</Link>
+            </p>
+            <dl className="ui-dl">
+              <div><dt>Longões cumpridos</dt><dd>{cyclePlanStats.completed} de {cyclePlanStats.total}</dd></div>
+              <div><dt>Planejado</dt><dd>{formatKmValue(cyclePlanStats.plannedKm, 0)}</dd></div>
+              <div>
+                <dt>Executado</dt>
+                <dd>
+                  {formatKmValue(cyclePlanStats.executedKm)}
+                  {cyclePlanStats.adherencePct !== null ? ` · ${Math.round(cyclePlanStats.adherencePct)}%` : ""}
+                </dd>
+              </div>
+              <div>
+                <dt>Maior estímulo</dt>
+                <dd>{cyclePlanStats.biggestLongRun ? formatKmValue(cyclePlanStats.biggestLongRun.plannedKm, 0) : "—"}</dd>
+              </div>
+            </dl>
+            {cyclePlanStats.reviewCount > 0 ? (
+              <p className="ui-muted">{cyclePlanStats.reviewCount} com distância fora do padrão, para revisar no COROS.</p>
+            ) : null}
+
+            {marathonLongRunPlan.length === 0 ? (
+              <p className="ui-muted">Nenhum longão planejado foi encontrado no COROS para este ciclo.</p>
+            ) : (
+              <div className="ui-list" style={{ margin: "0 -20px" }}>
+                {marathonLongRunPlan.map((item) => {
+                  const statusMeta = getPlanStatusMeta(item.status);
+                  return (
+                    <div key={item.key} className="ui-row ui-row--date" style={{ padding: "8px 20px" }}>
+                      <DateBlock dateKey={item.key} />
+                      <span className="ui-row__main">
+                        <span className="ui-row__title">{item.title}</span>
+                        <span className="ui-muted" style={{ fontSize: 12 }}>
+                          {item.typeLabel} · previsto {formatKmValue(item.plannedKm, item.plannedKm % 1 === 0 ? 0 : 1)}
+                        </span>
+                      </span>
+                      <span className="ui-row__side">
+                        <span className="ui-row__value">{item.actualKm !== null ? formatKmValue(item.actualKm) : "—"}</span>
+                        <span style={{ fontSize: 12, color: statusMeta.color }}>{statusMeta.label}</span>
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </details>
+      </main>
+
+      <footer className="ui-footer">Strava · Rafael Cabral · {getCurrentSeasonYear()}</footer>
+    </div>
   );
 }

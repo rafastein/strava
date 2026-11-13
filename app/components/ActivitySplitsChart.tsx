@@ -288,7 +288,9 @@ export default function ActivitySplitsChart({
     return (
       <button
         onClick={fetchAndRender}
-        className="w-full rounded-md border border-orange-400/35 bg-orange-400/[0.10] px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] leading-none text-orange-100 transition-colors hover:bg-orange-400/[0.18] md:w-[150px]"
+        type="button"
+        className="ui-btn ui-btn--ghost"
+        style={{ cursor: "pointer", alignSelf: "flex-start" }}
         aria-label={`Ver splits km a km de ${activityName ?? "atividade"}`}
       >
         Ver splits

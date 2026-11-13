@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { STRAVA_AGGREGATE_LIMIT, enforceRateLimit } from "../../../lib/rate-limit";
 import { getValidStravaAccessToken } from "../../../lib/strava-auth";
 import {
   getStravaActivities,
@@ -26,6 +27,9 @@ function getWeekStart(date: Date): Date {
 }
 
 export async function GET(req: NextRequest) {
+  const limited = await enforceRateLimit(req, STRAVA_AGGREGATE_LIMIT);
+  if (limited) return limited;
+
   const { searchParams } = new URL(req.url);
   const period = searchParams.get("period") ?? "week"; // week | month | cycle
 
