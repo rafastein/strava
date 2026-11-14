@@ -987,3 +987,29 @@
   font-weight: 600;
   text-transform: capitalize;
 }
+
+/* ── Tênis ── */
+.tenis-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: #f2f3f5;
+}
+
+.tenis-wear {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--ui-border);
+  overflow: hidden;
+}
+
+.tenis-wear__fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+}

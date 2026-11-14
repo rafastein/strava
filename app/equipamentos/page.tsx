@@ -22,10 +22,10 @@ import {
   formatPricePerRun,
   getEquipmentPurchaseMetadata,
 } from "../lib/equipment-metadata";
-import { formatBRDate } from "../lib/date-utils";
+import { getBRDateKey } from "../lib/date-utils";
+import { formatDayMonth, formatKm, formatNumber } from "../lib/format";
 import { sortEquipmentByName } from "../lib/equipment-sort";
-import { formatEfficiency, formatLongRunPace } from "../lib/strava-long-runs";
-import ShoeUsageChart from "../components/ShoeUsageChart";
+import { formatLongRunPace } from "../lib/strava-long-runs";
 import { getSisrunDataWithSource } from "../lib/sisrun-utils";
 import { getStructuredPlannedWorkout } from "../lib/planned-workout";
 import {
@@ -74,41 +74,13 @@ function formatDuration(seconds: number) {
 }
 
 function getWearStatus(totalKm: number, maxKm: number) {
-  const ratio = totalKm / maxKm;
+  const ratio = maxKm > 0 ? totalKm / maxKm : 0;
+  const progress = Math.min(Math.max(ratio * 100, 0), 100);
 
-  if (ratio >= 1) {
-    return {
-      label: "Muito rodado. Atenção alta",
-      emoji: "🔴",
-      tone: "bg-red-100 text-red-700",
-      progress: 100,
-    };
-  }
-
-  if (ratio >= 0.75) {
-    return {
-      label: "Bem rodado. Monitorar desgaste",
-      emoji: "🟡",
-      tone: "bg-amber-100 text-amber-700",
-      progress: Math.min(ratio * 100, 100),
-    };
-  }
-
-  if (ratio >= 0.4) {
-    return {
-      label: "Rodado, mas saudável",
-      emoji: "🔵",
-      tone: "bg-blue-100 text-blue-700",
-      progress: Math.min(ratio * 100, 100),
-    };
-  }
-
-  return {
-    label: "Novo / confortável",
-    emoji: "🟢",
-    tone: "bg-emerald-100 text-emerald-700",
-    progress: Math.min(ratio * 100, 100),
-  };
+  if (ratio >= 1) return { label: "Passou do limite", color: "#ff8a7a", progress: 100 };
+  if (ratio >= 0.75) return { label: "Bem rodado, monitorar", color: "var(--ui-accent)", progress };
+  if (ratio >= 0.4) return { label: "Rodado, saudável", color: "var(--ui-blue)", progress };
+  return { label: "Novo", color: "var(--ui-good)", progress };
 }
 
 function buildInitialGearSummary(gearId: string, name: string, brandName?: string | null): GearSummary {
@@ -212,211 +184,144 @@ export default async function EquipamentosPage() {
   );
 
   return (
-    <div className="page"><Navbar />
-    <main className="ba-page">
-        <div className="ba-page-header">
+    <div className="ui-page">
+      <Navbar />
+      <main className="ui-container" style={{ maxWidth: 760 }}>
+        <header className="ui-header">
           <div>
-            <p className="ba-eyebrow">Strava + COROS/treino estruturado + SisRUN</p>
-            <h1 className="ba-title">Equipamentos</h1>
-            <p className="ba-muted" style={{ marginTop: ".5rem" }}>
-              Quilometragem, desgaste, eficiência e recomendação dinâmica de tênis. O motor também considera o tempo sem uso para equilibrar o rodízio entre modelos adequados ao mesmo treino. O treino estruturado do Upstash/COROS tem prioridade; SisRUN entra como fallback.
+            <h1 className="ui-title">Tênis</h1>
+            <p className="ui-muted">
+              {grouped.length} {grouped.length === 1 ? "par" : "pares"} no rodízio · desgaste, custo e recomendação por treino
             </p>
           </div>
-          <Link href="/" className="ba-back">← Voltar ao dashboard</Link>
-        </div>
+        </header>
 
-        <TodayShoeCard
-          workout={todayWorkout}
-          shoe={todayShoe}
-          alternatives={todayAlternatives}
-          workoutSource={structuredWorkoutResult.data ? structuredWorkoutResult.sourceLabel : sisrunResult.sourceLabel}
-        />
+        <div className="hoje-col">
+          <TodayShoeCard
+            workout={todayWorkout}
+            shoe={todayShoe}
+            alternatives={todayAlternatives}
+            workoutSource={structuredWorkoutResult.data ? structuredWorkoutResult.sourceLabel : sisrunResult.sourceLabel}
+          />
 
-        {grouped.length === 0 ? (
-          <section className="ba-card" style={{ padding: "1.5rem" }}>
-            <p className="ba-muted">Nenhuma atividade com equipamento válido foi encontrada.</p>
-          </section>
-        ) : (
-          <>
-            <section className="ba-section">
-              <ShoeUsageChart
-                shoes={grouped.map((g) => ({
-                  name: g.name,
-                  totalKm: g.totalKm,
-                  maxKm: g.maxKm,
-                  lastUse: g.lastUse,
-                  activities: g.activities,
-                }))}
-              />
-            </section>
+          {grouped.length === 0 ? (
+            <p className="ui-card ui-card--pad ui-muted">Nenhuma atividade com tênis cadastrado foi encontrada no Strava.</p>
+          ) : (
+            <>
+              {/* ── Rodízio ── */}
+              <section className="ui-section" aria-label="Rodízio">
+                <div className="ui-section__head">
+                  <h2 className="ui-h2">Rodízio</h2>
+                  <span className="ui-muted">toque para ver uso e custo</span>
+                </div>
+                <div className="ui-card ui-list">
+                  {grouped.map((gear) => {
+                    const averagePace = gear.totalKm > 0 ? gear.totalTime / gear.totalKm : null;
+                    const averageKmPerRun = gear.activities > 0 ? gear.totalKm / gear.activities : 0;
+                    const averageHr = gear.heartRates.length > 0
+                      ? gear.heartRates.reduce((a, b) => a + b, 0) / gear.heartRates.length
+                      : null;
+                    const averageEfficiency = gear.efficiencies.length > 0
+                      ? gear.efficiencies.reduce((a, b) => a + b, 0) / gear.efficiencies.length
+                      : null;
+                    const wear = getWearStatus(gear.totalKm, gear.maxKm);
+                    const purchase = getEquipmentPurchaseMetadata(gear.name);
+                    const lastUseKey = gear.lastUse ? getBRDateKey(gear.lastUse) : "";
 
-            <section className="ba-section ba-card" style={{ padding: "1.5rem" }}>
-              <p className="ba-eyebrow">Motor de recomendação</p>
-              <h2 className="ba-title" style={{ fontSize: "1.8rem", marginTop: 4 }}>Tênis por tipo de treino</h2>
-              <p className="ba-muted" style={{ marginTop: ".4rem" }}>
-                Sugestão calculada pelo perfil do modelo, tipo do treino, desgaste acumulado e tempo desde o último uso. O rodízio só desempata modelos adequados ao treino; tênis de prova continuam preservados quando o dia não é prova/simulado.
-              </p>
-
-              <div className="mt-5 grid gap-3 md:grid-cols-3 lg:grid-cols-5">
-                {EQUIPMENT_RECOMMENDATION_TYPES.map((type) => {
-                  const syntheticWorkout: EquipmentWorkout = {
-                    status: "planned",
-                    type,
-                    label: getWorkoutLabel(type),
-                    dateLabel: "",
-                    distanceKm: null,
-                    source: "none",
-                    evidence: [],
-                  };
-                  const shoe = pickRecommendedShoeForWorkout(grouped, syntheticWorkout);
-
-                  return (
-                    <div key={type} className="ba-card-soft" style={{ padding: "1rem" }}>
-                      <p className="ba-label">
-                        {getWorkoutLabel(type)}
-                      </p>
-
-                      {shoe ? (
-                        <div className="mt-2 flex items-center gap-3">
-                          <BrandIcon brand={shoe.brand} />
-                          <div>
-                            <p style={{ fontWeight: 600, color: "var(--text)", fontSize: 13 }}>
-                              {shoe.name}
-                            </p>
-                            <p style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                              {shoe.totalKm.toFixed(0)} km acumulados
-                            </p>
-                          </div>
+                    return (
+                      <details key={gear.gearId} className="ui-acc">
+                        <summary className="ui-row" style={{ alignItems: "flex-start", paddingTop: 14, paddingBottom: 14 }}>
+                          <BrandBadge brand={gear.brand} />
+                          <span className="ui-row__main" style={{ flex: 1, gap: 6 }}>
+                            <span className="ui-row__title">{gear.name}</span>
+                            <span className="tenis-wear" role="img" aria-label={`${formatNumber(wear.progress)}% da vida útil estimada`}>
+                              <span className="tenis-wear__fill" style={{ width: `${wear.progress}%`, background: wear.color }} />
+                            </span>
+                            <span className="ui-muted" style={{ fontSize: 12 }}>
+                              <span style={{ color: wear.color, fontWeight: 600 }}>{wear.label}</span>
+                              {lastUseKey ? ` · último uso ${formatDayMonth(lastUseKey)}` : ""}
+                            </span>
+                          </span>
+                          <span className="ui-row__side">
+                            <span className="ui-row__value">{formatKm(gear.totalKm, 0)}</span>
+                            <span className="ui-muted">de {formatNumber(gear.maxKm)}</span>
+                          </span>
+                        </summary>
+                        <div className="ui-acc__body">
+                          <dl className="ui-dl">
+                            <div><dt>Corridas</dt><dd>{formatNumber(gear.activities)}</dd></div>
+                            <div><dt>Média por corrida</dt><dd>{formatKm(averageKmPerRun)}</dd></div>
+                            <div><dt>Tempo total</dt><dd>{formatDuration(gear.totalTime)}</dd></div>
+                            <div><dt>Pace médio</dt><dd>{formatLongRunPace(averagePace)}</dd></div>
+                            <div><dt>FC média</dt><dd>{averageHr ? `${formatNumber(averageHr)} bpm` : "—"}</dd></div>
+                            <div><dt>Eficiência</dt><dd>{averageEfficiency ? formatNumber(averageEfficiency, 1) : "—"}</dd></div>
+                            <div><dt>Subida acumulada</dt><dd>{formatNumber(gear.totalElevation)} m</dd></div>
+                            <div><dt>Corridas até o limite</dt><dd>{formatEstimatedRuns(gear.maxKm, averageKmPerRun)}</dd></div>
+                          </dl>
+                          <dl className="ui-dl" style={{ paddingTop: 14, borderTop: "1px solid var(--ui-border)" }}>
+                            <div><dt>Preço</dt><dd>{formatEquipmentPrice(purchase?.priceBRL)}</dd></div>
+                            <div><dt>Comprado em</dt><dd>{formatEquipmentPurchaseDate(purchase?.purchaseDate)}</dd></div>
+                            <div><dt>Idade</dt><dd>{formatEquipmentAge(purchase?.purchaseDate)}</dd></div>
+                            <div><dt>Custo por km até agora</dt><dd>{formatPricePerKm(purchase?.priceBRL, gear.totalKm)}</dd></div>
+                            <div><dt>Custo por corrida</dt><dd>{formatPricePerRun(purchase?.priceBRL, gear.activities)}</dd></div>
+                            <div><dt>Custo por km no fim da vida</dt><dd>{formatEstimatedPricePerKm(purchase?.priceBRL, gear.maxKm)}</dd></div>
+                          </dl>
                         </div>
-                      ) : (
-                        <p className="ba-muted" style={{ marginTop: 8 }}>Sem sugestão disponível.</p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
+                      </details>
+                    );
+                  })}
+                </div>
+              </section>
 
-            <section className="grid gap-4 md:grid-cols-2">
-              {grouped.map((gear) => {
-                const averagePace =
-                  gear.totalKm > 0 ? gear.totalTime / gear.totalKm : null;
+              {/* ── Por tipo de treino ── */}
+              <section className="ui-section" aria-label="Tênis por tipo de treino">
+                <div className="ui-section__head">
+                  <h2 className="ui-h2">Por tipo de treino</h2>
+                </div>
+                <div className="ui-card ui-list">
+                  {EQUIPMENT_RECOMMENDATION_TYPES.map((type) => {
+                    const syntheticWorkout: EquipmentWorkout = {
+                      status: "planned",
+                      type,
+                      label: getWorkoutLabel(type),
+                      dateLabel: "",
+                      distanceKm: null,
+                      source: "none",
+                      evidence: [],
+                    };
+                    const shoe = pickRecommendedShoeForWorkout(grouped, syntheticWorkout);
 
-                const averageKmPerRun =
-                  gear.activities > 0 ? gear.totalKm / gear.activities : 0;
-
-                const averageHr =
-                  gear.heartRates.length > 0
-                    ? gear.heartRates.reduce((a, b) => a + b, 0) /
-                      gear.heartRates.length
-                    : null;
-
-                const averageEfficiency =
-                  gear.efficiencies.length > 0
-                    ? gear.efficiencies.reduce((a, b) => a + b, 0) /
-                      gear.efficiencies.length
-                    : null;
-
-                const wear = getWearStatus(gear.totalKm, gear.maxKm);
-                const purchase = getEquipmentPurchaseMetadata(gear.name);
-                const pricePerKm = formatPricePerKm(
-                  purchase?.priceBRL,
-                  gear.totalKm,
-                );
-                const pricePerRun = formatPricePerRun(
-                  purchase?.priceBRL,
-                  gear.activities,
-                );
-                const purchasePrice = formatEquipmentPrice(purchase?.priceBRL);
-                const purchaseDate = formatEquipmentPurchaseDate(
-                  purchase?.purchaseDate,
-                );
-                const estimatedPricePerKm = formatEstimatedPricePerKm(
-                  purchase?.priceBRL,
-                  gear.maxKm,
-                );
-                const estimatedRuns = formatEstimatedRuns(
-                  gear.maxKm,
-                  averageKmPerRun,
-                );
-                const equipmentAge = formatEquipmentAge(purchase?.purchaseDate);
-
-                return (
-                  <article key={gear.gearId} className="ba-card" style={{ padding: "1.5rem" }}>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <BrandIcon brand={gear.brand} />
-                        <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text)" }}>
-                          {gear.name}
-                        </h2>
+                    return (
+                      <div key={type} className="ui-row" style={{ minHeight: 56 }}>
+                        <span className="ui-muted" style={{ fontSize: 14, color: "var(--ui-text-2)" }}>{getWorkoutLabel(type)}</span>
+                        <span className="ui-row__side">
+                          <span style={{ fontSize: 15, fontWeight: 600, textAlign: "right" }}>{shoe ? shoe.name : "sem sugestão"}</span>
+                          {shoe ? <span className="ui-muted" style={{ fontSize: 12 }}>{formatKm(shoe.totalKm, 0)} rodados</span> : null}
+                        </span>
                       </div>
-
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${wear.tone}`}
-                      >
-                        {wear.emoji} {wear.label}
-                      </span>
-                    </div>
-
-                    <div className="mt-5 grid gap-3 md:grid-cols-4">
-                      <Metric
-                        label="Km total"
-                        value={`${gear.totalKm.toFixed(1)} km`}
-                      />
-                      <Metric label="Treinos" value={String(gear.activities)} />
-                      <Metric
-                        label="Média por corrida"
-                        value={`${averageKmPerRun.toFixed(1)} km`}
-                      />
-                      <Metric label="Tempo" value={formatDuration(gear.totalTime)} />
-                      <Metric
-                        label="Pace médio"
-                        value={formatLongRunPace(averagePace)}
-                      />
-                      <Metric
-                        label="FC média"
-                        value={averageHr ? `${averageHr.toFixed(0)} bpm` : "-"}
-                      />
-                      <Metric
-                        label="Eficiência"
-                        value={formatEfficiency(averageEfficiency)}
-                      />
-                      <Metric
-                        label="Elevação"
-                        value={`${gear.totalElevation.toFixed(0)} m`}
-                      />
-                      <Metric label="Último uso" value={gear.lastUse ? formatBRDate(gear.lastUse) : "-"} />
-                      <Metric label="Preço" value={purchasePrice} />
-                      <Metric label="Data da compra" value={purchaseDate} />
-                      <Metric label="Idade" value={equipmentAge} />
-                      <Metric label="Preço por km" value={pricePerKm} />
-                      <Metric label="Preço por corrida" value={pricePerRun} />
-                      <Metric label="Preço estimado por km" value={estimatedPricePerKm} />
-                      <Metric label="Corridas estimadas" value={estimatedRuns} />
-                    </div>
-
-                    <div className="mt-4">
-                      <div style={{ marginBottom: 4, display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text-muted)" }}>
-                        <span>Desgaste estimado</span>
-                        <span>{gear.totalKm.toFixed(0)} / {gear.maxKm} km</span>
-                      </div>
-
-                      <div className="ba-progress">
-                        <div
-                          className="ba-progress-fill"
-                          style={{ width: `${wear.progress}%` }}
-                        />
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </section>
-          </>
-        )}
-    </main>
-    <footer className="site-footer">STRAVA · RAFAEL CABRAL · {getCurrentSeasonYear()}</footer>
+                    );
+                  })}
+                </div>
+                <p className="ui-muted" style={{ padding: "0 4px" }}>
+                  A sugestão combina o perfil do modelo, o tipo do treino, o desgaste e o tempo sem uso. Tênis de prova
+                  ficam preservados fora de dia de prova.
+                </p>
+              </section>
+            </>
+          )}
+        </div>
+      </main>
+      <footer className="ui-footer">Strava · Rafael Cabral · {getCurrentSeasonYear()}</footer>
     </div>
+  );
+}
+
+function BrandBadge({ brand }: { brand?: string }) {
+  // Fundo claro: várias marcas têm logo preto, que some no tema escuro.
+  return (
+    <span className="tenis-brand" aria-hidden="true">
+      <BrandIcon brand={brand} className="h-5 w-5" />
+    </span>
   );
 }
 
@@ -433,91 +338,51 @@ function TodayShoeCard({
 }) {
   const isRest = workout.status === "rest";
   const isUnknown = workout.status === "unknown";
+  const planned = typeof workout.distanceKm === "number" && workout.distanceKm > 0 ? `${formatKm(workout.distanceKm)} planejados` : null;
 
   return (
-    <section className="ba-section ba-card" style={{ padding: "1.5rem" }}>
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <p className="ba-eyebrow">Treino de hoje</p>
-          <h2 className="ba-title" style={{ fontSize: "1.9rem", marginTop: 4 }}>
-            {isRest ? "Descanso" : isUnknown ? "Sem treino carregado" : workout.label}
-          </h2>
-          <p className="ba-muted" style={{ marginTop: ".45rem" }}>
-            {isRest
-              ? "Nenhum tênis recomendado hoje. Melhor preservar o rodízio."
-              : isUnknown
-                ? "Não encontrei treino estruturado nem treino do dia no SisRUN carregado."
-                : `${
-                    typeof workout.distanceKm === "number" && workout.distanceKm > 0
-                      ? `${workout.distanceKm.toFixed(1)} km planejados`
-                      : workout.source === "structured-workout"
-                        ? "Distância não informada no treino estruturado"
-                        : "Distância não informada no SisRUN"
-                  } · fonte: ${workoutSource}`}
-          </p>
-
-          {workout.evidence.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {workout.evidence.slice(0, 4).map((item) => (
-                <span key={item} className="rounded-full px-3 py-1 text-xs font-semibold" style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-muted)" }}>
-                  {item}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="ba-card-soft" style={{ padding: "1rem", minWidth: 280 }}>
-          <p className="ba-label">Tênis recomendado</p>
-
-          {shoe ? (
-            <>
-              <div className="mt-3 flex items-center gap-3">
-                <BrandIcon brand={shoe.brand} />
-                <div>
-                  <p style={{ fontSize: 18, fontWeight: 800, color: "var(--text)", lineHeight: 1.15 }}>
-                    {shoe.name}
-                  </p>
-                  <p style={{ marginTop: 3, fontSize: 12, color: "var(--text-muted)" }}>
-                    {shoe.totalKm.toFixed(0)} / {shoe.maxKm} km · score {shoe.recommendationScore}
-                  </p>
-                </div>
-              </div>
-
-              <p className="ba-muted" style={{ marginTop: ".85rem", fontSize: 13 }}>
-                {shoe.profile.notes}
-              </p>
-
-              <ul style={{ marginTop: ".85rem", paddingLeft: "1rem", color: "var(--text-muted)", fontSize: 12 }}>
-                {shoe.reasons.slice(0, 3).map((reason) => (
-                  <li key={reason}>{reason}</li>
-                ))}
-              </ul>
-
-              {alternatives.length > 0 && (
-                <p style={{ marginTop: ".85rem", fontSize: 12, color: "var(--text-muted)" }}>
-                  Alternativas: {alternatives.map((alt) => alt.name).join(" · ")}
-                </p>
-              )}
-            </>
-          ) : (
-            <p className="ba-muted" style={{ marginTop: ".75rem" }}>
-              {isRest
-                ? "Dia sem treino. Sem desgaste necessário no rodízio."
-                : "Não há tênis suficiente no histórico para recomendar com segurança."}
-            </p>
-          )}
-        </div>
+    <section className="ui-card ui-card--pad ui-stack" aria-label="Tênis de hoje">
+      <p className="ui-label-accent">Hoje</p>
+      <div>
+        <h2 className="hoje-race__title" style={{ fontSize: 22 }}>
+          {isRest ? "Descanso" : isUnknown ? "Sem treino carregado" : workout.label}
+        </h2>
+        <p className="ui-muted" style={{ fontSize: 14, marginTop: 4 }}>
+          {isRest
+            ? "Nenhum tênis recomendado hoje; o rodízio descansa."
+            : isUnknown
+              ? "Não há treino do COROS nem do SisRUN para hoje."
+              : [planned, `fonte: ${workoutSource}`].filter(Boolean).join(" · ")}
+        </p>
       </div>
-    </section>
-  );
-}
 
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="ba-card-soft" style={{ padding: ".75rem 1rem" }}>
-      <p className="ba-label">{label}</p>
-      <p style={{ marginTop: 4, fontWeight: 600, color: "var(--text)", fontSize: 13 }}>{value}</p>
-    </div>
+      {shoe ? (
+        <div className="ui-stack" style={{ gap: 12, paddingTop: 16, borderTop: "1px solid var(--ui-border)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <BrandBadge brand={shoe.brand} />
+            <div style={{ minWidth: 0 }}>
+              <p className="ui-muted" style={{ fontSize: 12 }}>Tênis recomendado</p>
+              <p className="ui-num" style={{ fontSize: 20 }}>{shoe.name}</p>
+              <p className="ui-muted">{formatKm(shoe.totalKm, 0)} de {formatNumber(shoe.maxKm)} km</p>
+            </div>
+          </div>
+          {shoe.profile.notes ? <p style={{ fontSize: 14, color: "var(--ui-text-2)" }}>{shoe.profile.notes}</p> : null}
+          {shoe.reasons.length > 0 ? (
+            <ul style={{ paddingLeft: 18, fontSize: 14, color: "var(--ui-text-2)", display: "flex", flexDirection: "column", gap: 4 }}>
+              {shoe.reasons.slice(0, 3).map((reason) => (
+                <li key={reason}>{reason}</li>
+              ))}
+            </ul>
+          ) : null}
+          {alternatives.length > 0 ? (
+            <p className="ui-muted">Alternativas: {alternatives.map((alt) => alt.name).join(" · ")}</p>
+          ) : null}
+        </div>
+      ) : !isRest && !isUnknown ? (
+        <p className="ui-muted" style={{ fontSize: 14 }}>Ainda não há histórico suficiente para recomendar um tênis com segurança.</p>
+      ) : null}
+
+      <Link href="/coros" className="ui-btn ui-btn--ghost">Ver agenda de treinos</Link>
+    </section>
   );
 }
