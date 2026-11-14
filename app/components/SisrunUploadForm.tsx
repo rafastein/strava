@@ -48,58 +48,40 @@ export default function SisrunUploadForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="ba-card" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-      <div>
-        <p className="ba-eyebrow">Upload</p>
-        <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.6rem", color: "#fff", marginTop: 4 }}>
-          Atualizar SisRUN
-        </h2>
-        <p className="ba-muted" style={{ marginTop: ".4rem" }}>
-          Envie a planilha exportada para atualizar o planejamento semanal.
-        </p>
-      </div>
+    <form onSubmit={handleSubmit} className="ui-stack">
+      <p>Envie a planilha exportada do SisRUN (.xls ou .xlsx) para atualizar o planejamento semanal.</p>
 
-      <div className="ba-card-soft" style={{ padding: "1rem" }}>
-        <p className="ba-label" style={{ marginBottom: ".75rem" }}>Arquivo da planilha</p>
+      <input
+        ref={inputRef}
+        id="sisrun-file"
+        type="file"
+        accept=".xls,.xlsx"
+        onChange={(e) => {
+          const selected = e.target.files?.[0] ?? null;
+          setFile(selected);
+          setStatus("");
+        }}
+        className="sr-only"
+      />
 
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".xls,.xlsx"
-          onChange={(e) => {
-            const selected = e.target.files?.[0] ?? null;
-            setFile(selected);
-            setStatus("");
-          }}
-          className="sr-only"
-        />
-
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "rgba(0,0,0,.2)", border: "1px solid rgba(255,255,255,.07)", borderRadius: 12, padding: "10px 14px" }}>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,.55)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {file ? file.name : "Nenhum arquivo escolhido"}
-          </p>
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className="ba-pill ba-pill-dark"
-            style={{ flexShrink: 0, fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase" }}
-          >
-            Escolher arquivo
-          </button>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <button
-          type="submit"
-          disabled={loading}
-          className="ba-pill ba-pill-orange"
-          style={{ fontSize: 10, letterSpacing: ".12em", textTransform: "uppercase", opacity: loading ? .5 : 1, cursor: loading ? "not-allowed" : "pointer" }}
-        >
-          {loading ? "Processando..." : "Enviar planilha"}
+      <div className="hoje-notice">
+        <label htmlFor="sisrun-file" className="ui-muted" style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 14 }}>
+          {file ? file.name : "Nenhum arquivo escolhido"}
+        </label>
+        <button type="button" onClick={() => inputRef.current?.click()} className="ui-btn ui-btn--ghost" style={{ cursor: "pointer", flexShrink: 0 }}>
+          Escolher arquivo
         </button>
-        {status && <p style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>{status}</p>}
       </div>
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="ui-btn"
+        style={{ border: 0, opacity: loading ? 0.5 : 1, cursor: loading ? "wait" : "pointer" }}
+      >
+        {loading ? "Processando…" : "Enviar planilha"}
+      </button>
+      {status ? <p role="status" className="ui-muted" style={{ fontSize: 14 }}>{status}</p> : null}
     </form>
   );
 }

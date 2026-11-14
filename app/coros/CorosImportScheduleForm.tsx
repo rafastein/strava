@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
+import { fetchWithAdminRetry } from "../lib/admin-client";
 
 const EXAMPLE_RAW = `Training Schedule
 ========================
@@ -35,9 +36,8 @@ type ImportResponse = {
 };
 
 export default function CorosImportScheduleForm() {
-  const [adminSecret, setAdminSecret] = useState("");
   const [rawText, setRawText] = useState("");
-  const [preferredTitles, setPreferredTitles] = useState("2026-06-13=Longão 23k\n2026-06-20=20/06 Sab - Corrida Prova 10,0\n2026-06-21=21/06 Dom - Corrida Longo 25,0");
+  const [preferredTitles, setPreferredTitles] = useState("");
   const [dryRun, setDryRun] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<ImportResponse | null>(null);
@@ -62,12 +62,10 @@ export default function CorosImportScheduleForm() {
     setResult(null);
 
     try {
-      const response = await fetch("/api/coros/import-schedule", {
+      // Pede a senha administrativa só se o servidor recusar a primeira tentativa.
+      const response = await fetchWithAdminRetry("/api/coros/import-schedule", {
         method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-admin-secret": adminSecret,
-        },
+        headers: { "content-type": "application/json" },
         body: JSON.stringify({
           text: rawText,
           preferredTitlesByDate,
@@ -85,98 +83,76 @@ export default function CorosImportScheduleForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-4 grid gap-4">
-      <div className="grid gap-3 lg:grid-cols-[1fr_1fr]">
-        <label className="grid gap-2">
-          <span className="ba-label">ADMIN_SECRET</span>
-          <input
-            value={adminSecret}
-            onChange={(event) => setAdminSecret(event.target.value)}
-            type="password"
-            placeholder="Senha administrativa da Vercel"
-            style={fieldStyle}
-          />
-        </label>
-        <label className="grid gap-2">
-          <span className="ba-label">Preferências de duplicidade</span>
-          <textarea
-            value={preferredTitles}
-            onChange={(event) => setPreferredTitles(event.target.value)}
-            rows={3}
-            placeholder={"2026-06-13=Longão 23k\n2026-06-21=21/06 Dom - Corrida Longo 25,0"}
-            style={fieldStyle}
-          />
-        </label>
-      </div>
-
-      <label className="grid gap-2">
-        <span className="ba-label">Agenda bruta do COROS MCP</span>
+    <form onSubmit={handleSubmit} className="ui-stack">
+      <label className="ui-label">
+        Agenda bruta do COROS (texto do MCP)
         <textarea
+          className="ui-field"
           value={rawText}
           onChange={(event) => setRawText(event.target.value)}
-          rows={12}
+          rows={10}
           placeholder={EXAMPLE_RAW}
-          style={{ ...fieldStyle, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}
+          style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 13 }}
         />
       </label>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2 ba-muted" style={{ fontSize: 13 }}>
-          <input
-            type="checkbox"
-            checked={dryRun}
-            onChange={(event) => setDryRun(event.target.checked)}
-          />
-          Testar sem salvar
-        </label>
-        <button
-          type="submit"
-          disabled={isSubmitting || !adminSecret || !rawText.trim()}
-          className="ba-back"
-          style={{ cursor: isSubmitting ? "wait" : "pointer" }}
-        >
-          {isSubmitting ? "Importando..." : dryRun ? "Testar importação" : "Importar para Upstash"}
-        </button>
-      </div>
+      <label className="ui-label">
+        Título preferido quando há dois treinos no mesmo dia (uma linha por data: AAAA-MM-DD=título)
+        <textarea
+          className="ui-field"
+          value={preferredTitles}
+          onChange={(event) => setPreferredTitles(event.target.value)}
+          rows={3}
+          placeholder={"2026-06-13=Longão 23k"}
+        />
+      </label>
 
-      {result && (
-        <div className="ba-card-soft" style={{ padding: "1rem" }}>
+      <label style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 44, fontSize: 14 }}>
+        <input type="checkbox" checked={dryRun} onChange={(event) => setDryRun(event.target.checked)} style={{ width: 20, height: 20 }} />
+        Testar sem salvar
+      </label>
+
+      <button
+        type="submit"
+        disabled={isSubmitting || !rawText.trim()}
+        className="ui-btn"
+        style={{ border: 0, cursor: isSubmitting ? "wait" : "pointer", opacity: isSubmitting || !rawText.trim() ? 0.5 : 1 }}
+      >
+        {isSubmitting ? "Importando…" : dryRun ? "Testar importação" : "Importar e salvar"}
+      </button>
+
+      {result ? (
+        <div role="status" className="ui-stack" style={{ gap: 8 }}>
           {result.error ? (
-            <p style={{ color: "#fca5a5", fontWeight: 700 }}>{result.error}</p>
+            <p style={{ color: "#ff8a7a", fontWeight: 600 }}>{result.error}</p>
           ) : (
             <>
-              <p style={{ color: "var(--text)", fontWeight: 800 }}>
-                {result.dryRun ? "Dry-run concluído" : "Importação concluída"} · {result.importedCount ?? 0} treinos
+              <p style={{ color: "var(--ui-text)", fontWeight: 600 }}>
+                {result.dryRun ? "Teste concluído, nada foi salvo" : "Importação concluída"} · {result.importedCount ?? 0} treinos
               </p>
-              <div className="mt-3 grid gap-2 md:grid-cols-2">
+              <div className="ui-list" style={{ margin: "0 -20px" }}>
                 {(result.workouts ?? []).map((workout) => (
-                  <div key={`${workout.key}-${workout.title}`} className="ba-card-soft" style={{ padding: ".8rem" }}>
-                    <p style={{ color: "var(--text)", fontWeight: 700, fontSize: 13 }}>{workout.date} · {workout.title}</p>
-                    <p className="ba-muted" style={{ fontSize: 12 }}>
-                      {workout.source} · {workout.type}
-                      {workout.distanceKm ? ` · ${workout.distanceKm.toFixed(1)} km` : ""}
-                      {workout.loadTl ? ` · ${Math.round(workout.loadTl)} TL` : ""}
-                      {workout.estimatedTime ? ` · ${workout.estimatedTime}` : ""}
-                      {workout.steps?.length ? ` · ${workout.steps.length} bloco${workout.steps.length === 1 ? "" : "s"}` : ""}
-                    </p>
+                  <div key={`${workout.key}-${workout.title}`} className="ui-row" style={{ minHeight: 52 }}>
+                    <span className="ui-row__main">
+                      <span className="ui-row__title" style={{ whiteSpace: "normal" }}>{workout.title}</span>
+                      <span className="ui-muted">
+                        {[
+                          workout.date,
+                          workout.type,
+                          workout.distanceKm ? `${workout.distanceKm.toFixed(1).replace(".", ",")} km` : null,
+                          workout.loadTl ? `${Math.round(workout.loadTl)} TL` : null,
+                          workout.estimatedTime ?? null,
+                          workout.steps?.length ? `${workout.steps.length} ${workout.steps.length === 1 ? "bloco" : "blocos"}` : null,
+                        ].filter(Boolean).join(" · ")}
+                      </span>
+                    </span>
                   </div>
                 ))}
               </div>
             </>
           )}
         </div>
-      )}
+      ) : null}
     </form>
   );
 }
-
-const fieldStyle: CSSProperties = {
-  width: "100%",
-  borderRadius: 14,
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "rgba(255,255,255,0.05)",
-  color: "var(--text)",
-  padding: ".8rem 1rem",
-  outline: "none",
-  fontSize: 13,
-};

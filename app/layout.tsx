@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./styles/weekly-plan.css";
-import "./styles/coros.css";
 import "./styles/buenos-aires-archive.css";
 // Novo sistema visual: fica por último para valer sobre as regras antigas no celular.
 import "./styles/app.css";

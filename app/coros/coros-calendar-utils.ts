@@ -58,7 +58,7 @@ function formatIsoDate(date: Date) {
 
 export function formatDistance(distanceKm?: number | null) {
   if (typeof distanceKm !== "number" || !Number.isFinite(distanceKm)) return "não informada";
-  return `${distanceKm.toFixed(1)} km`;
+  return `${distanceKm.toFixed(1).replace(".", ",")} km`;
 }
 
 export function formatPlannedWorkoutSummary(workout: SavedWorkoutCard) {

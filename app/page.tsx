@@ -42,6 +42,7 @@ import {
   getSisrunData,
   getTodaySisrunRow,
   getTodayStravaKm,
+  isSisrunWeekCurrent,
   type SisrunWeek,
 } from "./lib/sisrun-utils";
 import { getValidStravaAccessToken } from "./lib/strava-auth";
@@ -122,7 +123,9 @@ export default async function Home() {
   const weekRuns = weekDays.reduce((sum, day) => sum + day.runs, 0);
   const weekMaxKm = Math.max(...weekDays.map((day) => day.km), 1);
 
-  const sisrunWeek = getCurrentWeek(sisrunData) as SisrunWeek | null;
+  // Planilha desatualizada devolve a última semana que tem; ela não vale como plano desta semana.
+  const lastOrCurrentSisrunWeek = getCurrentWeek(sisrunData) as SisrunWeek | null;
+  const sisrunWeek = isSisrunWeekCurrent(lastOrCurrentSisrunWeek) ? lastOrCurrentSisrunWeek : null;
   const structuredWeek = getStructuredCurrentWeekSummary(allStructuredPlannedWorkouts);
   const hasStructuredWeek = structuredWeek.workoutCount > 0;
   const plannedWeekKm = hasStructuredWeek ? structuredWeek.plannedKm : sisrunWeek?.totalPlannedKm ?? 0;

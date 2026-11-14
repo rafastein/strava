@@ -1,7 +1,6 @@
 // Sempre renderiza na hora; só as chamadas ao Strava usam o cache de dados (lib/strava-client).
 export const revalidate = 0;
 
-import Link from "next/link";
 import Navbar from "../components/Navbar";
 import SisrunUploadForm from "../components/SisrunUploadForm";
 import { getStravaActivities, isRunActivity, type StravaActivitySummary } from "../lib/strava-client";
@@ -12,7 +11,9 @@ import {
   getCurrentWeek,
   getTodaySisrunRow,
   getSisrunDataQualityWarnings,
+  isSisrunWeekCurrent,
 } from "../lib/sisrun-utils";
+import { formatDayMonth, formatKm, formatNumber, formatWeekdayShort } from "../lib/format";
 import { getCurrentSeasonYear } from "../lib/season";
 
 type StravaActivity = StravaActivitySummary;
@@ -35,13 +36,6 @@ function getWeekRows(
     const rowDate = parseBrDateLocal(row.date);
     return rowDate >= start && rowDate <= end;
   });
-}
-
-function getDayLabel(date: string) {
-  return new Intl.DateTimeFormat("pt-BR", { weekday: "short" })
-    .format(parseBrDateLocal(date))
-    .replace(".", "")
-    .toUpperCase();
 }
 
 function getActivityDateKey(activity: StravaActivity) {
@@ -79,7 +73,11 @@ function getCompletedKm(row: WeekRow, stravaKmByDate: Map<string, number>) {
   return Number(Math.max(row.completedDistanceKm ?? 0, stravaKmByDate.get(row.date) ?? 0).toFixed(1));
 }
 
-function formatKm(value: number) { return `${value.toFixed(1)} km`; }
+/** "13/11/2026" → "2026-11-13" */
+function toDateKey(brDate: string) {
+  const [day, month, year] = brDate.split("/");
+  return `${year}-${month}-${day}`;
+}
 
 function formatStatusValue(value: string | number | null) {
   if (value === null || value === "") return "—";
@@ -98,272 +96,173 @@ export default async function SisrunPage() {
   const plannedDays     = weekRows.filter((r) => r.plannedDistanceKm > 0).length;
   const completedTodayKm = todayRow ? getCompletedKm(todayRow, stravaKmByDate) : 0;
 
+  const weekPlannedKm = currentWeek?.totalPlannedKm ?? 0;
+  const weekDoneKm = weekRows.reduce((sum, row) => sum + getCompletedKm(row, stravaKmByDate), 0);
+  const weekPct = weekPlannedKm > 0 ? Math.min((weekDoneKm / weekPlannedKm) * 100, 100) : 0;
+  const todayKey = todayRow ? toDateKey(todayRow.date) : null;
+  // Com a planilha desatualizada, `currentWeek` é a última semana que ela tem, não a de hoje.
+  const weekIsCurrent = isSisrunWeekCurrent(currentWeek);
+
   return (
-    <div className="page">
+    <div className="ui-page">
       <Navbar />
-      <main className="ba-page">
-
-        {/* ── HEADER ── */}
-        <div className="ba-page-header">
+      <main className="ui-container" style={{ maxWidth: 760 }}>
+        <header className="ui-header">
           <div>
-            <p className="ba-eyebrow">SisRUN</p>
-            <h1 className="ba-title">Planejamento semanal</h1>
-            <p className="ba-muted" style={{ marginTop: ".5rem" }}>
-              Planejamento extraído da planilha atual, com resumo da semana,
-              volume previsto e distribuição dos treinos dia a dia.
-            </p>
+            <h1 className="ui-title">SisRUN</h1>
+            <p className="ui-muted">Planilha da assessoria: o planejado da semana contra o que foi feito</p>
           </div>
-          <Link href="/" className="ba-back">← Voltar ao dashboard</Link>
-        </div>
+        </header>
 
-        {/* ── UPLOAD + RESUMO ── */}
-        <section className="ba-section ba-grid-2" style={{ marginBottom: "1rem" }}>
-          <SisrunUploadForm />
-
-          <div className="ba-card" style={{ padding: "1.5rem" }}>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: "1.25rem" }}>
-              <div>
-                <p className="ba-eyebrow">Semana atual</p>
-                <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.6rem", color: "#fff", marginTop: 4 }}>
-                  Resumo da semana
-                </h2>
+        <div className="hoje-col">
+          {/* ── Semana ── */}
+          {currentWeek ? (
+            <section className="ui-card ui-card--pad ui-stack" aria-label="Semana atual">
+              <div className="ui-section__head" style={{ padding: 0 }}>
+                <h2 className="ui-h2">{weekIsCurrent ? "Esta semana" : "Última semana da planilha"}</h2>
+                <span className="ui-muted">
+                  {formatDayMonth(toDateKey(currentWeek.weekStart))} – {formatDayMonth(toDateKey(currentWeek.weekEnd))}
+                </span>
               </div>
-              {currentWeek && (
-                <span className="badge badge--muted">{plannedDays} dias com treino</span>
+              {weekIsCurrent ? null : (
+                <p style={{ fontSize: 14, color: "var(--ui-accent)" }}>
+                  A planilha não cobre a semana de hoje. Envie a versão mais recente em “Atualizar planilha”.
+                </p>
               )}
-            </div>
-
-            {currentWeek ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
-                {/* Período */}
-                <div className="ba-card-soft" style={{ padding: "1rem" }}>
-                  <p className="ba-label">Período</p>
-                  <p style={{ marginTop: ".4rem", fontSize: 15, fontWeight: 600, color: "#f5a623" }}>
-                    {currentWeek.weekStart} até {currentWeek.weekEnd}
-                  </p>
-                </div>
-
-                {/* Métricas */}
-                <div className="ba-grid-2">
-                  <div className="ba-card-soft" style={{ padding: "1rem", textAlign: "center" }}>
-                    <p className="ba-label">Km planejados</p>
-                    <p className="ba-value" style={{ fontSize: "2rem", marginTop: ".4rem" }}>
-                      {formatKm(currentWeek.totalPlannedKm)}
-                    </p>
-                  </div>
-                  <div className="ba-card-soft" style={{ padding: "1rem", textAlign: "center" }}>
-                    <p className="ba-label">Longão planejado</p>
-                    <p className="ba-value" style={{ fontSize: "2rem", marginTop: ".4rem" }}>
-                      {formatKm(currentWeek.longRunPlannedKm)}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Treino de hoje */}
-                <div className="ba-card-soft" style={{ padding: "1rem" }}>
-                  <p className="ba-label" style={{ marginBottom: ".75rem" }}>Treino de hoje</p>
-                  {todayRow ? (
-                    <div className="ba-grid-3">
-                      {[
-                        { label: "Planejado", value: formatKm(todayRow.plannedDistanceKm) },
-                        { label: "Feito",     value: formatKm(completedTodayKm) },
-                        { label: "Janela",    value: `${todayRow.minPlannedTime ?? "-"} / ${todayRow.maxPlannedTime ?? "-"}` },
-                      ].map((m) => (
-                        <div key={m.label} style={{ textAlign: "center" }}>
-                          <p className="ba-label">{m.label}</p>
-                          <p style={{ marginTop: ".35rem", fontSize: 14, fontWeight: 600, color: "var(--text)" }}>{m.value}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="ba-muted">Nenhum treino previsto para hoje.</p>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div style={{ border: "1px dashed rgba(255,255,255,.1)", borderRadius: 16, padding: "1.5rem", textAlign: "center" }}>
-                <p className="ba-muted">Nenhuma planilha carregada ainda.</p>
-              </div>
-            )}
-          </div>
-        </section>
-
-        <section className="ba-card" style={{ padding: "1.25rem", marginBottom: "1rem" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: "1rem", flexWrap: "wrap" }}>
-            <div>
-              <p className="ba-eyebrow">Fonte dos dados</p>
-              <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.35rem", color: "#fff", marginTop: 4 }}>
-                Status do SisRUN
-              </h2>
-              <p className="ba-muted" style={{ marginTop: ".35rem" }}>
-                Mostra se a página está lendo o planejamento do Upstash/Redis ou do arquivo local do projeto.
+              <p className="hoje-week__total">
+                <span className="hoje-week__km">{formatKm(weekDoneKm)}</span>
+                <span className="ui-muted" style={{ fontSize: 14 }}>de {formatKm(weekPlannedKm)} planejados</span>
               </p>
-            </div>
-            <span
-              className="badge badge--muted"
-              style={{
-                color: sisrunStatus.source === "redis" ? "var(--success)" : sisrunStatus.source === "file" ? "#f5a623" : "#ff8a8a",
-              }}
-            >
-              {sisrunStatus.sourceLabel}
-            </span>
-          </div>
-
-          <div className="ba-grid-4">
-            {[
-              { label: "Fonte atual", value: sisrunStatus.sourceLabel },
-              { label: "Arquivo", value: sisrunStatus.fileName },
-              { label: "Upload", value: sisrunStatus.uploadedAtLabel },
-              { label: "Chave Redis", value: sisrunStatus.key },
-            ].map((item) => (
-              <div key={item.label} className="ba-card-soft" style={{ padding: "1rem" }}>
-                <p className="ba-label">{item.label}</p>
-                <p style={{ marginTop: ".4rem", fontSize: 13, fontWeight: 650, color: "var(--text)", overflowWrap: "anywhere" }}>
-                  {formatStatusValue(item.value)}
-                </p>
+              <div className="hoje-progress" role="img" aria-label={`${formatNumber(weekPct)}% do volume planejado`}>
+                <div className="hoje-progress__fill" style={{ width: `${weekPct}%` }} />
               </div>
-            ))}
-          </div>
-
-          <div className="ba-grid-4" style={{ marginTop: ".75rem" }}>
-            {[
-              { label: "Semanas", value: sisrunStatus.weeksCount },
-              { label: "Linhas", value: sisrunStatus.rowsCount },
-              { label: "Treinos", value: sisrunStatus.workoutCount },
-              { label: "Km planejados", value: formatKm(sisrunStatus.totalPlannedKm) },
-            ].map((item) => (
-              <div key={item.label} className="ba-card-soft" style={{ padding: "1rem", textAlign: "center" }}>
-                <p className="ba-label">{item.label}</p>
-                <p style={{ marginTop: ".4rem", fontSize: 18, fontWeight: 800, color: "#fff" }}>
-                  {formatStatusValue(item.value)}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <div className="ba-card-soft" style={{ padding: "1rem", marginTop: ".75rem" }}>
-            <div className="ba-grid-3">
-              {[
-                { label: "Primeira semana", value: sisrunStatus.firstWeekLabel },
-                { label: "Semana atual encontrada", value: sisrunStatus.currentWeekLabel },
-                { label: "Última semana", value: sisrunStatus.lastWeekLabel },
-              ].map((item) => (
-                <div key={item.label}>
-                  <p className="ba-label">{item.label}</p>
-                  <p style={{ marginTop: ".35rem", fontSize: 13, fontWeight: 650, color: "var(--text)" }}>
-                    {formatStatusValue(item.value)}
-                  </p>
+              <dl className="ui-dl">
+                <div><dt>Dias com treino</dt><dd>{plannedDays}</dd></div>
+                <div><dt>Longão planejado</dt><dd>{currentWeek.longRunPlannedKm > 0 ? formatKm(currentWeek.longRunPlannedKm) : "—"}</dd></div>
+                <div>
+                  <dt>{weekIsCurrent ? "Hoje" : "Hoje (fora da planilha)"}</dt>
+                  <dd>
+                    {todayRow && todayRow.plannedDistanceKm > 0
+                      ? `${formatKm(completedTodayKm)} de ${formatKm(todayRow.plannedDistanceKm)}`
+                      : "sem treino"}
+                  </dd>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {(sisrunStatus.error || !sisrunStatus.loaded || sisrunStatus.warningsCount > 0) && (
-            <p className="ba-muted" style={{ marginTop: ".75rem" }}>
-              {sisrunStatus.error
-                ? `Observação técnica: ${sisrunStatus.error}`
-                : sisrunStatus.loaded
-                  ? `${sisrunStatus.warningsCount} alerta(s) de qualidade encontrado(s) nesta base.`
-                  : "Nenhum SisRUN carregado foi encontrado nessa fonte."}
-            </p>
-          )}
-        </section>
-
-        {dataWarnings.length > 0 && (
-          <section className="ba-card" style={{ padding: "1.25rem", marginBottom: "1rem", borderColor: "rgba(245,166,35,.28)" }}>
-            <p className="ba-eyebrow">Qualidade dos dados</p>
-            <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.35rem", color: "#fff", marginTop: 4 }}>
-              Atenção ao SisRUN carregado
-            </h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: ".75rem", marginTop: "1rem" }}>
-              {dataWarnings.map((warning, index) => (
-                <div key={`${warning.title}-${index}`} className="ba-card-soft" style={{ padding: "1rem" }}>
-                  <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: warning.level === "error" ? "#ff8a8a" : "#f5a623" }}>
-                    {warning.title}
-                  </p>
-                  <p className="ba-muted" style={{ marginTop: ".35rem" }}>{warning.description}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* ── AGENDA ── */}
-        <section className="ba-card sisrun-agenda-card">
-          <div className="sisrun-agenda-head">
-            <div>
-              <p className="ba-eyebrow">Agenda</p>
-              <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.6rem", color: "#fff", marginTop: 4 }}>
-                Dias da semana atual
-              </h2>
-              <p className="ba-muted" style={{ marginTop: ".4rem" }}>
-                Planejamento diário extraído da planilha do SisRUN, com execução preenchida pelo maior valor entre planilha e Strava.
-              </p>
-            </div>
-            {currentWeek && (
-              <span className="badge badge--muted">{currentWeek.weekStart} — {currentWeek.weekEnd}</span>
-            )}
-          </div>
-
-          {!sisrunData?.rows?.length || !currentWeek ? (
-            <div style={{ border: "1px dashed rgba(255,255,255,.1)", borderRadius: 16, padding: "1.5rem", textAlign: "center" }}>
-              <p className="ba-muted">Sem dados para exibir.</p>
-            </div>
+              </dl>
+            </section>
           ) : (
-            <div className="sisrun-week-list">
-              {weekRows.map((row, index) => {
-                const hasWorkout  = row.plannedDistanceKm > 0;
-                const completedKm = getCompletedKm(row, stravaKmByDate);
-                const done        = completedKm >= row.plannedDistanceKm && hasWorkout;
-
-                return (
-                  <div key={`${row.date}-${index}`} className="ba-card-soft sisrun-day-card">
-                    <div className="sisrun-day-card__inner">
-                      {/* Day badge */}
-                      <div
-                        className="sisrun-day-badge"
-                        style={{
-                          background: hasWorkout ? "rgba(245,166,35,.1)" : "rgba(255,255,255,.04)",
-                          border: `1px solid ${hasWorkout ? "rgba(245,166,35,.25)" : "rgba(255,255,255,.07)"}`,
-                          color: hasWorkout ? "#f5a623" : "rgba(255,255,255,.3)",
-                        }}
-                      >
-                        {getDayLabel(row.date)}
-                      </div>
-
-                      {/* Content */}
-                      <div className="sisrun-day-content">
-                        <div className="sisrun-day-summary">
-                          <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "rgba(255,255,255,.3)", marginBottom: 4 }}>{row.date}</p>
-                          <p style={{ fontSize: 14, fontWeight: 600, color: hasWorkout ? "var(--text)" : "rgba(255,255,255,.4)" }}>
-                            {hasWorkout ? `${formatKm(row.plannedDistanceKm)} planejados` : "Descanso / sem volume planejado"}
-                          </p>
-                        </div>
-
-                        <div className="sisrun-day-metrics">
-                          {[
-                            { label: "Planejado", value: formatKm(row.plannedDistanceKm) },
-                            { label: "Feito",     value: formatKm(completedKm),           accent: done },
-                            { label: "Tempo mín.", value: row.minPlannedTime ?? "-" },
-                            { label: "Tempo máx.", value: row.maxPlannedTime ?? "-" },
-                          ].map((m) => (
-                            <div key={m.label} className="sisrun-day-metric">
-                              <p className="ba-label">{m.label}</p>
-                              <p style={{ marginTop: ".3rem", fontSize: 12, fontWeight: 600, color: m.accent ? "var(--success)" : "var(--text)" }}>{m.value}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <section className="ui-card ui-card--pad ui-stack" aria-label="Semana atual">
+              <h2 className="ui-h2">Nenhuma semana encontrada</h2>
+              <p className="ui-muted" style={{ fontSize: 14 }}>
+                {sisrunData?.rows?.length
+                  ? "A planilha carregada não cobre a semana atual. Envie a versão mais recente logo abaixo."
+                  : "Nenhuma planilha carregada ainda. Envie a exportação do SisRUN logo abaixo."}
+              </p>
+            </section>
           )}
-        </section>
 
+          {/* ── Alertas de qualidade ── */}
+          {dataWarnings.length > 0 ? (
+            <section className="ui-card ui-card--pad ui-stack" aria-label="Atenção à planilha" style={{ borderColor: "var(--ui-accent)" }}>
+              <h2 className="ui-h2">Atenção à planilha</h2>
+              {dataWarnings.map((warning, index) => (
+                <p key={`${warning.title}-${index}`} style={{ fontSize: 14 }}>
+                  <strong style={{ color: warning.level === "error" ? "#ff8a7a" : "var(--ui-accent)" }}>{warning.title}.</strong>{" "}
+                  <span style={{ color: "var(--ui-text-2)" }}>{warning.description}</span>
+                </p>
+              ))}
+            </section>
+          ) : null}
+
+          {/* ── Dias ── */}
+          {currentWeek && weekRows.length > 0 ? (
+            <section className="ui-section" aria-label="Dias da semana">
+              <div className="ui-section__head">
+                <h2 className="ui-h2">Dia a dia</h2>
+                <span className="ui-muted">feito = maior entre planilha e Strava</span>
+              </div>
+              <div className="ui-card ui-list">
+                {weekRows.map((row, index) => {
+                  const hasWorkout = row.plannedDistanceKm > 0;
+                  const completedKm = getCompletedKm(row, stravaKmByDate);
+                  const done = hasWorkout && completedKm >= row.plannedDistanceKm;
+                  const dateKey = toDateKey(row.date);
+                  const [day] = formatDayMonth(dateKey).split(" ");
+                  const hasTime = (value?: string | null) => Boolean(value && !/^0?0:00(:00)?$/.test(value));
+                  const window = hasWorkout && (hasTime(row.minPlannedTime) || hasTime(row.maxPlannedTime))
+                    ? `${row.minPlannedTime ?? "—"} a ${row.maxPlannedTime ?? "—"}`
+                    : null;
+
+                  return (
+                    <div key={`${row.date}-${index}`} className="ui-row ui-row--date">
+                      <span className="ui-date">
+                        <span className="ui-date__day">{day}</span>
+                        <span className="ui-muted" style={{ fontSize: 12 }}>{formatWeekdayShort(dateKey)}</span>
+                      </span>
+                      <span className="ui-row__main">
+                        <span className="ui-row__title" style={hasWorkout ? undefined : { color: "var(--ui-muted)", fontWeight: 400 }}>
+                          {hasWorkout ? `${formatKm(row.plannedDistanceKm)} planejados` : "Descanso"}
+                          {dateKey === todayKey ? <span className="ui-tag-accent"> · hoje</span> : null}
+                        </span>
+                        {window ? <span className="ui-muted" style={{ fontSize: 12 }}>tempo previsto: {window}</span> : null}
+                      </span>
+                      <span className="ui-row__side">
+                        <span className="ui-row__value" style={completedKm > 0 ? undefined : { color: "var(--ui-muted)", fontWeight: 400 }}>
+                          {completedKm > 0 ? formatKm(completedKm) : "—"}
+                        </span>
+                        {done ? <span style={{ fontSize: 12, color: "var(--ui-good)" }}>cumprido</span> : null}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {/* ── Manutenção ── */}
+          <details className="ui-card ui-details" style={{ marginTop: 12 }} open={!sisrunData?.rows?.length || !weekIsCurrent}>
+            <summary>Atualizar planilha<Chevron /></summary>
+            <div className="ui-details__body">
+              <SisrunUploadForm />
+            </div>
+          </details>
+
+          <details className="ui-card ui-details">
+            <summary>Fonte dos dados<Chevron /></summary>
+            <div className="ui-details__body">
+              <dl className="ui-dl">
+                {[
+                  { label: "Fonte atual", value: sisrunStatus.sourceLabel },
+                  { label: "Arquivo", value: sisrunStatus.fileName },
+                  { label: "Enviado em", value: sisrunStatus.uploadedAtLabel },
+                  { label: "Semanas", value: sisrunStatus.weeksCount },
+                  { label: "Treinos", value: sisrunStatus.workoutCount },
+                  { label: "Km planejados", value: formatKm(sisrunStatus.totalPlannedKm) },
+                  { label: "Primeira semana", value: sisrunStatus.firstWeekLabel },
+                  { label: "Última semana", value: sisrunStatus.lastWeekLabel },
+                ].map((item) => (
+                  <div key={item.label}>
+                    <dt>{item.label}</dt>
+                    <dd style={{ fontSize: 14, overflowWrap: "anywhere" }}>{formatStatusValue(item.value)}</dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="ui-muted" style={{ overflowWrap: "anywhere" }}>
+                {sisrunStatus.rowsCount} linhas lidas · chave Redis: {formatStatusValue(sisrunStatus.key)}
+                {sisrunStatus.error ? ` · observação técnica: ${sisrunStatus.error}` : ""}
+              </p>
+            </div>
+          </details>
+        </div>
       </main>
-      <footer className="site-footer">STRAVA · RAFAEL CABRAL · {getCurrentSeasonYear()}</footer>
+      <footer className="ui-footer">Strava · Rafael Cabral · {getCurrentSeasonYear()}</footer>
     </div>
+  );
+}
+
+function Chevron() {
+  return (
+    <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 9l6 6 6-6" />
+    </svg>
   );
 }

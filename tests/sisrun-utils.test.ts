@@ -77,3 +77,13 @@ test("buildSisrunStatusSummary resume fonte, chave e contagens do SisRUN", () =>
   assert.equal(status.totalPlannedKm, 110);
   assert.equal(status.warningsCount, warnings.length);
 });
+
+test("semana da planilha só conta como atual quando contém a data de hoje", async () => {
+  const { isSisrunWeekCurrent } = await import("../app/lib/sisrun-utils");
+  const week = { weekStart: "09/11/2026", weekEnd: "15/11/2026" };
+  assert.equal(isSisrunWeekCurrent(week, new Date(2026, 10, 13)), true);
+  assert.equal(isSisrunWeekCurrent(week, new Date(2026, 10, 15, 22)), true);
+  assert.equal(isSisrunWeekCurrent(week, new Date(2026, 10, 16)), false);
+  assert.equal(isSisrunWeekCurrent({ weekStart: "28/09/2026", weekEnd: "04/10/2026" }, new Date(2026, 10, 13)), false);
+  assert.equal(isSisrunWeekCurrent(null), false);
+});

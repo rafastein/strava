@@ -948,3 +948,42 @@
   font-family: var(--ui-font-num);
   font-size: 15px;
 }
+
+/* ── Campos de formulário ── */
+.ui-label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ui-text-2);
+}
+
+.ui-field {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: var(--ui-radius-sm);
+  border: 1px solid var(--ui-border-strong);
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: 16px; /* 16px evita o zoom automático do iOS ao focar */
+}
+
+.ui-field::placeholder {
+  color: #6b727c;
+}
+
+/* ── Agenda do COROS ── */
+.coros-monthbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.coros-monthbar__select {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  text-transform: capitalize;
+}

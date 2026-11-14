@@ -342,6 +342,23 @@ export function getCurrentWeek(data: SisrunParsedData | null) {
   );
 }
 
+/**
+ * `getCurrentWeek` devolve a última semana da planilha quando a de hoje não existe.
+ * Use esta função para saber se a semana devolvida é mesmo a atual antes de tratá-la como tal.
+ */
+export function isSisrunWeekCurrent(
+  week: { weekStart: string; weekEnd: string } | null | undefined,
+  today: Date = getTodayBrazilDate(),
+) {
+  if (!week) return false;
+  const start = parseBrDate(week.weekStart);
+  const end = parseBrDate(week.weekEnd);
+  if (!start || !end) return false;
+  const endWithTime = new Date(end);
+  endWithTime.setHours(23, 59, 59, 999);
+  return today >= start && today <= endWithTime;
+}
+
 export function getTodaySisrunRow(data: SisrunParsedData | null) {
   if (!data?.rows?.length) return null;
 
