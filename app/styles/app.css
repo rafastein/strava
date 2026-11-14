@@ -904,3 +904,47 @@
   padding: 16px 20px 20px;
   border-top: 1px solid var(--ui-border);
 }
+
+/* ── Linha que é botão (filtro, expandir) ── */
+.ui-row--btn {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ui-row--btn[aria-pressed="true"],
+.ui-acc[data-open="true"] > .ui-row--btn {
+  background: var(--ui-surface-2);
+}
+
+.ui-row--btn[aria-pressed="true"] .ui-row__title {
+  color: var(--ui-accent);
+}
+
+/* ── Voltas (treinos de qualidade) ── */
+.quali-laps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.quali-lap {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--ui-border);
+  font-size: 13px;
+}
+
+.quali-lap__pace {
+  font-family: var(--ui-font-num);
+  font-size: 15px;
+}

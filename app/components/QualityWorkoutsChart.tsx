@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ChartDataset } from "chart.js";
+import { formatDayMonth, formatDuration, formatNumber } from "../lib/format";
 
 export type QualityWorkout = {
   id: string;
@@ -38,8 +39,8 @@ const TYPE_COLORS: Record<string, string> = {
   Intervalado: "#ef4444",
   Fartlek:     "#f97316",
   Progressivo: "#10b981",
-  "Tempo Run": "#3b82f6",
-  Rodagem:     "#6b7280",
+  "Tempo Run": "#6aa8ff",
+  Rodagem:     "#9ba1a9",
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -303,41 +304,33 @@ function SplitsMiniChart({ splits, label }: { splits: QualityWorkout["kmSplits"]
 
 
 function LapsTable({ laps, label }: { laps: NonNullable<QualityWorkout["laps"]>; label: string }) {
-  const color = TYPE_COLORS[label] || "#6b7280";
+  const color = TYPE_COLORS[label] || "#9ba1a9";
   const speeds = laps.map((l) => l.speedKmh).filter((s) => s > 0);
   const avgSpeed = speeds.length ? speeds.reduce((a, b) => a + b, 0) / speeds.length : 0;
-  const FAST_THRESH = avgSpeed * 1.08; // 8% above avg = fast lap
+  const FAST_THRESH = avgSpeed * 1.08; // 8% acima da média = volta forte
 
-  function formatTime(sec: number) {
-    const m = Math.floor(sec / 60);
-    const s = Math.round(sec % 60);
-    return `${m}:${String(s).padStart(2, "0")}`;
-  }
   function formatPaceStr(p: number | null) {
     if (!p || p < 3 || p > 12) return "—";
-    const m = Math.floor(p);
-    const s = Math.round((p - m) * 60);
-    return `${m}:${String(s).padStart(2, "0")}/km`;
+    return `${formatPace(p)}/km`;
   }
 
   return (
-    <div style={{ marginTop: 12 }}>
-      <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".12em", textTransform: "uppercase", color: "rgba(255,255,255,.3)", marginBottom: 8 }}>
-        Voltas · {laps.length} laps
+    <div>
+      <p className="ui-muted" style={{ marginBottom: 8 }}>
+        {laps.length} voltas · as fortes (8% acima da média) aparecem marcadas
       </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <div className="quali-laps">
         {laps.map((lap) => {
           const isFast = lap.speedKmh >= FAST_THRESH;
-          const isWarm = lap.index === 1;
-          const bgColor = isWarm ? "rgba(255,255,255,0.03)" : isFast ? color + "22" : "rgba(255,255,255,0.04)";
-          const borderColor = isFast ? color + "55" : "rgba(255,255,255,0.07)";
           return (
-            <div key={lap.index} style={{ display: "grid", gridTemplateColumns: "24px 1fr auto auto auto", gap: 8, alignItems: "center", background: bgColor, border: `1px solid ${borderColor}`, borderRadius: 10, padding: "7px 12px" }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: isFast ? color : "rgba(255,255,255,.3)", fontWeight: isFast ? 700 : 400 }}>{lap.index}</span>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,.5)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{lap.name}</span>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: isFast ? "#fff" : "rgba(255,255,255,.45)", fontWeight: isFast ? 600 : 400 }}>{formatPaceStr(lap.paceMinPerKm)}</span>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "rgba(255,255,255,.3)" }}>{lap.distKm.toFixed(2)} km</span>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "rgba(255,255,255,.25)" }}>{formatTime(lap.timeSec)}</span>
+            <div key={lap.index} className="quali-lap" style={isFast ? { borderColor: color, background: "var(--ui-surface-2)" } : undefined}>
+              <span className="ui-muted" style={{ width: 20 }}>{lap.index}</span>
+              <span className="quali-lap__pace" style={{ fontWeight: isFast ? 600 : 400, color: isFast ? "var(--ui-text)" : "var(--ui-text-2)" }}>
+                {formatPaceStr(lap.paceMinPerKm)}
+              </span>
+              <span className="ui-muted">{formatNumber(lap.distKm, 2)} km</span>
+              <span className="ui-muted" style={{ textAlign: "right" }}>{formatDuration(lap.timeSec)}</span>
+              <span className="ui-muted" style={{ textAlign: "right" }}>{lap.fcAvg ? `${lap.fcAvg} bpm` : "—"}</span>
             </div>
           );
         })}
@@ -347,8 +340,6 @@ function LapsTable({ laps, label }: { laps: NonNullable<QualityWorkout["laps"]>;
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-const ALL_TYPES = ["Todos", ...Object.keys(TYPE_COLORS)];
-
 export default function QualityWorkoutsChart({ workouts }: Props) {
   const [filter, setFilter] = useState("Todos");
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -369,7 +360,7 @@ export default function QualityWorkoutsChart({ workouts }: Props) {
     return acc;
   }, {});
 
-  // Per-type aggregated stats
+  // Médias por tipo
   const typeStats = Object.keys(TYPE_COLORS).reduce<Record<string, {
     avgDist: number | null;
     avgFc: number | null;
@@ -395,175 +386,144 @@ export default function QualityWorkoutsChart({ workouts }: Props) {
     return acc;
   }, {});
 
-  return (
-    <div className="space-y-6">
-      {/* Summary cards */}
-      <div className="ba-grid-3" style={{ gridTemplateColumns: "repeat(6,1fr)", gap: ".7rem", marginBottom: "1rem" }}>
-        {Object.entries(TYPE_COLORS).map(([tipo, color]) => {
-          const stats = typeStats[tipo];
-          const count = counts[tipo] || 0;
-          const active = filter === tipo;
-          return (
-            <button
-              key={tipo}
-              onClick={() => setFilter(active ? "Todos" : tipo)}
-              className="ba-card-soft"
-              style={{ padding: ".85rem 1rem", textAlign: "left", cursor: "pointer", outline: active ? `1.5px solid ${color}` : "none", background: active ? color + "18" : undefined, transition: "all .15s" }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0 }} />
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "rgba(255,255,255,.35)" }}>{tipo}</span>
-              </div>
-              <p style={{ fontFamily: "var(--font-display)", fontSize: "1.6rem", color: "#fff", lineHeight: 1 }}>{count}</p>
-              {count > 0 && (
-                <div style={{ borderTop: "1px solid rgba(255,255,255,.07)", marginTop: 8, paddingTop: 8 }}>
-                  {stats.avgDist !== null && <p style={{ fontSize: 11, color: "rgba(255,255,255,.35)", marginBottom: 4 }}>dist <span style={{ color: "rgba(255,255,255,.65)" }}>{stats.avgDist.toFixed(1)} km</span></p>}
-                  {stats.avgPace !== null && <p style={{ fontSize: 11, color: "rgba(255,255,255,.35)", marginBottom: 4 }}>pace <span style={{ color: "rgba(255,255,255,.65)" }}>{formatPace(stats.avgPace)}/km</span></p>}
-                  {stats.avgFc !== null && <p style={{ fontSize: 11, color: "rgba(255,255,255,.35)" }}>FC <span style={{ color: "rgba(255,255,255,.65)" }}>{stats.avgFc} bpm</span></p>}
-                </div>
-              )}
-            </button>
-          );
-        })}
-      </div>
+  const activeTypes = Object.keys(TYPE_COLORS).filter((tipo) => (counts[tipo] || 0) > 0);
 
-      {/* Charts row */}
-      <div className="ba-grid-2">
-        <div className="ba-card" style={{ padding: "1.2rem" }}>
-          <p style={{ marginBottom: 12, fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Treinos por mês e tipo</p>
-          <div className="relative h-48">
+  return (
+    <div className="hoje-col">
+      {/* ── Por tipo: cada linha também filtra a lista ── */}
+      <section className="ui-section" style={{ paddingTop: 0 }} aria-label="Por tipo de treino">
+        <div className="ui-section__head">
+          <h2 className="ui-h2">Por tipo</h2>
+          <span className="ui-muted">toque para filtrar</span>
+        </div>
+        <div className="ui-card ui-list">
+          {activeTypes.map((tipo) => {
+            const stats = typeStats[tipo];
+            const active = filter === tipo;
+            return (
+              <button
+                key={tipo}
+                type="button"
+                className="ui-row ui-row--btn"
+                aria-pressed={active}
+                onClick={() => setFilter(active ? "Todos" : tipo)}
+              >
+                <span className="ui-row__main">
+                  <span className="ui-row__title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span className="carga-dot" style={{ background: TYPE_COLORS[tipo] }} />
+                    {TYPE_LABELS[tipo] || tipo}
+                  </span>
+                  <span className="ui-muted">
+                    {counts[tipo]} {counts[tipo] === 1 ? "treino" : "treinos"}
+                    {stats.avgDist !== null ? ` · ${formatNumber(stats.avgDist, 1)} km em média` : ""}
+                  </span>
+                </span>
+                <span className="ui-row__side">
+                  <span className="ui-row__value">{stats.avgPace !== null ? `${formatPace(stats.avgPace)}/km` : "—"}</span>
+                  <span className="ui-muted">{stats.avgFc !== null ? `${stats.avgFc} bpm` : ""}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ── Gráficos ── */}
+      <div className="carga-grid">
+        <section className="ui-card ui-card--pad ui-stack" aria-label="Treinos por mês e tipo">
+          <h2 className="ui-h2">Treinos por mês</h2>
+          <div style={{ position: "relative", height: 200 }}>
             <VolumeChart workouts={normalizedWorkouts} />
           </div>
-        </div>
-        <div className="ba-card" style={{ padding: "1.2rem" }}>
-          <p style={{ marginBottom: 12, fontSize: 13, fontWeight: 600, color: "var(--text)" }}>FC máxima por treino</p>
-          <div className="relative h-48">
-            <FcTrendChart workouts={normalizedWorkouts} />
-          </div>
-        </div>
+        </section>
+        {normalizedWorkouts.some((w) => w.fcMax) ? (
+          <section className="ui-card ui-card--pad ui-stack" aria-label="FC máxima por treino">
+            <h2 className="ui-h2">FC máxima por treino</h2>
+            <div style={{ position: "relative", height: 200 }}>
+              <FcTrendChart workouts={normalizedWorkouts} />
+            </div>
+          </section>
+        ) : null}
       </div>
 
-      {/* Filter tabs */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", justifyContent: "center", margin: "1rem 0" }}>
-        {ALL_TYPES.map((t) => (
-          <button
-            key={t}
-            onClick={() => setFilter(t)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-              filter === t
-                ? "ba-pill ba-pill-orange"
-                : "ba-pill ba-pill-dark"
-            }`}
-          >
-            {t}
-            {t !== "Todos" && (
-              <span className="ml-1.5 text-xs opacity-60">{counts[t] || 0}</span>
-            )}
-          </button>
-        ))}
-      </div>
+      {/* ── Lista ── */}
+      <section className="ui-section" aria-label="Treinos">
+        <div className="ui-section__head" style={{ alignItems: "center" }}>
+          <h2 className="ui-h2">{filter === "Todos" ? "Todos os treinos" : TYPE_LABELS[filter] || filter}</h2>
+          {filter !== "Todos" ? (
+            <button type="button" className="ui-btn ui-btn--ghost" style={{ cursor: "pointer" }} onClick={() => setFilter("Todos")}>
+              Ver todos
+            </button>
+          ) : (
+            <span className="ui-muted">{sorted.length} treinos</span>
+          )}
+        </div>
 
-      {/* Workout list */}
-      <div style={{ display: "flex", flexDirection: "column", gap: ".6rem" }}>
-        {sorted.map((w) => {
-          const color = TYPE_COLORS[w.label] || "#6b7280";
-          const isOpen = expanded === w.id;
-          return (
-            <div key={w.id} className="ba-card-soft" style={{ overflow: "hidden" }}>
-              <button
-                className="w-full text-left" style={{ padding: "1.1rem 1.25rem", background: "transparent", cursor: "pointer" }}
-                onClick={() => setExpanded(isOpen ? null : w.id)}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <span
-                      className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                      style={{ background: color }}
-                    >
-                      {w.label[0]}
+        {sorted.length === 0 ? (
+          <p className="ui-card ui-card--pad ui-muted">Nenhum treino deste tipo encontrado.</p>
+        ) : (
+          <div className="ui-card ui-list">
+            {sorted.map((w) => {
+              const color = TYPE_COLORS[w.label] || "#9ba1a9";
+              const isOpen = expanded === w.id;
+              const goodPaces = w.kmSplits.map((s) => s.pace).filter((p): p is number => p !== null && p > 3 && p < 10);
+              const [day, month] = formatDayMonth(w.date).split(" ");
+              return (
+                <div key={w.id} className="ui-acc" data-open={isOpen ? "true" : undefined}>
+                  <button
+                    type="button"
+                    className="ui-row ui-row--date ui-row--btn"
+                    aria-expanded={isOpen}
+                    onClick={() => setExpanded(isOpen ? null : w.id)}
+                  >
+                    <span className="ui-date">
+                      <span className="ui-date__day">{day}</span>
+                      <span className="ui-muted" style={{ fontSize: 12 }}>{month}</span>
                     </span>
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span style={{ fontWeight: 600, color: "var(--text)", fontSize: 13 }}>{w.name}</span>
-                        <span
-                          className="rounded-full px-2 py-0.5 text-xs font-medium text-white"
-                          style={{ background: color }}
-                        >
-                          {TYPE_LABELS[w.label] || w.label}
-                        </span>
-                        {w.classificationSource === "coros" ? (
-                          <span className="ba-pill ba-pill-orange" style={{ fontSize: 10, padding: "2px 8px" }}>
-                            COROS
-                          </span>
-                        ) : w.confidence < 0.85 && (
-                          <span className="ba-pill ba-pill-dark" style={{ fontSize: 10, padding: "2px 8px" }}>
-                            auto-detectado
-                          </span>
-                        )}
-                      </div>
-                      <p style={{ marginTop: 2, fontSize: 11, color: "rgba(255,255,255,.4)" }}>{formatDate(w.date)}</p>
-                      {w.plannedWorkoutTitle && (
-                        <p style={{ marginTop: 2, fontSize: 11, color: "rgba(255,255,255,.35)" }}>
-                          Planejado COROS · {w.plannedWorkoutTitle}
-                        </p>
+                    <span className="ui-row__main">
+                      <span className="ui-row__title">{w.name}</span>
+                      <span className="ui-muted" style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
+                        <span className="carga-dot" style={{ background: color }} />
+                        {[
+                          TYPE_LABELS[w.label] || w.label,
+                          w.classificationSource === "coros" ? "tipo do COROS" : w.confidence < 0.85 ? "detectado automaticamente" : null,
+                        ].filter(Boolean).join(" · ")}
+                      </span>
+                    </span>
+                    <span className="ui-row__side">
+                      <span className="ui-row__value">{formatNumber(w.distKm, 1)} km</span>
+                      <span className="ui-muted">{w.fcMax ? `máx ${w.fcMax} bpm` : w.fcAvg ? `${w.fcAvg} bpm` : ""}</span>
+                    </span>
+                  </button>
+
+                  {isOpen ? (
+                    <div className="ui-acc__body">
+                      {w.plannedWorkoutTitle ? <p className="ui-muted">Planejado no COROS: {w.plannedWorkoutTitle}</p> : null}
+                      <dl className="ui-dl">
+                        <div><dt>FC média</dt><dd>{w.fcAvg ? `${w.fcAvg} bpm` : "—"}</dd></div>
+                        <div><dt>FC máxima</dt><dd>{w.fcMax ? `${w.fcMax} bpm` : "—"}</dd></div>
+                        <div><dt>Melhor km</dt><dd>{goodPaces.length ? `${formatPace(Math.min(...goodPaces))}/km` : "—"}</dd></div>
+                        <div><dt>Subida</dt><dd>{formatNumber(w.elev)} m</dd></div>
+                        <div><dt>Calorias</dt><dd>{w.cal ? `${formatNumber(w.cal)} kcal` : "—"}</dd></div>
+                      </dl>
+
+                      {w.laps && w.laps.length > 1 ? (
+                        <LapsTable laps={w.laps} label={w.label} />
+                      ) : w.kmSplits.length > 0 ? (
+                        <div style={{ position: "relative", height: 180 }}>
+                          <SplitsMiniChart splits={w.kmSplits} label={w.label} />
+                        </div>
+                      ) : (
+                        <p className="ui-muted">Splits não disponíveis para este treino.</p>
                       )}
                     </div>
-                  </div>
-                  <div style={{ display: "flex", flexShrink: 0, flexWrap: "wrap", gap: 6, fontSize: 11, color: "rgba(255,255,255,.4)" }}>
-                    <span style={{ fontFamily: "var(--font-mono)", fontWeight: 500, color: "var(--text)" }}>{w.distKm.toFixed(1)} km</span>
-                    {w.fcAvg && <span>{w.fcAvg} bpm</span>}
-                    {w.fcMax && (
-                      <span className="font-medium" style={{ color }}>
-                        máx {w.fcMax}
-                      </span>
-                    )}
-                    <span className={`text-sm transition-transform ${isOpen ? "rotate-180" : ""}`}>▾</span>
-                  </div>
+                  ) : null}
                 </div>
-              </button>
-
-              {isOpen && (
-                <div style={{ borderTop: "1px solid rgba(255,255,255,.06)", padding: "1rem 1.15rem" }}>
-                  <div style={{ marginBottom: 12, display: "flex", flexWrap: "wrap", gap: 12, fontSize: 11, color: "rgba(255,255,255,.4)" }}>
-                    <span>Elevação: {w.elev}m</span>
-                    <span>Calorias: {w.cal} kcal</span>
-                    {w.kmSplits.length > 0 && (
-                      <span>
-                        Melhor km:{" "}
-                        <span className="font-semibold" style={{ color }}>
-                          {formatPace(
-                            Math.min(
-                              ...w.kmSplits
-                                .map((s) => s.pace)
-                                .filter((p): p is number => p !== null && p > 3 && p < 10)
-                            )
-                          )}/km
-                        </span>
-                      </span>
-                    )}
-                  </div>
-
-                  {w.laps && w.laps.length > 1 ? (
-                    <LapsTable laps={w.laps} label={w.label} />
-                  ) : w.kmSplits.length > 0 ? (
-                    <div className="relative h-44">
-                      <SplitsMiniChart splits={w.kmSplits} label={w.label} />
-                    </div>
-                  ) : (
-                    <p style={{ fontSize: 11, color: "rgba(255,255,255,.3)" }}>Splits não disponíveis para este treino.</p>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        {sorted.length === 0 && (
-          <div className="ba-card" style={{ padding: "2rem", textAlign: "center" }}>
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,.4)" }}>Nenhum treino do tipo &ldquo;{filter}&rdquo; encontrado.</p>
+              );
+            })}
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

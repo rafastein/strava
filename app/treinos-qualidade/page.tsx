@@ -1,7 +1,6 @@
 // Sempre renderiza na hora; só as chamadas ao Strava usam o cache de dados (lib/strava-client).
 export const revalidate = 0;
 
-import Link from "next/link";
 import Navbar from "../components/Navbar";
 import { getValidStravaAccessToken } from "../lib/strava-auth";
 import { fetchStravaApi, getStravaActivities, isRunActivity } from "../lib/strava-client";
@@ -12,7 +11,8 @@ import QualityWorkoutsChart, {
   type QualityWorkout,
 } from "../components/QualityWorkoutsChart";
 import RevalidateButton from "../components/RevalidateButton";
-import { getCurrentSeasonYear } from "../lib/season";
+import { formatNumber } from "../lib/format";
+import { getCurrentSeasonYear, getSeasonEpochRange } from "../lib/season";
 
 type StravaActivity = {
   id: number;
@@ -54,13 +54,14 @@ type StravaSplit = {
   average_heartrate?: number | null;
 };
 
-const AFTER_EPOCH = Math.floor(new Date("2026-01-01T00:00:00Z").getTime() / 1000);
+
 const QUALITY_ACTIVITY_CACHE_PREFIX = "quality-workout-activity:v1:";
 const QUALITY_ACTIVITY_CACHE_TTL_SECONDS = 180 * 24 * 3600;
 
 
 async function getActivities(): Promise<StravaActivity[]> {
-  return getStravaActivities({ after: AFTER_EPOCH, maxPages: 3 });
+  // Só a temporada corrente: o cache em Redis também é separado por ano.
+  return getStravaActivities({ after: getSeasonEpochRange(getCurrentSeasonYear()).after, maxPages: 3 });
 }
 
 async function getDetailedActivity(
@@ -378,65 +379,48 @@ export default async function TreinosQualidadePage() {
     return acc;
   }, {});
   const mostCommon = Object.entries(countByType).sort((a, b) => b[1] - a[1])[0];
+  const seasonYear = getCurrentSeasonYear();
 
   return (
-    <div className="page">
+    <div className="ui-page">
       <Navbar />
-      <main className="ba-page">
-
-        {/* Header */}
-        <div className="ba-page-header" style={{ marginBottom: "2rem" }}>
+      <main className="ui-container">
+        <header className="ui-header">
           <div>
-            <p className="ba-eyebrow">Treinos</p>
-            <h1 className="ba-title">Treinos de qualidade</h1>
-            <p className="ba-muted" style={{ marginTop: ".5rem" }}>
-              Classificação automática por padrão de velocidade — intervalados, fartleks, progressivos e mais.
-            </p>
-            <p className="ba-muted" style={{ marginTop: ".35rem", fontSize: 12 }}>
-              {cacheLabel}
-            </p>
+            <h1 className="ui-title">Treinos de qualidade</h1>
+            <p className="ui-muted">Intervalados, fartleks, progressivos e tempo runs em {seasonYear}</p>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <RevalidateButton path="/treinos-qualidade" label="Atualizar cache" />
-            <Link href="/" className="ba-back">← Voltar ao dashboard</Link>
+          <RevalidateButton variant="icon" path="/treinos-qualidade" label="Atualizar treinos de qualidade" />
+        </header>
+
+        <div className="hoje-col">
+          <div className="ui-stat-grid">
+            {[
+              { value: formatNumber(totalQuality), label: "treinos de qualidade" },
+              { value: mostCommon ? mostCommon[0] : "—", label: mostCommon ? `tipo mais frequente · ${mostCommon[1]}×` : "tipo mais frequente" },
+              { value: avgFcMax ? `${avgFcMax} bpm` : "—", label: "FC máxima média" },
+            ].map((stat) => (
+              <div key={stat.label} className="ui-stat">
+                <span className="ui-stat__value" style={stat.value.length > 8 ? { fontSize: 15, lineHeight: "27px" } : undefined}>{stat.value}</span>
+                <span className="ui-stat__label">{stat.label}</span>
+              </div>
+            ))}
           </div>
+
+          {qualityWorkouts.length > 0 ? (
+            <QualityWorkoutsChart workouts={qualityWorkouts} />
+          ) : (
+            <p className="ui-card ui-card--pad ui-muted">
+              Nenhum treino de qualidade encontrado em {seasonYear}. Se você treinou, toque em atualizar no topo.
+            </p>
+          )}
+
+          <p className="ui-muted" style={{ padding: "0 4px" }}>
+            {baseWorkouts.length} {baseWorkouts.length === 1 ? "corrida" : "corridas"} de 5 a 16 km sem padrão de qualidade ficaram de fora. {cacheLabel}.
+          </p>
         </div>
-
-        {/* Summary cards */}
-        <section className="ba-grid-4" style={{ marginBottom: "1rem" }}>
-          <div className="ba-card" style={{ padding: "1.2rem", textAlign: "center" }}>
-            <p className="ba-label">Treinos de qualidade</p>
-            <p className="ba-value" style={{ fontSize: "2rem", color: "#f5a623", marginTop: ".4rem" }}>{totalQuality}</p>
-            <p className="ba-muted" style={{ marginTop: ".3rem" }}>desde jan/2026</p>
-          </div>
-          <div className="ba-card" style={{ padding: "1.2rem", textAlign: "center" }}>
-            <p className="ba-label">Tipo mais frequente</p>
-            <p className="ba-value" style={{ fontSize: "1.6rem", marginTop: ".4rem" }}>{mostCommon?.[0] ?? "—"}</p>
-            <p className="ba-muted" style={{ marginTop: ".3rem" }}>{mostCommon?.[1] ?? 0}x realizados</p>
-          </div>
-          <div className="ba-card" style={{ padding: "1.2rem", textAlign: "center" }}>
-            <p className="ba-label">FC máxima média</p>
-            <p className="ba-value" style={{ fontSize: "2rem", color: "#ef4444", marginTop: ".4rem" }}>{avgFcMax ? `${avgFcMax} bpm` : "—"}</p>
-            <p className="ba-muted" style={{ marginTop: ".3rem" }}>nos treinos de qualidade</p>
-          </div>
-          <div className="ba-card" style={{ padding: "1.2rem", textAlign: "center" }}>
-            <p className="ba-label">Corridas base</p>
-            <p className="ba-value" style={{ fontSize: "2rem", marginTop: ".4rem" }}>{baseWorkouts.length}</p>
-            <p className="ba-muted" style={{ marginTop: ".3rem" }}>sem padrão detectado</p>
-          </div>
-        </section>
-
-        {/* Charts + list */}
-        {qualityWorkouts.length > 0 ? (
-          <QualityWorkoutsChart workouts={qualityWorkouts} />
-        ) : (
-          <div className="ba-card" style={{ padding: "2rem", textAlign: "center" }}>
-            <p className="ba-muted">Nenhum treino de qualidade encontrado. Verifique a conexão com o Strava.</p>
-          </div>
-        )}
-
       </main>
-      <footer className="site-footer">STRAVA · RAFAEL CABRAL · {getCurrentSeasonYear()}</footer>
+      <footer className="ui-footer">Strava · Rafael Cabral · {seasonYear}</footer>
     </div>
   );
 }
