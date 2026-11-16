@@ -399,3 +399,15 @@ test("recomendação passada não contamina o rodízio virtual do futuro", () =>
 
   assert.equal(recommendations.get("2026-08-11")?.name, "ASICS Magic Speed 5");
 });
+
+test("modelos novos têm perfil próprio", () => {
+  assert.equal(inferShoeProfile("PUMA Deviate Nitro Elite 3").key, "puma-deviate-nitro-elite-3");
+  assert.equal(inferShoeProfile("PUMA Deviate Nitro 3").key, "puma-deviate-nitro-3");
+  assert.equal(inferShoeProfile("ASICS Superblast 3").key, "asics-superblast-3");
+  assert.equal(inferShoeProfile("ASICS Superblast 2").key, "asics-superblast-2");
+  assert.equal(getShoeMaxKm("ASICS Metaspeed Sky Tokyo"), 400);
+  const edge = inferShoeProfile("ASICS Metaspeed Edge");
+  assert.ok(!edge.raceOnly);
+  assert.ok(!edge.strengths.some((type) => type.startsWith("prova_")));
+  assert.ok(!(edge.secondary ?? []).some((type) => type.startsWith("prova_")));
+});

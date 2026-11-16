@@ -86,3 +86,17 @@ test("formata a idade em anos e meses completos", () => {
   );
   assert.equal(formatEquipmentAge(undefined, referenceDate), "Não informada");
 });
+
+test("tênis novos têm preço e data, e presente aparece como presente", () => {
+  assert.deepEqual(getEquipmentPurchaseMetadata("PUMA Deviate Nitro Elite 3"), { priceBRL: 445, purchaseDate: "2026-10-06" });
+  assert.deepEqual(getEquipmentPurchaseMetadata("PUMA Deviate Nitro 3"), { priceBRL: 878.64, purchaseDate: "2025-05-20" });
+  assert.deepEqual(getEquipmentPurchaseMetadata("ASICS Metaspeed Sky Tokyo"), { priceBRL: 1150, purchaseDate: "2026-08-29" });
+  assert.deepEqual(getEquipmentPurchaseMetadata("ASICS Metaspeed Edge"), { priceBRL: 310, purchaseDate: "2026-11-03" });
+
+  const gift = getEquipmentPurchaseMetadata("ASICS Superblast 3");
+  assert.equal(gift?.purchaseDate, "2026-08-04");
+  assert.equal(formatEquipmentPrice(gift?.priceBRL), "Presente");
+  assert.equal(formatPricePerKm(gift?.priceBRL, 120), "Presente");
+  assert.equal(formatPricePerRun(gift?.priceBRL, 10), "Presente");
+  assert.equal(formatEstimatedPricePerKm(gift?.priceBRL, 800), "Presente");
+});

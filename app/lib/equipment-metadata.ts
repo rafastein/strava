@@ -52,7 +52,26 @@ const EQUIPMENT_PURCHASES: Record<string, EquipmentPurchaseMetadata> = {
     priceBRL: 1083.59,
     purchaseDate: "2026-05-23",
   },
+  // Presente: preço 0. Data = primeiro uso no Strava.
+  "asics superblast 3": {
+    priceBRL: 0,
+    purchaseDate: "2026-08-04",
+  },
+  "puma deviate nitro elite 3": {
+    priceBRL: 445,
+    purchaseDate: "2026-10-06",
+  },
+  "asics metaspeed sky tokyo": {
+    priceBRL: 1150,
+    purchaseDate: "2026-08-29",
+  },
+  "asics metaspeed edge": {
+    priceBRL: 310,
+    purchaseDate: "2026-11-03",
+  },
 };
+
+const GIFT_LABEL = "Presente";
 
 function normalizeEquipmentName(name: string) {
   return name
@@ -101,6 +120,8 @@ export function formatPricePerKm(
     return "Não informado";
   }
 
+  if (priceBRL === 0) return GIFT_LABEL;
+
   if (!Number.isFinite(totalKm) || totalKm <= 0) {
     return "Ainda sem uso";
   }
@@ -116,6 +137,8 @@ export function formatPricePerRun(
     return "Não informado";
   }
 
+  if (priceBRL === 0) return GIFT_LABEL;
+
   if (!Number.isFinite(activityCount) || activityCount <= 0) {
     return "Ainda sem uso";
   }
@@ -129,6 +152,8 @@ export function formatEquipmentPrice(
   if (typeof priceBRL !== "number" || !Number.isFinite(priceBRL)) {
     return "Não informado";
   }
+
+  if (priceBRL === 0) return GIFT_LABEL;
 
   return formatCurrencyBRL(priceBRL);
 }
@@ -157,6 +182,8 @@ export function formatEstimatedPricePerKm(
   if (typeof priceBRL !== "number" || !Number.isFinite(priceBRL)) {
     return "Não informado";
   }
+
+  if (priceBRL === 0) return GIFT_LABEL;
 
   if (
     !Number.isFinite(estimatedDurabilityKm) ||
