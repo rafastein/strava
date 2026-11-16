@@ -1027,3 +1027,25 @@
   grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   gap: 12px;
 }
+
+/* ── Seleção de provas no gráfico (meias) ── */
+.meia-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  border: 2px solid var(--ui-border-strong);
+}
+
+/* A caixa de seleção já marca a escolha; a linha não muda de cor. */
+.meia-row[aria-pressed="true"] {
+  background: transparent;
+}
+
+.meia-row[aria-pressed="true"] .ui-row__title {
+  color: var(--ui-text);
+}

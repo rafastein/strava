@@ -1,7 +1,6 @@
 // Sempre renderiza na hora; só as chamadas ao Strava usam o cache de dados (lib/strava-client).
 export const revalidate = 0;
 
-import Link from "next/link";
 import Navbar from "../components/Navbar";
 import { getValidStravaAccessToken } from "../lib/strava-auth";
 import {
@@ -18,7 +17,9 @@ import {
 import { KNOWN_GEAR_NAME_FALLBACKS } from "../lib/equipment-recommendation";
 import HalfMarathonComparison from "../components/HalfMarathonComparison";
 import type { HalfMarathonEntry } from "../components/HalfMarathonComparison";
-import { getCurrentSeasonYear } from "../lib/season";
+import { formatDuration } from "../lib/format";
+import { getBestHalfIndex, getHalfRacePace } from "../lib/half-marathon";
+import { getCurrentSeasonYear, getYearFromDateKey } from "../lib/season";
 
 type StravaActivity = StravaActivitySummary;
 type HalfSplitSource = "splits_metric" | "laps" | "estimated";
@@ -149,14 +150,6 @@ async function getActivitySplits(
   return { splits: buildEstimatedSplits(activity), source: "estimated" };
 }
 
-function formatBRDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString("pt-BR", {
-      day: "2-digit", month: "short", year: "numeric",
-    });
-  } catch { return iso.slice(0, 10); }
-}
-
 function cleanRaceName(name: string): string {
   return name
     .replace(/^\s*prova:\s*/i, "")
@@ -213,6 +206,7 @@ export default async function MeiasPage() {
         date: activity.start_date_local,
         distanceKm: Number((activity.distance / 1000).toFixed(2)),
         gearName: activity.gear_id ? gearNameLookup[activity.gear_id] ?? activity.gear_id : null,
+        timeSec: activity.elapsed_time > 0 ? activity.elapsed_time : activity.moving_time,
         splits: result.splits,
         splitSource: result.source,
       });
@@ -221,87 +215,65 @@ export default async function MeiasPage() {
 
   const estimatedCount = halves.filter((half) => half.splitSource === "estimated").length;
 
-  const validPaces = halves.map((h) => {
-    const ps = h.splits.map((s) => s.paceSecPerKm).filter((p) => p > 0 && p < 900);
-    return ps.length ? ps.reduce((a, b) => a + b, 0) / ps.length : 0;
-  });
-
-  const bestIdx = validPaces.indexOf(Math.min(...validPaces.filter((p) => p > 0)));
+  const bestIdx = getBestHalfIndex(halves);
+  const best = bestIdx >= 0 ? halves[bestIdx] : null;
+  // Pace da mais antiga contra a mais recente; positivo = mais rápido hoje.
+  const oldestPace = halves.length >= 2 ? getHalfRacePace(halves[halves.length - 1]) : 0;
+  const latestPace = halves.length >= 2 ? getHalfRacePace(halves[0]) : 0;
+  const evolutionSec = oldestPace > 0 && latestPace > 0 ? Math.round(oldestPace - latestPace) : null;
+  const firstYear = halves.length ? getYearFromDateKey(halves[halves.length - 1].date) : null;
 
   return (
-    <div className="page"><Navbar />
-    <main className="ba-page">
-        <div className="ba-page-header">
+    <div className="ui-page">
+      <Navbar />
+      <main className="ui-container" style={{ maxWidth: 760 }}>
+        <header className="ui-header">
           <div>
-            <p className="ba-eyebrow">Análise</p>
-            <h1 className="ba-title">Comparativo de Meias</h1>
-            <p className="ba-muted" style={{ marginTop: ".5rem" }}>
-              {halves.length} provas de meia exibidas desde jan/2024 — {halvesBase.length} candidatas oficiais encontradas no Strava.
+            <h1 className="ui-title">Meias maratonas</h1>
+            <p className="ui-muted">
+              {halves.length} {halves.length === 1 ? "prova" : "provas"}{firstYear ? ` desde ${firstYear}` : ""}, comparadas km a km
             </p>
           </div>
-          <Link href="/" className="ba-back">← Voltar ao dashboard</Link>
-        </div>
+        </header>
 
         {halves.length === 0 ? (
-          <div className="ba-card" style={{ padding: "1.5rem" }}>
-            <p className="ba-muted">
-              {!token
-                ? "Não consegui autenticar no Strava. Confira as variáveis STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET e STRAVA_REFRESH_TOKEN na Vercel."
-                : halvesBase.length > 0
-                  ? `Encontrei ${halvesBase.length} meia(s) candidata(s), mas o Strava não retornou splits/laps válidos para montar o gráfico.`
-                  : "Nenhuma atividade com nome de Prova e distância de meia maratona foi encontrada desde jan/2024."}
-            </p>
-          </div>
+          <p className="ui-card ui-card--pad ui-muted">
+            {!token
+              ? "Não consegui autenticar no Strava. Confira STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET e STRAVA_REFRESH_TOKEN na Vercel."
+              : halvesBase.length > 0
+                ? `Encontrei ${halvesBase.length} meia(s), mas o Strava não devolveu splits para montar o gráfico.`
+                : "Nenhuma atividade com “Prova” no nome e distância de meia maratona foi encontrada desde 2024."}
+          </p>
         ) : (
-          <>
-            <section className="ba-grid-4 ba-section">
-              <div className="ba-card" style={{ padding: "1.2rem", textAlign: "center" }}>
-                <p className="ba-label">Total de provas</p>
-                <p className="ba-value" style={{ fontSize: "2rem", marginTop: ".4rem" }}>{halves.length}</p>
-                <p className="ba-muted" style={{ marginTop: ".3rem" }}>desde jan/2024</p>
+          <div className="hoje-col">
+            <div className="ui-stat-grid">
+              <div className="ui-stat">
+                <span className="ui-stat__value">{best?.timeSec ? formatDuration(best.timeSec) : "—"}</span>
+                <span className="ui-stat__label">{best ? `melhor · ${best.name}` : "melhor"}</span>
               </div>
-              <div className="ba-card" style={{ padding: "1.2rem", textAlign: "center" }}>
-                <p className="ba-label">Mais recente</p>
-                <p className="ba-value" style={{ fontSize: "1rem", marginTop: ".4rem", lineHeight: 1.3 }}>{halves[0]?.name}</p>
-                <p className="ba-muted" style={{ marginTop: ".3rem" }}>{formatBRDate(halves[0]?.date ?? "")}</p>
+              <div className="ui-stat">
+                <span className="ui-stat__value">{halves[0]?.timeSec ? formatDuration(halves[0].timeSec) : "—"}</span>
+                <span className="ui-stat__label">mais recente · {halves[0]?.name}</span>
               </div>
-              <div className="ba-card" style={{ padding: "1.2rem", textAlign: "center" }}>
-                <p className="ba-label">Melhor prova</p>
-                <p className="ba-value" style={{ fontSize: "1rem", marginTop: ".4rem", lineHeight: 1.3, color: "#10b981" }}>{halves[bestIdx]?.name ?? "-"}</p>
-                <p className="ba-muted" style={{ marginTop: ".3rem" }}>{formatBRDate(halves[bestIdx]?.date ?? "")}</p>
+              <div className="ui-stat">
+                <span className="ui-stat__value">
+                  {evolutionSec === null ? "—" : evolutionSec === 0 ? "igual" : `${evolutionSec > 0 ? "−" : "+"}${Math.abs(evolutionSec)} s/km`}
+                </span>
+                <span className="ui-stat__label">pace da última contra a primeira</span>
               </div>
-              <div className="ba-card" style={{ padding: "1.2rem", textAlign: "center" }}>
-                <p className="ba-label">Evolução</p>
-                <p className="ba-value" style={{ fontSize: "2rem", marginTop: ".4rem", color: "#60a5fa" }}>
-                  {halves.length >= 2 ? (
-                    (() => {
-                      const first = validPaces[validPaces.length - 1];
-                      const last = validPaces[0];
-                      if (!first || !last) return "-";
-                      const diffSec = Math.round(first - last);
-                      return diffSec > 0 ? `-${diffSec}s/km` : `+${Math.abs(diffSec)}s/km`;
-                    })()
-                  ) : "-"}
-                </p>
-                <p className="ba-muted" style={{ marginTop: ".3rem" }}>1ª vs última prova</p>
-              </div>
-            </section>
+            </div>
 
             {estimatedCount > 0 ? (
-              <div className="ba-card ba-section" style={{ padding: "1rem" }}>
-                <p className="ba-muted">
-                  {estimatedCount} prova(s) apareceram com linha estimada por pace médio porque o Strava não retornou splits/laps detalhados.
-                </p>
-              </div>
+              <p className="ui-muted" style={{ padding: "0 4px" }}>
+                {estimatedCount} {estimatedCount === 1 ? "prova aparece" : "provas aparecem"} com linha reta pelo pace médio: o Strava não devolveu splits.
+              </p>
             ) : null}
 
-            <section>
-              <HalfMarathonComparison races={halves} />
-            </section>
-          </>
+            <HalfMarathonComparison races={halves} />
+          </div>
         )}
-    </main>
-    <footer className="site-footer">STRAVA · RAFAEL CABRAL · {getCurrentSeasonYear()}</footer>
+      </main>
+      <footer className="ui-footer">Strava · Rafael Cabral · {getCurrentSeasonYear()}</footer>
     </div>
   );
 }

@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { ChartDataset } from "chart.js";
+import { formatDuration } from "../lib/format";
+import { getBestHalfIndex, getHalfRacePace } from "../lib/half-marathon";
 
 export type HalfMarathonEntry = {
   id: number;
@@ -9,6 +11,8 @@ export type HalfMarathonEntry = {
   date: string;
   distanceKm: number;
   gearName?: string | null;
+  /** Tempo da prova em segundos (decorrido no Strava). */
+  timeSec?: number | null;
   splitSource?: "splits_metric" | "laps" | "estimated";
   splits: { km: number; paceSecPerKm: number; heartrate: number | null; distanceM?: number }[];
 };
@@ -61,6 +65,13 @@ function cleanRaceName(name: string): string {
 
 const CLOSED_KM_MIN_DISTANCE_M = 990;
 
+function getInitialVisible(races: HalfMarathonEntry[]) {
+  const visible = new Set(races.slice(0, 3).map((_, index) => index));
+  const best = getBestHalfIndex(races);
+  if (best >= 0) visible.add(best);
+  return visible;
+}
+
 function isClosedKmSplit(split: HalfMarathonEntry["splits"][number]): boolean {
   // O último split do Strava pode ter poucos metros, mas o pace vem normalizado para 1 km.
   // Para "Melhor km", consideramos apenas quilômetros realmente fechados.
@@ -70,7 +81,8 @@ function isClosedKmSplit(split: HalfMarathonEntry["splits"][number]): boolean {
 export default function HalfMarathonComparison({ races }: Props) {
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstance = useRef<unknown>(null);
-  const [visible, setVisible] = useState<Set<number>>(new Set(races.map((_, i) => i)));
+  // Todas sobrepostas viram um emaranhado no celular: começa com as 3 mais recentes e a mais rápida.
+  const [visible, setVisible] = useState<Set<number>>(() => getInitialVisible(races));
 
   const toggleRace = (idx: number) => {
     setVisible((prev) => {
@@ -92,11 +104,11 @@ export default function HalfMarathonComparison({ races }: Props) {
       chartInstance.current = null;
     }
 
-    const gridColor = "rgba(255,255,255,0.06)";
-    const tickColor = "rgba(255,255,255,0.4)";
+    const gridColor = "#262a2f";
+    const tickColor = "#9ba1a9";
 
     const maxKm = Math.max(...races.map((r) => r.splits.length));
-    const labels = Array.from({ length: maxKm }, (_, i) => `${i + 1}km`);
+    const labels = Array.from({ length: maxKm }, (_, i) => `${i + 1}`);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const datasets: ChartDataset<any, any>[] = races
@@ -128,8 +140,9 @@ export default function HalfMarathonComparison({ races }: Props) {
       .filter((p) => p > 0 && p < 900)
       .map((p) => p / 60);
 
-    const paceMin = allPaces.length ? Math.min(...allPaces) * 0.98 : 4;
-    const paceMax = allPaces.length ? Math.max(...allPaces) * 1.02 : 6.5;
+    // Limites em múltiplos de 15 s para o eixo mostrar paces redondos (4:30, 4:45…).
+    const paceMin = allPaces.length ? Math.floor(Math.min(...allPaces) * 4) / 4 : 4;
+    const paceMax = allPaces.length ? Math.ceil(Math.max(...allPaces) * 4) / 4 : 6.5;
 
     chartInstance.current = new Chart(chartRef.current, {
       type: "line",
@@ -153,7 +166,7 @@ export default function HalfMarathonComparison({ races }: Props) {
         },
         scales: {
           x: {
-            ticks: { color: tickColor, font: { size: 10 }, autoSkip: false, maxRotation: 45 },
+            ticks: { color: tickColor, font: { size: 12 }, maxTicksLimit: 8, maxRotation: 0 },
             grid: { color: gridColor },
           },
           y: {
@@ -162,14 +175,14 @@ export default function HalfMarathonComparison({ races }: Props) {
             max: paceMax,
             ticks: {
               color: tickColor,
-              font: { size: 10 },
+              font: { size: 12 },
               callback: (v: unknown) => {
                 const val = typeof v === "number" ? v * 60 : 0;
                 return formatPace(val);
               },
             },
             grid: { color: gridColor },
-            title: { display: true, text: "min/km", color: tickColor, font: { size: 10 } },
+            title: { display: false },
           },
         },
       },
@@ -187,109 +200,78 @@ export default function HalfMarathonComparison({ races }: Props) {
   }, []);
 
   if (races.length === 0) {
-    return (
-      <div className="ba-card" style={{ padding: "1.5rem" }}>
-        <p className="ba-muted">Nenhuma meia maratona com splits disponíveis.</p>
-      </div>
-    );
+    return <p className="ui-card ui-card--pad ui-muted">Nenhuma meia maratona com splits disponíveis.</p>;
   }
 
+  const bestIndex = getBestHalfIndex(races);
+
   return (
-    <div className="ba-card" style={{ padding: "1.5rem" }}>
-      <div className="mb-4">
-        <p className="ba-eyebrow">Comparativo de meias maratonas</p>
-        <p className="ba-muted" style={{ marginTop: 4 }}>
-          Splits km a km sobrepostos — clique para mostrar/ocultar cada prova.
-        </p>
-      </div>
+    <div className="hoje-col">
+      <section className="ui-card ui-card--pad ui-stack" aria-label="Splits km a km">
+        <div>
+          <h2 className="ui-h2">Km a km</h2>
+          <p className="ui-muted">Pace de cada quilômetro, mais rápido no alto. Escolha as provas na lista abaixo.</p>
+        </div>
+        <div style={{ position: "relative", height: 260 }}>
+          <canvas ref={chartRef} role="img" aria-label="Pace km a km das meias maratonas selecionadas" />
+        </div>
+      </section>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        {races.map((race, i) => {
-          const color = COLORS[i % COLORS.length];
-          const isOn = visible.has(i);
-          return (
-            <button
-              key={race.id}
-              onClick={() => toggleRace(i)}
-              className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-opacity ${
-                isOn ? "opacity-100" : "opacity-40"
-              }`}
-              style={{ borderColor: isOn ? color : "rgba(255,255,255,.15)", color: isOn ? color : "rgba(255,255,255,.35)" }}
-            >
-              <span
-                className="inline-block h-2 w-2 rounded-full"
-                style={{ background: isOn ? color : "rgba(255,255,255,.2)" }}
-              />
-              {formatShortDate(race.date)} {cleanRaceName(race.name)}{race.splitSource === "estimated" ? " · média" : ""}
-            </button>
-          );
-        })}
-      </div>
+      <section className="ui-section" aria-label="Provas">
+        <div className="ui-section__head">
+          <h2 className="ui-h2">Provas</h2>
+          <span className="ui-muted">{visible.size} de {races.length} no gráfico</span>
+        </div>
+        <div className="ui-card ui-list">
+          {races.map((race, i) => {
+            const color = COLORS[i % COLORS.length];
+            const isOn = visible.has(i);
+            const pace = getHalfRacePace(race);
+            const closedKmPaces = race.splits
+              .filter(isClosedKmSplit)
+              .map((split) => split.paceSecPerKm)
+              .filter((pace) => pace > 0 && pace < 900);
+            const best = closedKmPaces.length ? Math.min(...closedKmPaces) : 0;
+            const isBest = i === bestIndex;
 
-      <div className="relative h-72">
-        <canvas
-          ref={chartRef}
-          role="img"
-          aria-label="Comparativo de splits km a km das meias maratonas"
-        />
-      </div>
-
-      <div className="mt-4 overflow-x-auto">
-        <table className="w-full text-xs">
-          <thead>
-            <tr style={{ borderBottom: "1px solid rgba(255,255,255,.05)" }}>
-              <th style={{ paddingBottom: 8, textAlign: "left", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)" }}>Prova</th>
-              <th style={{ paddingBottom: 8, textAlign: "left", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)" }}>Tênis</th>
-              <th style={{ paddingBottom: 8, textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)" }}>Data</th>
-              <th style={{ paddingBottom: 8, textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)" }}>Dist</th>
-              <th style={{ paddingBottom: 8, textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)" }}>Ritmo médio</th>
-              <th style={{ paddingBottom: 8, textAlign: "right", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--text-faint)" }}>Melhor km</th>
-            </tr>
-          </thead>
-          <tbody>
-            {races.map((race, i) => {
-              const color = COLORS[i % COLORS.length];
-              const validPaces = race.splits
-                .map((s) => s.paceSecPerKm)
-                .filter((p) => p > 0 && p < 900);
-              const avg = validPaces.length
-                ? validPaces.reduce((a, b) => a + b, 0) / validPaces.length
-                : 0;
-              const closedKmPaces = race.splits
-                .filter(isClosedKmSplit)
-                .map((s) => s.paceSecPerKm)
-                .filter((p) => p > 0 && p < 900);
-              const best = closedKmPaces.length ? Math.min(...closedKmPaces) : 0;
-              return (
-                <tr key={race.id} style={{ borderBottom: "1px solid rgba(255,255,255,.05)" }}>
-                  <td className="py-2">
-                    <span className="flex items-center gap-1.5">
-                      <span
-                        className="inline-block h-2.5 w-2.5 rounded-full"
-                        style={{ background: color }}
-                      />
-                      <span style={{ fontWeight: 500, color: "var(--text)", fontSize: 13 }}>
-                        {cleanRaceName(race.name)}{race.splitSource === "estimated" ? " · média" : ""}
-                      </span>
-                    </span>
-                  </td>
-                  <td style={{ padding: "8px 12px", textAlign: "left", color: "var(--text-muted)", fontSize: 12, whiteSpace: "nowrap" }}>
-                    {race.gearName ?? "-"}
-                  </td>
-                  <td style={{ padding: "8px 0", textAlign: "right", color: "var(--text-muted)", fontSize: 12 }}>{formatShortDate(race.date)}</td>
-                  <td style={{ padding: "8px 0", textAlign: "right", color: "var(--text-muted)", fontSize: 12 }}>{formatDistanceKm(race.distanceKm)}</td>
-                  <td style={{ padding: "8px 0", textAlign: "right", fontFamily: "var(--font-mono)", fontWeight: 500, color: "var(--text)", fontSize: 12 }}>
-                    {formatPace(avg)}/km
-                  </td>
-                  <td style={{ padding: "8px 0", textAlign: "right", fontFamily: "var(--font-mono)", fontWeight: 500, color: "#10b981", fontSize: 12 }}>
-                    {formatPace(best)}/km
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+            return (
+              <button
+                key={race.id}
+                type="button"
+                className="ui-row ui-row--btn meia-row"
+                aria-pressed={isOn}
+                onClick={() => toggleRace(i)}
+                style={{ alignItems: "flex-start", paddingTop: 12, paddingBottom: 12 }}
+              >
+                <span className={`meia-check${isOn ? " meia-check--on" : ""}`} style={isOn ? { background: color, borderColor: color } : undefined} aria-hidden="true">
+                  {isOn ? (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0e0f11" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-10" /></svg>
+                  ) : null}
+                </span>
+                <span className="ui-row__main" style={{ flex: 1 }}>
+                  <span className="ui-row__title" style={{ whiteSpace: "normal" }}>
+                    {cleanRaceName(race.name)}
+                    {isBest ? <span className="ui-tag-accent"> · melhor pace</span> : null}
+                  </span>
+                  <span className="ui-muted" style={{ fontSize: 12 }}>
+                    {[
+                      formatShortDate(race.date),
+                      formatDistanceKm(race.distanceKm),
+                      best ? `melhor km ${formatPace(best)}` : null,
+                      race.gearName ?? null,
+                      race.splitSource === "estimated" ? "sem splits: linha pela média" : null,
+                    ].filter(Boolean).join(" · ")}
+                  </span>
+                </span>
+                <span className="ui-row__side">
+                  <span className="ui-row__value">{race.timeSec ? formatDuration(race.timeSec) : `${formatPace(pace)}/km`}</span>
+                  {race.timeSec ? <span className="ui-muted">{formatPace(pace)}/km</span> : null}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 }
