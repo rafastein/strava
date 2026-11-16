@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import type { ChartDataset } from "chart.js";
 import { formatDuration } from "../lib/format";
 import { getBestHalfIndex, getHalfRacePace } from "../lib/half-marathon";
+import { applyChartTheme } from "../lib/chart-theme";
 
 export type HalfMarathonEntry = {
   id: number;
@@ -98,6 +99,7 @@ export default function HalfMarathonComparison({ races }: Props) {
 
     const { Chart, registerables } = await import("chart.js");
     Chart.register(...registerables);
+      applyChartTheme(Chart);
 
     if (chartInstance.current) {
       (chartInstance.current as { destroy: () => void }).destroy();

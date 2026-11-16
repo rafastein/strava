@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Navbar from "../../components/Navbar";
 import { formatNumber, formatPace, formatWeekdayShort } from "../../lib/format";
 import { STATUS_META, type DayLoad } from "../../lib/training-load";
+import { applyChartTheme } from "../../lib/chart-theme";
 
 type ApiResponse = {
   days: DayLoad[];
@@ -158,11 +159,12 @@ export default function CargaPage() {
 
     const visible = data.days.slice(-windowDays);
     const labels = visible.map((d) => formatDate(d.date));
-    const tick = { color: "#9ba1a9", font: { size: 12, family: "Inter, system-ui, sans-serif" } };
+    const tick = { color: "#9ba1a9", font: { size: 12 } };
 
     let cancelled = false;
 
     import("chart.js/auto").then(({ default: Chart }) => {
+      applyChartTheme(Chart);
       if (cancelled || !canvasRef.current) return;
 
       if (chartRef.current) {

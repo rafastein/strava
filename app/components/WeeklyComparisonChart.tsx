@@ -1,5 +1,7 @@
 "use client";
 
+import { formatKm, formatNumber } from "../lib/format";
+
 type WeeklyItem = {
   label?: string;
   weekLabel?: string;
@@ -82,309 +84,53 @@ export default function WeeklyComparisonChart({
   orderLabel = "Da semana mais recente para a mais antiga",
 }: Props) {
   return (
-    <section
-      style={{
-        background:
-          "linear-gradient(180deg, rgba(22,22,24,0.96) 0%, rgba(14,14,16,0.98) 100%)",
-        border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: 24,
-        padding: 28,
-        boxShadow: "0 18px 45px rgba(0,0,0,0.22)",
-      }}
-    >
-      <header style={{ marginBottom: 24 }}>
-        <h2
-          style={{
-            color: "#fff",
-            fontSize: 20,
-            lineHeight: 1.15,
-            fontWeight: 800,
-            margin: 0,
-          }}
-        >
-          {title}
-        </h2>
-
-        <p
-          style={{
-            color: "rgba(255,255,255,0.48)",
-            fontSize: 12,
-            lineHeight: 1.5,
-            marginTop: 8,
-            marginBottom: 0,
-          }}
-        >
-          {subtitle}
-        </p>
-
-        <p
-          style={{
-            color: "rgba(255,255,255,0.28)",
-            fontFamily: "'DM Mono', monospace",
-            fontSize: 10,
-            letterSpacing: "0.16em",
-            textTransform: "uppercase",
-            marginTop: 16,
-            marginBottom: 0,
-          }}
-        >
-          {orderLabel}
-        </p>
-      </header>
-
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 22,
-        }}
-      >
+    <section className="ui-section" aria-label={title}>
+      <div className="ui-section__head">
+        <h2 className="ui-h2">{title}</h2>
+        <span className="ui-muted">{orderLabel.toLowerCase()}</span>
+      </div>
+      <div className="ui-card ui-list">
         {items.map((item, index) => {
-          const plannedKm = getNumber(
-            item.plannedKm,
-            item.planned,
-            item.totalPlannedKm,
-          );
-
-          const executedKm = getNumber(
-            item.executedKm,
-            item.doneKm,
-            item.actualKm,
-            item.stravaKm,
-          );
-
+          const plannedKm = getNumber(item.plannedKm, item.planned, item.totalPlannedKm);
+          const executedKm = getNumber(item.executedKm, item.doneKm, item.actualKm, item.stravaKm);
           const adherencePct =
-            item.adherencePct ??
-            item.adherence ??
-            (plannedKm > 0 ? (executedKm / plannedKm) * 100 : 0);
-
-          const progressPct =
-            plannedKm > 0
-              ? Math.min((executedKm / plannedKm) * 100, 100)
-              : 0;
-
+            item.adherencePct ?? item.adherence ?? (plannedKm > 0 ? (executedKm / plannedKm) * 100 : 0);
+          const progressPct = plannedKm > 0 ? Math.min((executedKm / plannedKm) * 100, 100) : 0;
           const label = getLabel(item);
-
-          const isCurrent = Boolean(
-            item.isCurrentWeek ??
-              item.isCurrent ??
-              item.current ??
-              isCurrentWeekLabel(label),
-          );
+          const isCurrent = Boolean(item.isCurrentWeek ?? item.isCurrent ?? item.current ?? isCurrentWeekLabel(label));
 
           // Semana sem treino planejado: não existe aderência nem "falta" a calcular.
           const hasPlan = plannedKm > 0;
           const isDone = hasPlan && adherencePct >= 100;
           const isPartial = adherencePct >= 70 && adherencePct < 100;
-
-          const barColor = isDone
-            ? "linear-gradient(90deg, #22c55e, #34d399)"
-            : isCurrent
-              ? "linear-gradient(90deg, #f5a623, #fb923c, #ff6b00)"
-              : isPartial
-                ? "#f97316"
-                : "#ef4444";
+          const barColor = isDone ? "var(--ui-good)" : isCurrent || isPartial ? "var(--ui-accent)" : "#ff8a7a";
 
           return (
-            <article
-              key={`${label}-${index}`}
-              style={{
-                borderRadius: 22,
-                padding: 22,
-                background: isCurrent
-                  ? "radial-gradient(circle at 92% 0%, rgba(245,166,35,0.22), transparent 38%), linear-gradient(180deg, rgba(120,53,15,0.38) 0%, rgba(67,27,8,0.48) 100%)"
-                  : "linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.025) 100%)",
-                border: isCurrent
-                  ? "1px solid rgba(245,166,35,0.46)"
-                  : "1px solid rgba(255,255,255,0.08)",
-                boxShadow: isCurrent
-                  ? "0 0 0 1px rgba(245,166,35,0.08), 0 22px 56px rgba(245,166,35,0.12), 0 20px 60px rgba(0,0,0,0.24)"
-                  : "none",
-              }}
-            >
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr auto",
-                  gap: 18,
-                  alignItems: "flex-start",
-                  marginBottom: 22,
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      marginBottom: 8,
-                    }}
-                  >
-                    <h3
-                      style={{
-                        color: "#fff",
-                        fontSize: 16,
-                        lineHeight: 1.1,
-                        fontWeight: 800,
-                        margin: 0,
-                      }}
-                    >
-                      {label}
-                    </h3>
-
-                    {isCurrent && (
-                      <span
-                        style={{
-                          color: "#f5a623",
-                          background: "rgba(245,166,35,0.14)",
-                          border: "1px solid rgba(245,166,35,0.28)",
-                          borderRadius: 999,
-                          padding: "3px 8px",
-                          fontSize: 10,
-                          fontWeight: 800,
-                          fontFamily: "'DM Mono', monospace",
-                          letterSpacing: "0.08em",
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        Semana atual
-                      </span>
-                    )}
-                  </div>
-
-                  <p
-                    style={{
-                      color: "rgba(255,255,255,0.48)",
-                      fontSize: 12,
-                      margin: 0,
-                    }}
-                  >
-                    Progresso real
-                  </p>
-                </div>
-
-                <div style={{ textAlign: "right" }}>
-                  <strong
-                    style={{
-                      color: "#fff",
-                      fontSize: 13,
-                      lineHeight: 1.2,
-                      display: "block",
-                    }}
-                  >
-                    {hasPlan
-                      ? `${executedKm.toFixed(1)} / ${plannedKm.toFixed(1)} km`
-                      : `${executedKm.toFixed(1)} km`}
-                  </strong>
-
-                  <span
-                    style={{
-                      color: "rgba(255,255,255,0.42)",
-                      fontSize: 11,
-                      display: "block",
-                      marginTop: 6,
-                    }}
-                  >
-                    {hasPlan ? `${Math.round(adherencePct)}% de aderência` : "sem plano cadastrado"}
-                  </span>
-                </div>
+            <div key={`${label}-${index}`} className="ui-row" style={{ alignItems: "stretch", flexDirection: "column", gap: 8, paddingTop: 14, paddingBottom: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
+                <span className="ui-row__title">
+                  {label}
+                  {isCurrent ? <span className="ui-tag-accent"> · semana atual</span> : null}
+                </span>
+                <span className="ui-num" style={{ fontSize: 15, whiteSpace: "nowrap" }}>
+                  {hasPlan ? `${formatNumber(executedKm, 1)} de ${formatKm(plannedKm)}` : formatKm(executedKm)}
+                </span>
               </div>
-
-              <div style={{ marginBottom: 22 }}>
-                <div
-                  style={{
-                    height: 7,
-                    borderRadius: 999,
-                    background: "rgba(255,255,255,0.09)",
-                    overflow: "hidden",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: `${progressPct}%`,
-                      height: "100%",
-                      borderRadius: 999,
-                      background: barColor,
-                      boxShadow: isCurrent
-                        ? "0 0 18px rgba(245,166,35,0.32)"
-                        : "none",
-                    }}
-                  />
-                </div>
+              <div className="hoje-progress" role="img" aria-label={hasPlan ? `${formatNumber(adherencePct)}% do planejado` : "sem plano"}>
+                <div className="hoje-progress__fill" style={{ width: `${progressPct}%`, background: barColor }} />
               </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                  gap: 14,
-                  marginBottom: 20,
-                }}
-              >
-                <MiniMetric label="Planejado" value={hasPlan ? `${plannedKm.toFixed(1)} km` : "—"} />
-                <MiniMetric label="Executado" value={`${executedKm.toFixed(1)} km`} />
-                <MiniMetric label="Aderência" value={hasPlan ? `${Math.round(adherencePct)}%` : "—"} />
-              </div>
-
-              <p
-                style={{
-                  color: "rgba(255,255,255,0.52)",
-                  fontSize: 12,
-                  lineHeight: 1.5,
-                  margin: 0,
-                }}
-              >
+              <span className="ui-muted">
                 {!hasPlan
-                  ? "Nenhum treino planejado para esta semana. Cadastre o plano para comparar com o executado."
+                  ? "Nenhum treino planejado para esta semana."
                   : isDone
-                  ? `Meta semanal cumprida. Excedente de ${(
-                      executedKm - plannedKm
-                    ).toFixed(1)} km.`
-                  : `Faltam ${Math.max(plannedKm - executedKm, 0).toFixed(
-                      1,
-                    )} km para cumprir o planejado da semana.`}
-              </p>
-            </article>
+                    ? `Meta cumprida · ${formatNumber(adherencePct)}%${executedKm > plannedKm ? `, ${formatKm(executedKm - plannedKm)} a mais` : ""}`
+                    : `${formatNumber(adherencePct)}% · faltam ${formatKm(Math.max(plannedKm - executedKm, 0))}`}
+              </span>
+            </div>
           );
         })}
       </div>
+      <p className="ui-muted" style={{ padding: "0 4px" }}>{subtitle}</p>
     </section>
-  );
-}
-
-function MiniMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div
-      style={{
-        borderRadius: 14,
-        padding: "12px 14px",
-        background: "rgba(255,255,255,0.045)",
-        border: "1px solid rgba(255,255,255,0.07)",
-      }}
-    >
-      <p
-        style={{
-          color: "rgba(255,255,255,0.36)",
-          fontSize: 10,
-          letterSpacing: "0.14em",
-          textTransform: "uppercase",
-          margin: 0,
-        }}
-      >
-        {label}
-      </p>
-
-      <strong
-        style={{
-          color: "#fff",
-          fontSize: 15,
-          lineHeight: 1.2,
-          display: "block",
-          marginTop: 8,
-        }}
-      >
-        {value}
-      </strong>
-    </div>
   );
 }

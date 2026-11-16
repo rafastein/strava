@@ -1,3 +1,4 @@
+import { formatKm } from "../lib/format";
 import type { SisrunRow } from "../lib/sisrun-utils";
 import {
   getStructuredWorkoutPlannedDistanceKm,
@@ -53,7 +54,7 @@ function getWorkoutTitle(
 ) {
   if (structuredWorkout) return structuredWorkout.title;
   if (!todaySisrunRow) return "Nenhum treino previsto.";
-  return `Planejado: ${todaySisrunRow.plannedDistanceKm.toFixed(1)} km`;
+  return todaySisrunRow.plannedDistanceKm > 0 ? `${formatKm(todaySisrunRow.plannedDistanceKm)} na planilha` : "Descanso";
 }
 
 function getSourceLabel(
@@ -76,109 +77,48 @@ export default function TodayWorkoutCard({
   const sourceLabel = getSourceLabel(structuredWorkout, structuredWorkoutSourceLabel);
   const evidence = structuredWorkout?.steps.slice(0, 3).map((step) => {
     const repeat = step.repeat ? `${step.repeat}x ` : "";
-    const distance = step.distanceKm ? ` · ${step.distanceKm.toFixed(2)} km` : "";
+    const distance = step.distanceKm ? ` · ${formatKm(step.distanceKm, step.distanceKm < 1 ? 2 : 1)}` : "";
     const intensity = step.intensity ? ` · ${step.intensity}` : "";
     return `${repeat}${step.label}${distance}${intensity}`;
   }) ?? [];
 
+  const hasWorkout = Boolean(structuredWorkout || todaySisrunRow);
+  const statusColor = todayOk ? "var(--ui-good)" : todayStatus === "Sem treino" ? "var(--ui-muted)" : "var(--ui-accent)";
+
   return (
-    <div
-      style={{
-        background: "rgba(255,255,255,0.03)",
-        border: "1px solid rgba(255,255,255,0.07)",
-        borderRadius: 16,
-        padding: "1.5rem",
-      }}
-    >
-      <p
-        style={{
-          fontFamily: "'DM Mono', monospace",
-          fontSize: 10,
-          letterSpacing: "0.1em",
-          textTransform: "uppercase",
-          color: "rgba(255,255,255,0.3)",
-          marginBottom: "0.75rem",
-        }}
-      >
-        Hoje · {sourceLabel}
-      </p>
+    <section className="ui-card ui-card--pad ui-stack" aria-label="Treino de hoje">
+      <div className="ui-section__head" style={{ padding: 0, alignItems: "center" }}>
+        <p className="ui-label-accent">Treino de hoje</p>
+        <span style={{ fontSize: 13, fontWeight: 600, color: statusColor }}>{todayStatus.replace(" ✓", "")}</span>
+      </div>
 
-      {structuredWorkout || todaySisrunRow ? (
+      {hasWorkout ? (
         <>
-          <p
-            style={{
-              fontSize: 13,
-              color: "rgba(255,255,255,0.5)",
-              marginBottom: 4,
-            }}
-          >
-            {getWorkoutTitle(todaySisrunRow, structuredWorkout)}
-          </p>
-          <p
-            style={{
-              fontSize: 13,
-              color: "rgba(255,255,255,0.5)",
-              marginBottom: 4,
-            }}
-          >
-            Planejado: {plannedDistanceKm === null ? "distância não informada" : `${plannedDistanceKm.toFixed(1)} km`}
-          </p>
-          <p
-            style={{
-              fontSize: 13,
-              color: "rgba(255,255,255,0.5)",
-              marginBottom: 12,
-            }}
-          >
-            Strava: {todayStravaKm.toFixed(1)} km
-          </p>
-
-          {evidence.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
-              {evidence.map((item) => (
-                <span
-                  key={item}
-                  style={{
-                    display: "inline-block",
-                    padding: "3px 8px",
-                    borderRadius: 999,
-                    fontSize: 10,
-                    color: "rgba(255,255,255,0.55)",
-                    background: "rgba(255,255,255,0.05)",
-                  }}
-                >
-                  {item}
-                </span>
-              ))}
+          <div>
+            <h2 className="ui-h2" style={{ fontSize: 20 }}>{getWorkoutTitle(todaySisrunRow, structuredWorkout)}</h2>
+            <p className="ui-muted" style={{ marginTop: 4 }}>fonte: {sourceLabel}</p>
+          </div>
+          <dl className="ui-dl">
+            <div>
+              <dt>Planejado</dt>
+              <dd>{plannedDistanceKm === null ? "não informado" : formatKm(plannedDistanceKm)}</dd>
             </div>
-          )}
+            <div>
+              <dt>Feito no Strava</dt>
+              <dd>{formatKm(todayStravaKm)}</dd>
+            </div>
+          </dl>
+          {evidence.length > 0 ? (
+            <ul className="ui-list" style={{ listStyle: "none", margin: "0 -20px -20px", borderTop: "1px solid var(--ui-border)" }}>
+              {evidence.map((item) => (
+                <li key={item} className="ui-row" style={{ minHeight: 44, fontSize: 14, color: "var(--ui-text-2)" }}>{item}</li>
+              ))}
+            </ul>
+          ) : null}
         </>
       ) : (
-        <p
-          style={{
-            fontSize: 13,
-            color: "rgba(255,255,255,0.3)",
-            marginBottom: 12,
-          }}
-        >
-          Nenhum treino previsto.
-        </p>
+        <p className="ui-muted" style={{ fontSize: 14 }}>Nenhum treino previsto para hoje.</p>
       )}
-
-      <span
-        style={{
-          display: "inline-block",
-          padding: "4px 12px",
-          borderRadius: 6,
-          fontSize: 12,
-          fontWeight: 600,
-          background: todayOk ? "rgba(16,185,129,0.15)" : "rgba(245,166,35,0.15)",
-          color: todayOk ? "#10b981" : "#f5a623",
-          border: `1px solid ${todayOk ? "rgba(16,185,129,0.3)" : "rgba(245,166,35,0.3)"}`,
-        }}
-      >
-        {todayStatus}
-      </span>
-    </div>
+    </section>
   );
 }

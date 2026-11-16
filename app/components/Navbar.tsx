@@ -2,54 +2,47 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-const NAV_LINKS = [
-  { href: "/", label: "Home" },
-  { href: "/longoes", label: "Longões" },
-  { href: "/treinos-qualidade", label: "Qualidade" },
-  { href: "/meias", label: "Meias" },
-  { href: "/provas", label: "Provas" },
-  { href: "/27-capitais", label: "27 Capitais" },
-  { href: "/corridas-brasil", label: "Brasil" },
-  { href: "/corridas-mundo", label: "Mundo" },
-  { href: "/buenos-aires", label: "Buenos Aires · histórico" },
-  { href: "/equipamentos", label: "Tênis" },
-  { href: "/coros", label: "COROS" },
-  { href: "/sisrun", label: "SisRUN" },
-  { href: "/carga", label: "Carga" },
-];
+import { NAV_TABS, NavTabIcon, isNavTabActive } from "./nav-tabs";
 
 type Props = {
   athleteName?: string;
   athleteAvatar?: string;
 };
 
+/**
+ * Topo do site. No desktop mostra as cinco seções; no celular fica só a marca,
+ * porque a navegação vai para a barra de abas do rodapé.
+ */
 export default function Navbar({ athleteName, athleteAvatar }: Props) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
 
   return (
-    <nav className="site-nav">
-      <div className="site-nav__inner">
-        <div className="site-nav__brand">
-          {athleteAvatar && <img src={athleteAvatar} alt="" className="site-nav__avatar" />}
-          <Link href="/" className="site-nav__logo">
-            {athleteName?.toUpperCase() ?? "RAFAEL"}
-          </Link>
-          <span className="site-nav__dot" />
-        </div>
+    <header className="ui-nav">
+      <div className="ui-nav__inner">
+        <Link href="/" className="ui-nav__brand">
+          {athleteAvatar ? (
+            // eslint-disable-next-line @next/next/no-img-element -- avatar externo do Strava, 28 px
+            <img src={athleteAvatar} alt="" width={28} height={28} className="ui-nav__avatar" />
+          ) : (
+            <span className="ui-nav__dot" aria-hidden="true" />
+          )}
+          {athleteName ?? "Rafael"}
+        </Link>
 
-        <div className="site-nav__links">
-          {NAV_LINKS.map((link) => (
+        <nav className="ui-nav__links" aria-label="Seções">
+          {NAV_TABS.map((tab) => (
             <Link
-              key={link.href}
-              href={link.href}
-              className={`site-nav__link${pathname === link.href ? " site-nav__link--active" : ""}`}
+              key={tab.href}
+              href={tab.href}
+              className="ui-nav__link"
+              aria-current={isNavTabActive(tab, pathname) ? "page" : undefined}
             >
-              {link.label}
+              <NavTabIcon tab={tab} size={18} />
+              {tab.label}
             </Link>
           ))}
-        </div>
+        </nav>
       </div>
-    </nav>
+    </header>
   );
 }

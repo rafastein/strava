@@ -564,7 +564,7 @@ function MapPhotoOverlay({
                 border: "1px solid rgba(16,185,129,0.25)",
                 background: "rgba(16,185,129,0.12)",
                 color: "#34d399",
-                fontSize: 9,
+                fontSize: 11,
                 fontWeight: 900,
                 lineHeight: 1,
                 letterSpacing: "0.12em",
@@ -611,7 +611,7 @@ function MapPhotoOverlay({
               href={item.activityUrl}
               target="_blank"
               rel="noreferrer"
-              className="ba-button ba-button--ghost"
+              className="ui-btn ui-btn--ghost"
               style={{ marginTop: 12, width: "100%", justifyContent: "center" }}
             >
               Abrir no Strava
@@ -634,7 +634,7 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
         padding: ".65rem .7rem",
       }}
     >
-      <p className="ba-label" style={{ fontSize: 9, whiteSpace: "nowrap" }}>
+      <p className="ba-label" style={{ whiteSpace: "nowrap" }}>
         {label}
       </p>
       <p

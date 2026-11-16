@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { ChartDataset } from "chart.js";
+import { applyChartTheme } from "../lib/chart-theme";
 
 type SplitEntry = {
   km: number;
@@ -28,9 +29,9 @@ function formatPace(secPerKm: number): string {
 }
 
 function getPaceColor(paceSecPerKm: number, avgPace: number): string {
-  if (paceSecPerKm <= avgPace * 0.97) return "#10b981";
-  if (paceSecPerKm <= avgPace * 1.03) return "#3b82f6";
-  return "#6b7280";
+  if (paceSecPerKm <= avgPace * 0.97) return "#3ddc97";
+  if (paceSecPerKm <= avgPace * 1.03) return "#6aa8ff";
+  return "#6b727c";
 }
 
 export default function ActivitySplitsChart({
@@ -72,6 +73,7 @@ export default function ActivitySplitsChart({
     async function render() {
       const { Chart, registerables } = await import("chart.js");
       Chart.register(...registerables);
+      applyChartTheme(Chart);
       if (cancelled || !chartRef.current || !splits) return;
 
       if (chartInstance.current) {
@@ -79,9 +81,9 @@ export default function ActivitySplitsChart({
         chartInstance.current = null;
       }
 
-      const gridColor = "rgba(255,255,255,0.06)";
-      const tickColor = "rgba(255,255,255,0.45)";
-      const canvasBg = "#0d0d0d";
+      const gridColor = "#262a2f";
+      const tickColor = "#9ba1a9";
+      const canvasBg = "#17191c";
 
       const validPaces = splits
         .map((s) => s.paceSecPerKm)
@@ -123,10 +125,10 @@ export default function ActivitySplitsChart({
           type: "line" as const,
           label: "FC (bpm)",
           data: splits.map((s) => s.heartrate),
-          borderColor: "#ef4444",
+          borderColor: "#ff8a7a",
           backgroundColor: "transparent",
           pointRadius: 3,
-          pointBackgroundColor: "#ef4444",
+          pointBackgroundColor: "#ff8a7a",
           pointBorderColor: canvasBg,
           pointBorderWidth: 1.5,
           tension: 0.4,
@@ -141,7 +143,7 @@ export default function ActivitySplitsChart({
         type: "line" as const,
         label: "Média da corrida",
         data: splits.map(() => avgPace / 60),
-        borderColor: "#6366f1",
+        borderColor: "#c9cdd3",
         backgroundColor: "transparent",
         borderDash: [4, 3],
         pointRadius: 0,
@@ -154,9 +156,9 @@ export default function ActivitySplitsChart({
       if (goalPaceSecPerKm && goalPaceSecPerKm > 0) {
         datasets.push({
           type: "line" as const,
-          label: "Meta BsAs",
+          label: "Pace alvo",
           data: splits.map(() => goalPaceSecPerKm / 60),
-          borderColor: "#f97316",
+          borderColor: "#f5a623",
           backgroundColor: "transparent",
           borderDash: [6, 4],
           pointRadius: 0,
@@ -170,7 +172,7 @@ export default function ActivitySplitsChart({
         x: {
           ticks: {
             color: tickColor,
-            font: { size: 10 },
+            font: { size: 12 },
             maxRotation: 45,
             autoSkip: false,
           },
@@ -184,7 +186,7 @@ export default function ActivitySplitsChart({
           max: paceMax / 60,
           ticks: {
             color: tickColor,
-            font: { size: 10 },
+            font: { size: 12 },
             callback: (v: unknown) => {
               const val = typeof v === "number" ? v * 60 : 0;
               return formatPace(val);
@@ -195,7 +197,7 @@ export default function ActivitySplitsChart({
             display: true,
             text: "min/km",
             color: tickColor,
-            font: { size: 10 },
+            font: { size: 12 },
           },
         },
       };
@@ -210,16 +212,16 @@ export default function ActivitySplitsChart({
           min: Math.min(...hrValues) - 5,
           max: Math.max(...hrValues) + 5,
           ticks: {
-            color: "#ef4444",
-            font: { size: 10 },
+            color: "#ff8a7a",
+            font: { size: 12 },
             callback: (v: unknown) => `${v} bpm`,
           },
           grid: { display: false },
           title: {
             display: true,
             text: "bpm",
-            color: "#ef4444",
-            font: { size: 10 },
+            color: "#ff8a7a",
+            font: { size: 12 },
           },
         };
       }
@@ -299,36 +301,22 @@ export default function ActivitySplitsChart({
   }
 
   if (loading) {
-    return (
-      <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] md:col-span-2" style={{ padding: "0.95rem" }}>
-        <div className="flex items-center gap-3">
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
-          <p className="text-sm text-white/45">Carregando splits...</p>
-        </div>
-      </div>
-    );
+    return <p className="ui-muted" role="status" style={{ minHeight: 44, display: "flex", alignItems: "center" }}>Carregando splits…</p>;
   }
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-5">
-        <p className="text-sm text-red-300">{error}</p>
-        <button
-          onClick={() => { setLoaded(false); fetchAndRender(); }}
-          className="mt-2 text-xs text-red-300 underline"
-        >
-          Tentar novamente
+      <p role="alert" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", fontSize: 14, color: "#ff8a7a" }}>
+        {error}
+        <button type="button" className="ui-btn ui-btn--ghost" style={{ cursor: "pointer" }} onClick={() => { setLoaded(false); fetchAndRender(); }}>
+          Tentar de novo
         </button>
-      </div>
+      </p>
     );
   }
 
   if (!splits || splits.length === 0) {
-    return (
-      <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] md:col-span-2" style={{ padding: "0.95rem" }}>
-        <p className="text-sm text-white/45">Splits não disponíveis para esta atividade.</p>
-      </div>
-    );
+    return <p className="ui-muted">Splits não disponíveis para esta atividade.</p>;
   }
 
   const validPaces = splits.map((s) => s.paceSecPerKm).filter((p) => p > 0 && p < 1200);
@@ -339,75 +327,26 @@ export default function ActivitySplitsChart({
   const hasHr = splits.some((s) => s.heartrate !== null);
 
   return (
-    <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] md:col-span-2" style={{ padding: "0.95rem" }}>
-      <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">
-            Splits km a km
-          </p>
-          {activityName && (
-            <p className="mt-1 text-[11px] text-white/[0.32]">{activityName}</p>
-          )}
-        </div>
-        <div className="flex w-full flex-wrap gap-1.5 text-[10px] text-white/[0.38] xl:w-auto xl:justify-end">
-          <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1">
-            Ritmo médio:{" "}
-            <span className="font-semibold text-white/85">
-              {formatPace(avgPace)}/km
-            </span>
-          </span>
-          <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1">
-            Melhor km:{" "}
-            <span className="font-semibold text-emerald-400">
-              {formatPace(bestPace)}/km
-            </span>
-          </span>
-          {goalPaceSecPerKm && (
-            <span className="rounded-full border border-orange-400/20 bg-orange-400/10 px-2.5 py-1 text-orange-200">
-              <span className="inline-block h-2 w-4 border-b-2 border-dashed border-orange-400 align-middle" />{" "}
-              Meta BsAs: {formatPace(goalPaceSecPerKm)}/km
-            </span>
-          )}
-        </div>
+    <div className="splits-box">
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
+        <h4 style={{ fontSize: 15, fontWeight: 600 }}>Km a km</h4>
+        <span className="ui-muted">
+          média {formatPace(avgPace)}/km · melhor km {formatPace(bestPace)}/km
+          {goalPaceSecPerKm ? ` · alvo ${formatPace(goalPaceSecPerKm)}/km` : ""}
+        </span>
       </div>
 
-      <div className="relative h-64">
-        <canvas
-          ref={chartRef}
-          role="img"
-          aria-label={`Splits km a km de ${activityName ?? "atividade"}`}
-        />
+      <div style={{ position: "relative", height: 240 }}>
+        <canvas ref={chartRef} role="img" aria-label={`Splits km a km de ${activityName ?? "atividade"}`} />
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[10px] text-white/[0.30]">
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-emerald-500" />
-          Acima da média
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-blue-500" />
-          Na média
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-gray-400" />
-          Abaixo da média
-        </span>
-        {hasHr && (
-          <span className="flex items-center gap-1">
-            <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-500" />
-            Frequência cardíaca
-          </span>
-        )}
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-2 w-4 border-b-2 border-dashed border-indigo-400 align-middle" />
-          Média da corrida
-        </span>
-        {goalPaceSecPerKm && (
-          <span className="flex items-center gap-1">
-            <span className="inline-block h-2 w-4 border-b-2 border-dashed border-orange-400 align-middle" />
-            Meta BsAs
-          </span>
-        )}
+      <div className="carga-legend" style={{ fontSize: 12 }}>
+        <span className="carga-legend__item"><span className="carga-dot" style={{ background: "#3ddc97" }} />mais rápido que a média</span>
+        <span className="carga-legend__item"><span className="carga-dot" style={{ background: "#6aa8ff" }} />na média</span>
+        <span className="carga-legend__item"><span className="carga-dot" style={{ background: "#6b727c" }} />mais lento</span>
+        <span className="carga-legend__item"><span className="carga-legend__line" style={{ background: "#c9cdd3" }} />média</span>
+        {hasHr ? <span className="carga-legend__item"><span className="carga-legend__line" style={{ background: "#ff8a7a" }} />FC</span> : null}
+        {goalPaceSecPerKm ? <span className="carga-legend__item"><span className="carga-legend__line" style={{ background: "#f5a623" }} />pace alvo</span> : null}
       </div>
     </div>
   );

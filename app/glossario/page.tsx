@@ -119,98 +119,62 @@ const GROUP_DESCRIPTIONS: Record<string, string> = {
   "Tipos de treino": "Estímulos que aparecem na planilha e no histórico.",
 };
 
+export const metadata = { title: "Glossário · Rafael Cabral" };
+
+function slug(group: string) {
+  return group.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replaceAll(" ", "-");
+}
+
 export default function GlossarioPage() {
   const groups = Array.from(new Set(TERMS.map((term) => term.group)));
-  const highlighted = TERMS.filter((term) => ["Aderência", "Eficiência", "VDOT", "Longão"].includes(term.term));
 
   return (
-    <main className="min-h-screen" style={{ background: "#0d0d0d", fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="ui-page">
       <Navbar />
-      <link
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap"
-        rel="stylesheet"
-      />
-
-      <div className="ba-page glossary-page">
-        <section className="glossary-hero ba-card">
+      <main className="ui-container" style={{ maxWidth: 760 }}>
+        <header className="ui-header">
           <div>
-            <p className="ba-eyebrow">Guia rápido</p>
-            <h1 className="ba-title glossary-title">Glossário do dashboard</h1>
-            <p className="ba-muted glossary-lead">
-              Uma leitura simples dos conceitos usados nas páginas de treino, maratona, longões, SisRUN e projeções.
-            </p>
+            <h1 className="ui-title">Glossário</h1>
+            <p className="ui-muted">{TERMS.length} termos usados nas páginas de treino, provas e carga</p>
           </div>
+        </header>
 
-          <div className="glossary-hero-panel">
-            <p className="ba-label">Resumo</p>
-            <strong>{TERMS.length} termos</strong>
-            <span>{groups.length} categorias para consultar durante o ciclo.</span>
-          </div>
-        </section>
-
-        <section className="glossary-quick-grid">
-          {highlighted.map((term) => (
-            <div key={term.term} className="ba-card-soft glossary-feature-card">
-              <p className="ba-label">{term.group}</p>
-              <h2>{term.term}</h2>
-              <span>{term.short}</span>
-            </div>
+        <nav className="glossario-chips" aria-label="Categorias">
+          {groups.map((group) => (
+            <a key={group} href={`#${slug(group)}`} className="ui-chip glossario-chip">{group}</a>
           ))}
-        </section>
+        </nav>
 
-        <section className="ba-card glossary-index-card">
-          <div className="content-card-head">
-            <div>
-              <p className="ba-label">Categorias</p>
-              <h2 className="content-card-title">Navegação rápida</h2>
-            </div>
-            <Link href="/" className="content-card-chip content-chip-link">
-              Voltar ao dashboard
-            </Link>
-          </div>
-
-          <div className="glossary-index-pills">
-            {groups.map((group) => (
-              <a key={group} href={`#${group.toLowerCase().replaceAll(" ", "-")}`}>
-                {group}
-              </a>
-            ))}
-          </div>
-        </section>
-
-        <div className="glossary-sections">
+        <div className="hoje-col" style={{ marginTop: 12 }}>
           {groups.map((group) => {
             const terms = TERMS.filter((term) => term.group === group);
-
             return (
-              <section key={group} id={group.toLowerCase().replaceAll(" ", "-")} className="ba-card glossary-section-card">
-                <div className="glossary-section-head">
-                  <div>
-                    <p className="ba-label">Categoria</p>
-                    <h2>{group}</h2>
-                    <p className="ba-muted">{GROUP_DESCRIPTIONS[group]}</p>
-                  </div>
-                  <span>{terms.length} termos</span>
+              <section key={group} id={slug(group)} className="ui-section glossario-section" aria-label={group}>
+                <div className="ui-section__head">
+                  <h2 className="ui-h2">{group}</h2>
+                  <span className="ui-muted">{GROUP_DESCRIPTIONS[group]}</span>
                 </div>
-
-                <div className="glossary-term-grid">
+                <dl className="ui-card ui-list">
                   {terms.map((term) => (
-                    <article key={term.term} className="glossary-term-card">
-                      <div>
-                        <p className="glossary-term-group">{term.short}</p>
-                        <h3>{term.term}</h3>
-                      </div>
-                      <p>{term.definition}</p>
-                    </article>
+                    <div key={term.term} className="glossario-term">
+                      <dt>
+                        <span className="ui-row__title">{term.term}</span>
+                        <span className="ui-muted"> · {term.short}</span>
+                      </dt>
+                      <dd>{term.definition}</dd>
+                    </div>
                   ))}
-                </div>
+                </dl>
               </section>
             );
           })}
         </div>
-      </div>
 
-      <footer className="site-footer">STRAVA · RAFAEL CABRAL · GLOSSÁRIO</footer>
-    </main>
+        <p style={{ marginTop: 24 }}>
+          <Link href="/carga" className="ui-btn ui-btn--ghost">Forma, fadiga e frescor estão explicados em Carga</Link>
+        </p>
+      </main>
+      <footer className="ui-footer">Strava · Rafael Cabral · glossário</footer>
+    </div>
   );
 }

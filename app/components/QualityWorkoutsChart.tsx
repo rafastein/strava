@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChartDataset } from "chart.js";
 import { formatDayMonth, formatDuration, formatNumber } from "../lib/format";
+import { applyChartTheme } from "../lib/chart-theme";
 
 export type QualityWorkout = {
   id: string;
@@ -79,6 +80,7 @@ function VolumeChart({ workouts }: { workouts: QualityWorkout[] }) {
     async function render() {
       const { Chart, registerables } = await import("chart.js");
       Chart.register(...registerables);
+      applyChartTheme(Chart);
       if (cancelled || !ref.current) return;
       if (chart.current) (chart.current as { destroy: () => void }).destroy();
 
@@ -145,6 +147,7 @@ function FcTrendChart({ workouts }: { workouts: QualityWorkout[] }) {
     async function render() {
       const { Chart, registerables } = await import("chart.js");
       Chart.register(...registerables);
+      applyChartTheme(Chart);
       if (cancelled || !ref.current) return;
       if (chart.current) (chart.current as { destroy: () => void }).destroy();
 
@@ -224,6 +227,7 @@ function SplitsMiniChart({ splits, label }: { splits: QualityWorkout["kmSplits"]
     async function render() {
       const { Chart, registerables } = await import("chart.js");
       Chart.register(...registerables);
+      applyChartTheme(Chart);
       if (cancelled || !ref.current || splits.length === 0) return;
       if (chart.current) (chart.current as { destroy: () => void }).destroy();
 

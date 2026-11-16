@@ -18,8 +18,20 @@
   --ui-good: #3ddc97;
   --ui-radius: 20px;
   --ui-radius-sm: 14px;
-  --ui-font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --ui-font-num: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --ui-font: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ui-font-num: var(--font-grotesk), var(--font-inter), system-ui, sans-serif;
+
+  /* Variáveis antigas ainda lidas pelo mapa e pelas medalhas das 27 Capitais:
+     apontam para o sistema novo, para não sobrar fonte nem cor da versão anterior. */
+  --font-display: var(--ui-font-num);
+  --font-mono: var(--ui-font);
+  --font-body: var(--ui-font);
+  --bg: var(--ui-bg);
+  --text: var(--ui-text);
+  --text-muted: var(--ui-muted);
+  --text-faint: #6b727c;
+  --border: var(--ui-border);
+  --accent: var(--ui-accent);
   --ui-tabbar-h: 64px;
 }
 
@@ -63,24 +75,97 @@
   body {
     padding-bottom: calc(var(--ui-tabbar-h) + env(safe-area-inset-bottom, 0px));
   }
+}
 
-  /* A faixa de 13 links some no celular: a navegação passa a ser a barra de abas. */
-  .site-nav__links {
-    display: none;
-  }
+/* ── Topo: marca + seções (as seções só aparecem no desktop) ── */
+.ui-nav {
+  position: sticky;
+  top: 0;
+  z-index: 110;
+  background: rgba(14, 15, 17, 0.92);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--ui-border);
+  padding-top: env(safe-area-inset-top, 0px);
+}
 
-  .site-nav__logo {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-  }
+.ui-nav__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1120px;
+  height: 56px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
 
-  .site-nav__inner {
-    flex-direction: row;
-    align-items: center;
-    height: 52px;
-    min-height: 52px;
-    padding: 0 1rem;
+.ui-nav__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-family: var(--ui-font-num);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ui-text);
+  text-decoration: none;
+}
+
+.ui-nav__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.ui-nav__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--ui-accent);
+}
+
+.ui-nav__links {
+  display: none;
+  gap: 4px;
+}
+
+.ui-nav__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-family: var(--ui-font);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ui-muted);
+  text-decoration: none;
+}
+
+.ui-nav__link:hover {
+  color: var(--ui-text);
+  background: var(--ui-surface);
+}
+
+.ui-nav__link[aria-current="page"] {
+  color: var(--ui-text);
+  background: var(--ui-surface-2);
+}
+
+.ui-nav__link[aria-current="page"] svg {
+  color: var(--ui-accent);
+}
+
+.ui-nav a:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+@media (min-width: 900px) {
+  .ui-nav__links {
+    display: flex;
   }
 }
 
@@ -1089,4 +1174,62 @@
   color: var(--ui-muted);
   white-space: nowrap;
   overflow: visible;
+}
+
+/* ── Glossário ── */
+.glossario-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.glossario-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 14px;
+  color: var(--ui-text);
+  text-decoration: none;
+}
+
+.glossario-section {
+  scroll-margin-top: 72px;
+}
+
+.glossario-term {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 20px;
+}
+
+.glossario-term + .glossario-term {
+  border-top: 1px solid var(--ui-border);
+}
+
+.glossario-term dd {
+  font-size: 14px;
+  color: var(--ui-text-2);
+  text-wrap: pretty;
+}
+
+/* ── Splits km a km (abre dentro de listas) ── */
+.splits-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 16px;
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-bg);
+  border: 1px solid var(--ui-border);
+}
+
+/* ── Formulário de provas ── */
+.race-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  gap: 12px;
 }

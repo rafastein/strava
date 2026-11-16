@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties, type FormEvent } from "react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { fetchWithAdminRetry } from "../lib/admin-client";
 import type { ManagedRace, SeasonRaceStatus } from "../lib/race-calendar";
@@ -122,6 +122,7 @@ function monthLabel(dateKey: string) {
 export default function RaceManagerClient({ initialRaces, todayKey }: Props) {
   const router = useRouter();
   const [form, setForm] = useState<RaceFormState>(EMPTY_FORM);
+  const formRef = useRef<HTMLFormElement>(null);
   const [status, setStatus] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -195,174 +196,138 @@ export default function RaceManagerClient({ initialRaces, todayKey }: Props) {
   }
 
 
-  return (
-    <div className="race-manager-layout">
-      <section className="ba-card race-manager-panel race-manager-list-panel">
-        <div className="race-manager-heading">
-          <div>
-            <p className="ba-eyebrow">Calendário salvo</p>
-            <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.75rem", color: "#fff", marginTop: 4 }}>Próximas provas</h2>
-            <p className="ba-muted" style={{ marginTop: ".35rem" }}>A lista mostra apenas provas de hoje em diante. As anteriores continuam salvas no calendário.</p>
-          </div>
-        </div>
+  function startEdit(race: ManagedRace) {
+    setForm(raceToForm(race));
+    // No celular o formulário fica abaixo da lista: leva até ele.
+    requestAnimationFrame(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          {grouped.length === 0 && (
-            <div className="ba-card-soft" style={{ padding: "1rem" }}>
-              <p style={{ color: "#fff", fontWeight: 800 }}>Nenhuma prova futura cadastrada.</p>
-              <p className="ba-muted" style={{ marginTop: ".35rem", fontSize: 13 }}>Use o formulário ao lado para incluir a próxima prova.</p>
-            </div>
-          )}
-          {grouped.map(([label, races]) => (
-            <div key={label}>
-              <p className="ba-label" style={{ marginBottom: ".6rem", textTransform: "capitalize" }}>{label}</p>
-              <div style={{ display: "grid", gap: ".65rem" }}>
-                {races.map((race) => (
-                  <div key={race.id} className="ba-card-soft race-manager-item">
-                    <div className="race-manager-item__content">
-                      <p style={{ color: "#fff", fontWeight: 800, fontSize: 14, marginBottom: 3 }}>{race.name}</p>
-                      <p className="ba-muted race-manager-item__meta">{formatDate(race.dateKey)} · {race.location} · {formatDistance(race.distanceKm)}</p>
-                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: ".55rem" }}>
-                        <span className="badge badge--accent">{race.objective}</span>
-                        {race.badge && <span className="badge badge--purple">{race.badge}</span>}
-                        {race.fixedStatus && <span className="badge badge--blue">{race.fixedStatus}</span>}
-                        {race.isGoal && <span className="badge badge--orange">prova-alvo</span>}
-                      </div>
-                    </div>
-                    <div className="race-manager-item__actions">
-                      <button type="button" onClick={() => setForm(raceToForm(race))} className="ba-pill ba-pill-dark">Editar</button>
-                      <button type="button" onClick={() => handleDelete(race)} className="ba-pill ba-pill-dark" disabled={busyId === race.id} style={{ opacity: busyId === race.id ? .55 : 1 }}>
-                        Apagar
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+  return (
+    <div className="ui-stack">
+      {grouped.length === 0 ? (
+        <p className="ui-muted">Nenhuma prova futura cadastrada. Use o formulário abaixo para incluir a próxima.</p>
+      ) : (
+        <div className="ui-list" style={{ margin: "0 -20px", borderTop: "1px solid var(--ui-border)", borderBottom: "1px solid var(--ui-border)" }}>
+          {grouped.flatMap(([, races]) => races).map((race) => (
+            <div key={race.id} className="ui-row" style={{ alignItems: "flex-start", paddingTop: 12, paddingBottom: 12 }}>
+              <span className="ui-row__main">
+                <span className="ui-row__title" style={{ whiteSpace: "normal" }}>{race.name}</span>
+                <span className="ui-muted" style={{ fontSize: 12 }}>
+                  {[formatDate(race.dateKey), race.location, formatDistance(race.distanceKm), race.objective, race.badge, race.isGoal ? "prova-alvo" : null]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+              </span>
+              <span style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                <button type="button" className="ui-btn ui-btn--ghost" style={{ cursor: "pointer", padding: "0 12px" }} onClick={() => startEdit(race)}>
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  className="ui-btn ui-btn--ghost"
+                  style={{ cursor: "pointer", padding: "0 12px", color: "#ff8a7a", opacity: busyId === race.id ? 0.55 : 1 }}
+                  disabled={busyId === race.id}
+                  onClick={() => handleDelete(race)}
+                >
+                  Apagar
+                </button>
+              </span>
             </div>
           ))}
         </div>
-      </section>
+      )}
 
-      <form onSubmit={handleSubmit} className="ba-card race-manager-panel race-manager-form-panel">
-        <p className="ba-eyebrow">Cadastro</p>
-        <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.75rem", color: "#fff", marginTop: 4 }}>{form.id ? "Editar prova" : "Nova prova"}</h2>
-        <p className="ba-muted" style={{ marginTop: ".35rem", marginBottom: "1rem" }}>A senha administrativa será solicitada automaticamente se necessário.</p>
+      <form ref={formRef} onSubmit={handleSubmit} className="ui-stack" style={{ scrollMarginTop: 72 }}>
+        <h3 className="ui-h2" style={{ fontSize: 16 }}>{form.id ? "Editar prova" : "Nova prova"}</h3>
 
-        <div style={{ display: "grid", gap: ".8rem" }}>
-          <label style={labelStyle}>
-            <span className="ba-label">Nome</span>
-            <input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder="Ex: Meia de Goiânia" style={fieldStyle} required />
+        <label className="ui-label">
+          Nome
+          <input className="ui-field" value={form.name} onChange={(e) => update("name", e.target.value)} placeholder="Ex: Meia de Goiânia" required />
+        </label>
+
+        <div className="race-form-grid">
+          <label className="ui-label">
+            Data
+            <input className="ui-field" value={form.dateKey} onChange={(e) => update("dateKey", e.target.value)} type="date" min={todayKey} required />
           </label>
-
-          <div className="race-form-grid-2">
-            <label style={labelStyle}>
-              <span className="ba-label">Data</span>
-              <input value={form.dateKey} onChange={(e) => update("dateKey", e.target.value)} type="date" min={todayKey} style={fieldStyle} required />
-            </label>
-            <label style={labelStyle}>
-              <span className="ba-label">Distância km</span>
-              <input value={form.distanceKm} onChange={(e) => update("distanceKm", e.target.value)} inputMode="decimal" placeholder="21.1" style={fieldStyle} required />
-            </label>
-          </div>
-
-          <label style={labelStyle}>
-            <span className="ba-label">Local</span>
-            <input value={form.location} onChange={(e) => update("location", e.target.value)} placeholder="Brasília" style={fieldStyle} required />
+          <label className="ui-label">
+            Distância (km)
+            <input className="ui-field" value={form.distanceKm} onChange={(e) => update("distanceKm", e.target.value)} inputMode="decimal" placeholder="21.1" required />
           </label>
-
-          <label style={labelStyle}>
-            <span className="ba-label">Objetivo</span>
-            <input value={form.objective} onChange={(e) => update("objective", e.target.value)} placeholder="Treino / All-in / Sub-3:45" style={fieldStyle} />
-          </label>
-
-          <div className="race-form-grid-2">
-            <label style={labelStyle}>
-              <span className="ba-label">Pace alvo</span>
-              <input value={form.targetPace} onChange={(e) => update("targetPace", e.target.value)} placeholder="5:20 ou 320" style={fieldStyle} />
-            </label>
-            <label style={labelStyle}>
-              <span className="ba-label">Badge</span>
-              <input value={form.badge} onChange={(e) => update("badge", e.target.value)} placeholder="27 Capitais" style={fieldStyle} />
-            </label>
-          </div>
-
-          <div className="race-form-grid-2">
-            <label style={labelStyle}>
-              <span className="ba-label">Status fixo</span>
-              <select value={form.fixedStatus} onChange={(e) => update("fixedStatus", e.target.value as RaceFormState["fixedStatus"])} style={fieldStyle}>
-                <option value="">Automático</option>
-                <option value="simulation">simulation</option>
-                <option value="mission">mission</option>
-                <option value="next">next</option>
-                <option value="completed">completed</option>
-              </select>
-            </label>
-            <label style={labelStyle}>
-              <span className="ba-label">Link</span>
-              <input value={form.href} onChange={(e) => update("href", e.target.value)} placeholder="/buenos-aires" style={fieldStyle} />
-            </label>
-          </div>
-
-          <div className="race-form-grid-2">
-            <label style={labelStyle}>
-              <span className="ba-label">Horário</span>
-              <input value={form.timeLocal} onChange={(e) => update("timeLocal", e.target.value)} placeholder="07:00:00" style={fieldStyle} />
-            </label>
-            <label style={labelStyle}>
-              <span className="ba-label">Fuso</span>
-              <input value={form.timezoneOffset} onChange={(e) => update("timezoneOffset", e.target.value)} placeholder="-03:00" style={fieldStyle} />
-            </label>
-          </div>
-
-          <div className="race-form-checks">
-            <label style={checkboxLabelStyle}>
-              <input type="checkbox" checked={form.featured} onChange={(e) => update("featured", e.target.checked)} />
-              Aparece na temporada
-            </label>
-            <label style={checkboxLabelStyle}>
-              <input type="checkbox" checked={form.isGoal} onChange={(e) => update("isGoal", e.target.checked)} />
-              Prova-alvo
-            </label>
-          </div>
-
-          <div className="race-form-actions">
-            <button type="submit" className="ba-pill ba-pill-orange" disabled={busyId === "form"} style={{ opacity: busyId === "form" ? .55 : 1 }}>
-              {busyId === "form" ? "Salvando..." : form.id ? "Salvar edição" : "Incluir prova"}
-            </button>
-            {form.id && (
-              <button type="button" className="ba-pill ba-pill-dark" onClick={() => setForm(EMPTY_FORM)}>
-                Cancelar edição
-              </button>
-            )}
-          </div>
-
-          {status && <p className="ba-muted" style={{ fontSize: 12 }}>{status}</p>}
         </div>
+
+        <label className="ui-label">
+          Local
+          <input className="ui-field" value={form.location} onChange={(e) => update("location", e.target.value)} placeholder="Brasília" required />
+        </label>
+
+        <div className="race-form-grid">
+          <label className="ui-label">
+            Objetivo
+            <input className="ui-field" value={form.objective} onChange={(e) => update("objective", e.target.value)} placeholder="Treino, all-in, sub-3:45" />
+          </label>
+          <label className="ui-label">
+            Pace alvo
+            <input className="ui-field" value={form.targetPace} onChange={(e) => update("targetPace", e.target.value)} placeholder="5:20 ou 320" />
+          </label>
+        </div>
+
+        <label style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 44, fontSize: 14 }}>
+          <input type="checkbox" checked={form.featured} onChange={(e) => update("featured", e.target.checked)} style={{ width: 20, height: 20 }} />
+          Aparece nos resultados da temporada
+        </label>
+        <label style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 44, fontSize: 14 }}>
+          <input type="checkbox" checked={form.isGoal} onChange={(e) => update("isGoal", e.target.checked)} style={{ width: 20, height: 20 }} />
+          Prova-alvo
+        </label>
+
+        <details className="ui-details" style={{ margin: "0 -20px", borderTop: "1px solid var(--ui-border)" }}>
+          <summary>Mais opções</summary>
+          <div className="ui-details__body">
+            <div className="race-form-grid">
+              <label className="ui-label">
+                Selo
+                <input className="ui-field" value={form.badge} onChange={(e) => update("badge", e.target.value)} placeholder="27 Capitais" />
+              </label>
+              <label className="ui-label">
+                Status fixo
+                <select className="ui-field" value={form.fixedStatus} onChange={(e) => update("fixedStatus", e.target.value as RaceFormState["fixedStatus"])}>
+                  <option value="">Automático</option>
+                  <option value="simulation">Simulado</option>
+                  <option value="mission">Missão</option>
+                  <option value="next">Próxima</option>
+                  <option value="completed">Concluída</option>
+                </select>
+              </label>
+              <label className="ui-label">
+                Horário da largada
+                <input className="ui-field" value={form.timeLocal} onChange={(e) => update("timeLocal", e.target.value)} placeholder="07:00:00" />
+              </label>
+              <label className="ui-label">
+                Fuso
+                <input className="ui-field" value={form.timezoneOffset} onChange={(e) => update("timezoneOffset", e.target.value)} placeholder="-03:00" />
+              </label>
+            </div>
+            <label className="ui-label">
+              Link interno
+              <input className="ui-field" value={form.href} onChange={(e) => update("href", e.target.value)} placeholder="/buenos-aires" />
+            </label>
+          </div>
+        </details>
+
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button type="submit" className="ui-btn" style={{ border: 0, cursor: "pointer", opacity: busyId === "form" ? 0.55 : 1 }} disabled={busyId === "form"}>
+            {busyId === "form" ? "Salvando…" : form.id ? "Salvar edição" : "Incluir prova"}
+          </button>
+          {form.id ? (
+            <button type="button" className="ui-btn ui-btn--ghost" style={{ cursor: "pointer", minHeight: 48 }} onClick={() => setForm(EMPTY_FORM)}>
+              Cancelar edição
+            </button>
+          ) : null}
+        </div>
+        <p className="ui-muted">A senha administrativa é pedida ao salvar, se for preciso.</p>
+        {status ? <p role="status" style={{ fontSize: 14 }}>{status}</p> : null}
       </form>
     </div>
   );
 }
-
-const labelStyle: CSSProperties = {
-  display: "grid",
-  gap: ".4rem",
-};
-
-const checkboxLabelStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: ".45rem",
-  color: "rgba(255,255,255,.55)",
-  fontSize: 13,
-};
-
-const fieldStyle: CSSProperties = {
-  width: "100%",
-  borderRadius: 14,
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "rgba(255,255,255,0.05)",
-  color: "var(--text)",
-  padding: ".78rem .9rem",
-  outline: "none",
-  fontSize: 13,
-};

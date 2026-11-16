@@ -1,9 +1,24 @@
 import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
 import "./globals.css";
-import "./styles/weekly-plan.css";
-// Novo sistema visual: fica por último para valer sobre as regras antigas no celular.
 import "./styles/app.css";
 import TabBar from "./components/TabBar";
+
+// Fontes empacotadas no projeto (sem depender do Google Fonts): carregam junto com a
+// página, sem pedido extra a outro domínio, e funcionam mesmo com a rede instável.
+const inter = localFont({
+  src: "../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2",
+  weight: "100 900",
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const spaceGrotesk = localFont({
+  src: "../node_modules/@fontsource-variable/space-grotesk/files/space-grotesk-latin-wght-normal.woff2",
+  weight: "300 700",
+  variable: "--font-grotesk",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Dashboard Strava · Rafael Cabral",
@@ -20,12 +35,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR" className="h-full antialiased">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
-      </head>
+    <html lang="pt-BR" className={`h-full antialiased ${inter.variable} ${spaceGrotesk.variable}`}>
       <body className="min-h-full">
         {children}
         <TabBar />

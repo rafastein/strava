@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { TooltipItem } from "chart.js";
+import { applyChartTheme } from "../lib/chart-theme";
 
 export type LongRunChartEntry = {
   id: number | string;
@@ -49,6 +50,7 @@ export default function LongRunCharts({ longRuns }: Props) {
     async function init() {
       const { Chart, registerables } = await import("chart.js");
       Chart.register(...registerables);
+      applyChartTheme(Chart);
 
       if (cancelled || !chartRef.current) return;
 
@@ -57,9 +59,9 @@ export default function LongRunCharts({ longRuns }: Props) {
         chartInstance.current = null;
       }
 
-      const gridColor = "rgba(255,255,255,0.06)";
-      const tickColor = "rgba(255,255,255,0.45)";
-      const canvasBg = "#0d0d0d";
+      const gridColor = "#262a2f";
+      const tickColor = "#9ba1a9";
+      const canvasBg = "#17191c";
 
       let datasets: ConstructorParameters<typeof Chart>[1]["data"]["datasets"] =
         [];
@@ -73,12 +75,12 @@ export default function LongRunCharts({ longRuns }: Props) {
           {
             label: "Ritmo (min/km)",
             data: paceData,
-            borderColor: "#3b82f6",
-            backgroundColor: "rgba(59,130,246,0.08)",
+            borderColor: "#6aa8ff",
+            backgroundColor: "rgba(106,168,255,0.08)",
             fill: true,
             tension: 0.4,
             pointRadius: 5,
-            pointBackgroundColor: "#3b82f6",
+            pointBackgroundColor: "#6aa8ff",
             pointBorderColor: canvasBg,
             pointBorderWidth: 1.5,
             spanGaps: true,
@@ -86,7 +88,7 @@ export default function LongRunCharts({ longRuns }: Props) {
         ];
         scales = {
           x: {
-            ticks: { color: tickColor, font: { size: 10 }, maxRotation: 45 },
+            ticks: { color: tickColor, font: { size: 12 }, maxRotation: 0 },
             grid: { color: gridColor },
           },
           y: {
@@ -95,7 +97,7 @@ export default function LongRunCharts({ longRuns }: Props) {
             max: 7.0,
             ticks: {
               color: tickColor,
-              font: { size: 10 },
+              font: { size: 12 },
               callback: (v: unknown) => {
                 const val = typeof v === "number" ? v : 0;
                 const m = Math.floor(val);
@@ -111,29 +113,29 @@ export default function LongRunCharts({ longRuns }: Props) {
           {
             label: "FC média",
             data: sorted.map((r) => r.averageHeartrate),
-            borderColor: "#ef4444",
-            backgroundColor: "rgba(239,68,68,0.08)",
+            borderColor: "#ff8a7a",
+            backgroundColor: "rgba(255,138,122,0.08)",
             fill: true,
             tension: 0.4,
             pointRadius: 4,
-            pointBackgroundColor: "#ef4444",
+            pointBackgroundColor: "#ff8a7a",
             spanGaps: true,
           },
           {
             label: "FC máxima",
             data: sorted.map((r) => r.maxHeartrate),
-            borderColor: "#f97316",
+            borderColor: "#f5a623",
             backgroundColor: "transparent",
             borderDash: [4, 3],
             tension: 0.4,
             pointRadius: 2,
-            pointBackgroundColor: "#f97316",
+            pointBackgroundColor: "#f5a623",
             spanGaps: true,
           },
         ];
         scales = {
           x: {
-            ticks: { color: tickColor, font: { size: 10 }, maxRotation: 45 },
+            ticks: { color: tickColor, font: { size: 12 }, maxRotation: 0 },
             grid: { color: gridColor },
           },
           y: {
@@ -141,7 +143,7 @@ export default function LongRunCharts({ longRuns }: Props) {
             max: 195,
             ticks: {
               color: tickColor,
-              font: { size: 10 },
+              font: { size: 12 },
               callback: (v: unknown) => `${v} bpm`,
             },
             grid: { color: gridColor },
@@ -152,26 +154,26 @@ export default function LongRunCharts({ longRuns }: Props) {
           {
             label: "Eficiência",
             data: sorted.map((r) => r.efficiency),
-            borderColor: "#10b981",
-            backgroundColor: "rgba(16,185,129,0.08)",
+            borderColor: "#3ddc97",
+            backgroundColor: "rgba(61,220,151,0.08)",
             fill: true,
             tension: 0.4,
             pointRadius: 5,
             pointBackgroundColor: sorted.map((r) =>
-              r.efficiency && r.efficiency > 15 ? "#10b981" : "#6b7280"
+              r.efficiency && r.efficiency > 15 ? "#3ddc97" : "#6b7280"
             ),
             spanGaps: true,
           },
         ];
         scales = {
           x: {
-            ticks: { color: tickColor, font: { size: 10 }, maxRotation: 45 },
+            ticks: { color: tickColor, font: { size: 12 }, maxRotation: 0 },
             grid: { color: gridColor },
           },
           y: {
             ticks: {
               color: tickColor,
-              font: { size: 10 },
+              font: { size: 12 },
               callback: (v: unknown) =>
                 typeof v === "number" ? v.toFixed(1) : v,
             },
@@ -264,27 +266,27 @@ export default function LongRunCharts({ longRuns }: Props) {
       <div className="carga-legend">
         {mode === "pace" && (
           <>
-            <span className="flex items-center gap-1">
-              <span className="inline-block h-2.5 w-2.5 rounded-full bg-blue-500" />
+            <span className="carga-legend__item">
+              <span className="carga-dot" style={{ background: "#6aa8ff" }} />
               Ritmo médio — menor = mais rápido
             </span>
           </>
         )}
         {mode === "heartrate" && (
           <>
-            <span className="flex items-center gap-1">
-              <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-500" />
+            <span className="carga-legend__item">
+              <span className="carga-dot" style={{ background: "#ff8a7a" }} />
               FC média
             </span>
-            <span className="flex items-center gap-1">
-              <span className="inline-block h-2.5 w-2.5 rounded-full bg-orange-400" />
+            <span className="carga-legend__item">
+              <span className="carga-dot" style={{ background: "#f5a623" }} />
               FC máxima
             </span>
           </>
         )}
         {mode === "efficiency" && (
-          <span className="flex items-center gap-1">
-            <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500" />
+          <span className="carga-legend__item">
+            <span className="carga-dot" style={{ background: "#3ddc97" }} />
             Eficiência = velocidade ajustada / FC — maior é melhor
           </span>
         )}
