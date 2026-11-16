@@ -1,5 +1,6 @@
 import { getPrKeyForRaceDistance, type RacePrKey } from "./home-week";
 import { getYearFromDateKey } from "./season";
+import { isRunActivity } from "./strava-activity";
 
 // Resultado de cada prova da temporada: casa a prova cadastrada com a corrida do Strava
 // do mesmo dia. Regras herdadas do antigo SeasonCalendar, agora puras e testáveis.
@@ -16,7 +17,9 @@ type ResultRace = {
 
 type ResultActivity = {
   id: number;
+  name?: string | null;
   type: string;
+  sport_type?: string | null;
   distance: number;
   moving_time: number;
   elapsed_time?: number;
@@ -38,6 +41,22 @@ export type SeasonResult = {
   isPR: boolean;
 };
 
+const RACE_PREFIX = /prova:\s*/i;
+
+/** Corrida marcada como prova no Strava ("Prova: Meia de Curitiba"). */
+export function isTaggedRaceActivity(activity: { name?: string | null }): boolean {
+  return RACE_PREFIX.test(activity.name ?? "");
+}
+
+/** Nome sem o marcador "Prova:". */
+export function cleanRaceActivityName(name: string): string {
+  return name.replace(RACE_PREFIX, "").replace(/\s{2,}/g, " ").trim();
+}
+
+function getResultTime(activity: ResultActivity) {
+  return activity.elapsed_time && activity.elapsed_time > 0 ? activity.elapsed_time : activity.moving_time;
+}
+
 /** Anos com prova cadastrada até a temporada atual, do mais recente para o mais antigo. */
 export function getResultSeasons(races: { dateKey: string }[], currentYear: number): number[] {
   const years = new Set<number>([currentYear]);
@@ -56,6 +75,7 @@ export function resolveSeasonResults(
   seasonYear: number,
 ): SeasonResult[] {
   const results: SeasonResult[] = [];
+  const usedActivityIds = new Set<number>();
 
   for (const race of races) {
     if (getYearFromDateKey(race.dateKey) !== seasonYear) continue;
@@ -75,8 +95,9 @@ export function resolveSeasonResults(
     const prKey = getPrKeyForRaceDistance(race.distanceKm);
     const isPR = Boolean(match && prKey && prs?.[prKey]?.activityId === match.id);
 
-    // Provas não destacadas só aparecem quando viraram recorde.
-    if (!race.featured && !isPR) continue;
+    // Provas não destacadas só aparecem quando viraram recorde ou quando a corrida está marcada "Prova:".
+    if (!race.featured && !isPR && !(match && isTaggedRaceActivity(match))) continue;
+    if (match) usedActivityIds.add(match.id);
 
     results.push({
       id: race.id,
@@ -85,9 +106,30 @@ export function resolveSeasonResults(
       location: race.location,
       distanceKm: race.distanceKm,
       badge: race.badge,
-      timeSec: match ? (match.elapsed_time && match.elapsed_time > 0 ? match.elapsed_time : match.moving_time) : null,
+      timeSec: match ? getResultTime(match) : null,
       activityId: match?.id ?? null,
       isPR,
+    });
+  }
+
+  // Corridas marcadas "Prova:" no Strava que não casaram com nenhuma prova cadastrada.
+  for (const activity of activities) {
+    if (usedActivityIds.has(activity.id) || !isRunActivity(activity) || !isTaggedRaceActivity(activity)) continue;
+    const dateKey = activity.start_date_local?.slice(0, 10);
+    if (!dateKey || getYearFromDateKey(dateKey) !== seasonYear || dateKey > todayKey) continue;
+
+    const distanceKm = Math.round(activity.distance / 100) / 10;
+    const prKey = getPrKeyForRaceDistance(distanceKm);
+    usedActivityIds.add(activity.id);
+    results.push({
+      id: `strava-${activity.id}`,
+      name: cleanRaceActivityName(activity.name ?? "") || "Prova",
+      dateKey,
+      location: "",
+      distanceKm,
+      timeSec: getResultTime(activity),
+      activityId: activity.id,
+      isPR: Boolean(prKey && prs?.[prKey]?.activityId === activity.id),
     });
   }
 

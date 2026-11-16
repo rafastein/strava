@@ -62,3 +62,26 @@ test("temporadas disponíveis não incluem anos futuros", () => {
   assert.deepEqual(getResultSeasons([...races, { dateKey: "2025-10-05" }], 2026), [2026, 2025]);
   assert.deepEqual(getResultSeasons([], 2027), [2027]);
 });
+
+test("corridas marcadas \"Prova:\" entram nos resultados, sem o marcador e sem duplicar", () => {
+  const tagged = [
+    ...activities.map((a) => (a.id === 5 ? { ...a, name: "Prova: Quatro Poderes" } : a)),
+    { ...run(7, "2026-10-04", 10.05, 2700), name: "Prova: Corrida da Ponte" },
+    { ...run(8, "2026-06-06", 21.15, 5691), name: "prova: Meia do Rio repetida" }, // outra atividade, mesmo dia
+    { ...run(9, "2026-10-11", 8, 2400), name: "Treino leve" },
+    { ...run(10, "2026-10-12", 12, 3600, "Ride"), name: "Prova: pedal" },
+    { ...run(11, "2026-12-01", 10, 2700), name: "Prova: futura" },
+  ];
+  const results = resolveSeasonResults(races, tagged, prs, "2026-11-13", 2026);
+  const names = results.map((r) => r.name);
+
+  // Prova cadastrada não destacada passa a aparecer quando a corrida tem "Prova:".
+  assert.ok(names.includes("Quatro Poderes 10K"));
+  const ponte = results.find((r) => r.name === "Corrida da Ponte");
+  assert.equal(ponte?.activityId, 7);
+  assert.equal(ponte?.distanceKm, 10.1);
+  assert.equal(ponte?.timeSec, 2700);
+  assert.ok(names.includes("Meia do Rio repetida"));
+  assert.ok(!names.some((n) => /treino|pedal|futura/i.test(n)));
+  assert.equal(results.filter((r) => r.activityId === 2).length, 1);
+});
