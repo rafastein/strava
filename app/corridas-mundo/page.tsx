@@ -1,38 +1,22 @@
 // Sempre renderiza na hora; só as chamadas ao Strava usam o cache de dados (lib/strava-client).
 export const revalidate = 0;
 
-import Link from "next/link";
 import Navbar from "../components/Navbar";
-import { formatBRDate } from "../lib/date-utils";
 import WorldRaceMap from "../components/WorldRaceMap";
-import ActivitySplitsChart from "../components/ActivitySplitsChart";
-import {
-  getRaceLikeActivitiesFromStrava,
-  groupStravaRacesByCountry,
-  getStravaRaceStats,
-  getCountryCountsFromStrava,
-  formatRacePace,
-  formatRaceEfficiency,
-} from "../lib/strava-races";
+import { RaceGroupList, TopRacesList, getTopRacesByPace } from "../components/RaceGroupList";
+import { formatNumber } from "../lib/format";
 import { getCurrentSeasonYear } from "../lib/season";
+import {
+  formatRaceEfficiency,
+  getCountryCountsFromStrava,
+  getRaceLikeActivitiesFromStrava,
+  getStravaRaceStats,
+  groupStravaRacesByCountry,
+} from "../lib/strava-races";
+
+export const metadata = { title: "Corridas pelo mundo · Rafael Cabral" };
 
 const HALF_MARATHON_KM = 21;
-
-type Race = {
-  id: number | string;
-  name: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  date: string;
-  distanceKm: number;
-  time: string;
-  paceSecPerKm?: number | null;
-  elevationGain?: number;
-  averageHeartrate?: number | null;
-  efficiency?: number | null;
-  gearName?: string | null;
-};
 
 function normalizeText(value: string) {
   return String(value ?? "")
@@ -250,7 +234,7 @@ function CountryFlag({ country }: { country: string }) {
 
   if (!code) {
     return (
-      <span className="flex h-5 w-7 items-center justify-center rounded-sm border border-white/10 bg-white/5 text-[10px] font-bold text-white/40">
+      <span aria-hidden="true" style={{ display: "inline-flex", width: 28, height: 20, alignItems: "center", justifyContent: "center", borderRadius: 3, border: "1px solid var(--ui-border-strong)", fontSize: 12, color: "var(--ui-muted)" }}>
         ?
       </span>
     );
@@ -259,90 +243,13 @@ function CountryFlag({ country }: { country: string }) {
   return (
     <img
       src={`https://flagcdn.com/w40/${code}.png`}
-      alt={`Bandeira de ${normalizeCountryDisplay(country)}`}
-      className="h-5 w-7 rounded-[2px] object-cover shadow-sm shadow-black/20"
+      alt=""
+      width={28}
+      height={20}
+      style={{ borderRadius: 3, objectFit: "cover", flexShrink: 0 }}
       loading="lazy"
     />
   );
-}
-
-function formatRaceName(name: string) {
-  return String(name ?? "")
-    .replace(/^\s*Prova:\s*/i, "")
-    .replace(/\s*\*{3}\s*$/g, "")
-    .trim();
-}
-
-function parseTimeToSeconds(time: string) {
-  const parts = time.split(":").map(Number);
-
-  if (parts.some(Number.isNaN)) return Number.POSITIVE_INFINITY;
-
-  if (parts.length === 3) {
-    const [hours, minutes, seconds] = parts;
-    return hours * 3600 + minutes * 60 + seconds;
-  }
-
-  if (parts.length === 2) {
-    const [minutes, seconds] = parts;
-    return minutes * 60 + seconds;
-  }
-
-  return Number.POSITIVE_INFINITY;
-}
-
-function formatPaceFromRace(race: Race) {
-  if (race.paceSecPerKm) return formatRacePace(race.paceSecPerKm);
-
-  const totalSeconds = parseTimeToSeconds(race.time);
-
-  if (!Number.isFinite(totalSeconds) || !race.distanceKm) return "-";
-
-  const paceSeconds = totalSeconds / race.distanceKm;
-  const min = Math.floor(paceSeconds / 60);
-  const sec = Math.round(paceSeconds % 60);
-
-  if (sec === 60) return `${min + 1}:00/km`;
-
-  return `${min}:${String(sec).padStart(2, "0")}/km`;
-}
-
-function getTrend(current?: number | null, previous?: number | null) {
-  if (!current || !previous) return "➖";
-  const diff = current - previous;
-  if (Math.abs(diff) < 1) return "➖";
-  return diff > 0 ? "📈" : "📉";
-}
-
-function formatRaceGear(race: Race) {
-  return race.gearName?.trim() || "-";
-}
-
-function getTopRaceMedals(
-  races: Array<{ id: number | string; time: string; distanceKm: number }>
-) {
-  const ranked = [...races]
-    .map((race) => {
-      const totalSeconds = parseTimeToSeconds(race.time);
-      const paceSeconds = totalSeconds / race.distanceKm;
-
-      return {
-        id: race.id,
-        paceSeconds,
-      };
-    })
-    .filter((race) => Number.isFinite(race.paceSeconds))
-    .sort((a, b) => a.paceSeconds - b.paceSeconds)
-    .slice(0, 3);
-
-  const medals = ["🥇", "🥈", "🥉"];
-  const medalMap = new Map<number | string, string>();
-
-  ranked.forEach((race, index) => {
-    medalMap.set(race.id, medals[index]);
-  });
-
-  return medalMap;
 }
 
 export default async function CorridasMundoPage() {
@@ -352,143 +259,68 @@ export default async function CorridasMundoPage() {
   const grouped = groupStravaRacesByCountry(races);
   const stats = getStravaRaceStats(races);
   const counts = getCountryCountsFromStrava(races);
-  const topRaceMedals = getTopRaceMedals(races);
+  const topRaces = getTopRacesByPace(races, () => true);
+  const rankById = new Map(topRaces.map((race, index) => [race.id, index + 1] as const));
+  const leader = grouped[0];
 
   return (
-    <div className="page">
+    <div className="ui-page">
       <Navbar />
-      <main className="ba-page">
-        <div className="ba-section flex items-center justify-between">
+      <main className="ui-container">
+        <header className="ui-header">
           <div>
-            <p className="ba-eyebrow">Corridas</p>
-            <h1 className="ba-title">Corridas pelo mundo</h1>
-            <p className="ba-muted" style={{ marginTop: ".5rem" }}>
-              Corridas puxadas do Strava com distância mínima de 21 km.
-            </p>
+            <h1 className="ui-title">Corridas pelo mundo</h1>
+            <p className="ui-muted">Provas de 21 km ou mais identificadas no Strava, por país</p>
+          </div>
+        </header>
+
+        <div className="hoje-col">
+          <div className="ui-stat-grid">
+            <div className="ui-stat">
+              <span className="ui-stat__value">{formatNumber(stats.totalRaces)}</span>
+              <span className="ui-stat__label">provas de 21 km+</span>
+            </div>
+            <div className="ui-stat">
+              <span className="ui-stat__value">{formatNumber(stats.countriesCount)}</span>
+              <span className="ui-stat__label">{leader ? `países · mais provas: ${normalizeCountryDisplay(leader.country)}` : "países"}</span>
+            </div>
+            <div className="ui-stat">
+              <span className="ui-stat__value">{formatRaceEfficiency(stats.averageEfficiency)}</span>
+              <span className="ui-stat__label">eficiência média</span>
+            </div>
           </div>
 
-          <Link href="/" className="ba-back">
-            Voltar ao dashboard
-          </Link>
-        </div>
+          <section aria-label="Mapa-múndi" style={{ minWidth: 0 }}>
+            <WorldRaceMap counts={counts} />
+          </section>
 
-        <section className="ba-section ba-grid-4">
-          <InfoCard title="Corridas 21k+" value={String(stats.totalRaces)} />
-          <InfoCard
-            title="Países com corridas"
-            value={String(stats.countriesCount)}
-          />
-          <InfoCard
-            title="País líder"
-            value={grouped[0] ? normalizeCountryDisplay(grouped[0].country) : "-"}
-          />
-          <InfoCard
-            title="Eficiência média"
-            value={formatRaceEfficiency(stats.averageEfficiency)}
-          />
-        </section>
-
-        <section className="ba-section">
-          <WorldRaceMap counts={counts} />
-        </section>
-
-        <section className="ba-card" style={{ padding: "1.5rem" }}>
-          <p className="ba-eyebrow">Ranking por país</p>
-          <p className="ba-muted" style={{ marginTop: ".4rem", marginBottom: "1.25rem" }}>
-            Lista detalhada das corridas identificadas como eventos/provas com
-            distância mínima de 21 km. As medalhas destacam os 3 melhores paces
-            médios da página.
-          </p>
-
-          {grouped.length === 0 ? (
-            <p className="ba-muted">
-              Nenhuma corrida acima de 21 km foi identificada com a regra atual.
-            </p>
-          ) : (
-            <div className="world-country-grid">
-              {grouped.map((item) => {
-                const displayCountry = normalizeCountryDisplay(item.country);
-
-                return (
-                  <div key={item.country} className="ba-card-soft world-country-card">
-                    {/* País header */}
-                    <div className="world-country-card__header">
-                      <p className="world-country-card__title">
-                        <CountryFlag country={item.country} />
-                        <span>{displayCountry}</span>
-                      </p>
-                      <span className="badge badge--accent">
-                        {item.count} {item.count === 1 ? "corrida" : "corridas"}
-                      </span>
-                    </div>
-
-                    {/* Corridas */}
-                    <div className="world-race-list">
-                      {item.races.map((race: Race, index) => {
-                        const medal    = topRaceMedals.get(race.id);
-                        const previous = item.races[index + 1];
-
-                        return (
-                          <div key={race.id} className="world-race-card">
-                            <div style={{ minWidth: 0 }}>
-                              {/* Nome */}
-                              <p className="world-race-card__name">
-                                {medal && (
-                                  <span style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, flexShrink: 0 }}>
-                                    {medal}
-                                  </span>
-                                )}
-                                <span className="world-race-card__name-text">
-                                  {formatRaceName(race.name)}
-                                </span>
-                              </p>
-
-                              {/* Detalhes */}
-                              <p className="world-race-card__details">
-                                {race.city || "Não identificado"}
-                                {race.state ? `, ${race.state}` : ""} · {formatBRDate(race.date)} · {race.distanceKm.toFixed(2)} km · {race.time} · {formatPaceFromRace(race)}
-                              </p>
-
-                              {/* Tênis */}
-                              <p className="world-race-card__gear">
-                                Tênis · {formatRaceGear(race)}
-                              </p>
-
-                              {/* Stats */}
-                              <p className="world-race-card__stats">
-                                FC {race.averageHeartrate ? `${race.averageHeartrate.toFixed(0)} bpm` : "-"} · Alt {race.elevationGain ?? 0} m · Ef {formatRaceEfficiency(race.efficiency ?? null)} · {getTrend(race.efficiency, previous?.efficiency)}
-                              </p>
-                            </div>
-
-                            <ActivitySplitsChart
-                              activityId={Number(String(race.id).replace("strava-", ""))}
-                              activityName={formatRaceName(race.name)}
-                              targetPaceSecPerKm={race.paceSecPerKm ?? undefined}
-                              goalPaceSecPerKm={320}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
+          <section className="ui-section" aria-label="Melhores marcas">
+            <div className="ui-section__head">
+              <h2 className="ui-h2">Melhores marcas</h2>
+              <span className="ui-muted">por pace médio</span>
             </div>
-          )}
-        </section>
-      </main>
-      <footer className="site-footer">STRAVA · RAFAEL CABRAL · {getCurrentSeasonYear()}</footer>
-    </div>
-  );
-}
+            <TopRacesList title="Provas de 21 km ou mais" races={topRaces} />
+          </section>
 
-function InfoCard({ title, value }: { title: string; value: string }) {
-  return (
-    <div className="ba-card" style={{ padding: "1.5rem", textAlign: "center" }}>
-      <p className="ba-label">{title}</p>
-      <h2 className="ba-value" style={{ fontSize: 30, marginTop: ".4rem" }}>
-        {value}
-      </h2>
+          <section className="ui-section" aria-label="Provas por país">
+            <div className="ui-section__head">
+              <h2 className="ui-h2">Por país</h2>
+              <span className="ui-muted">toque para ver as provas</span>
+            </div>
+            <RaceGroupList
+              groups={grouped.map((item) => ({
+                key: item.country,
+                title: normalizeCountryDisplay(item.country),
+                leading: <CountryFlag country={item.country} />,
+                races: item.races,
+              }))}
+              rankById={rankById}
+              emptyText="Nenhuma prova de 21 km ou mais foi identificada no Strava."
+            />
+          </section>
+        </div>
+      </main>
+      <footer className="ui-footer">Strava · Rafael Cabral · {getCurrentSeasonYear()}</footer>
     </div>
   );
 }

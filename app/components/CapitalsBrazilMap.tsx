@@ -122,12 +122,6 @@ function getStatusLabel(status: CapitalStatus) {
   return "Pendente";
 }
 
-function getStatusDot(status: CapitalStatus) {
-  if (status === "completed") return "#10b981";
-  if (status === "next") return "#f59e0b";
-  return EMPTY_FILL;
-}
-
 export default function CapitalsBrazilMap({ items }: Props) {
   const [geographyData, setGeographyData] = useState<any>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -147,15 +141,6 @@ export default function CapitalsBrazilMap({ items }: Props) {
     return map;
   }, [items]);
 
-  const totals = useMemo(() => {
-    return items.reduce(
-      (acc, item) => {
-        acc[item.status] += 1;
-        return acc;
-      },
-      { completed: 0, next: 0, locked: 0 } as Record<CapitalStatus, number>,
-    );
-  }, [items]);
 
   useEffect(() => {
     let active = true;
@@ -486,10 +471,6 @@ export default function CapitalsBrazilMap({ items }: Props) {
         </div>
 
         <aside className="capitals-brazil-map-side">
-          <MapStat label="Concluídas" value={totals.completed} status="completed" />
-          <MapStat label="Próximas" value={totals.next} status="next" />
-          <MapStat label="Pendentes" value={totals.locked} status="locked" />
-
           <div className="capitals-brazil-map-stat">
             <p className="ba-label">Foto da prova</p>
             <p className="ba-muted" style={{ marginTop: 8, fontSize: 13, lineHeight: 1.5 }}>
@@ -674,30 +655,6 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function MapStat({
-  label,
-  value,
-  status,
-}: {
-  label: string;
-  value: number;
-  status: CapitalStatus;
-}) {
-  return (
-    <div className="capitals-brazil-map-stat">
-      <div className="flex items-center justify-between gap-3">
-        <p className="ba-label">{label}</p>
-        <span
-          className="h-3 w-3 rounded-full border border-white/10"
-          style={{ backgroundColor: getStatusDot(status) }}
-        />
-      </div>
-      <p className="ba-value" style={{ marginTop: 6, fontSize: 34 }}>
-        {value}
-      </p>
-    </div>
-  );
-}
 
 function Legend({ color, label }: { color: string; label: string }) {
   return (

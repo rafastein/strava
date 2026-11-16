@@ -1013,3 +1013,17 @@
   height: 100%;
   border-radius: 3px;
 }
+
+/* ── Provas dentro de um grupo (mapas) ── */
+.race-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 20px;
+}
+
+.race-podiums {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: 12px;
+}

@@ -1,4 +1,3 @@
-import type { CSSProperties } from "react";
 import {
   capitalMedalMetaByState,
   type CapitalChallengeItem,
@@ -197,10 +196,6 @@ function MedalShell({ item }: { item: CapitalChallengeItem }) {
 }
 
 export default function CapitalMedalGrid({ items }: { items: CapitalChallengeItem[] }) {
-  const completed = items.filter((item) => item.status === "completed").length;
-  const next = items.filter((item) => item.status === "next").length;
-  const remaining = items.length - completed;
-
   const orderedItems = [...items].sort((a, b) => {
     const statusOrder: Record<CapitalStatus, number> = { completed: 0, next: 1, locked: 2 };
     return (
@@ -265,18 +260,6 @@ export default function CapitalMedalGrid({ items }: { items: CapitalChallengeIte
             </p>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, minmax(76px, 1fr))",
-              gap: 8,
-              minWidth: "min(270px, 100%)",
-            }}
-          >
-            <SummaryBox label="Concluídas" value={String(completed)} tone="completed" />
-            <SummaryBox label="Próximas" value={String(next)} tone="next" />
-            <SummaryBox label="Restantes" value={String(remaining)} tone="locked" />
-          </div>
         </div>
 
         <div
@@ -296,48 +279,3 @@ export default function CapitalMedalGrid({ items }: { items: CapitalChallengeIte
   );
 }
 
-function SummaryBox({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone: CapitalStatus;
-}) {
-  const palette = getPalette(tone);
-  const style: CSSProperties = {
-    minWidth: 0,
-    borderRadius: 14,
-    border: `1px solid ${
-      tone === "completed"
-        ? "rgba(16,185,129,0.45)"
-        : tone === "next"
-        ? "rgba(245,158,11,0.45)"
-        : "rgba(255,255,255,0.10)"
-    }`,
-    background: tone === "locked" ? "rgba(0,0,0,0.24)" : "rgba(0,0,0,0.18)",
-    padding: "0.72rem 0.78rem",
-    boxShadow: tone === "completed" ? "inset 0 1px 0 rgba(255,255,255,0.08)" : "none",
-  };
-
-  return (
-    <div style={style}>
-      <p className="ba-label" style={{ fontSize: 9, whiteSpace: "nowrap" }}>
-        {label}
-      </p>
-      <p
-        style={{
-          marginTop: 5,
-          color: tone === "locked" ? "#fff" : palette.codeColor,
-          fontSize: 27,
-          fontWeight: 950,
-          lineHeight: 1,
-          letterSpacing: "-0.04em",
-        }}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}

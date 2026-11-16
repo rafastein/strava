@@ -99,15 +99,12 @@ export default function WorldRaceMap({ counts }: Props) {
   const pathGenerator = projection ? geoPath().projection(projection) : null;
 
   return (
-    <div className="ba-card" style={{ padding: "1.5rem" }}>
-      <p className="ba-eyebrow">Mapa-múndi</p>
+    <div className="ui-card ui-card--pad">
+      <h2 className="ui-h2">Mapa-múndi</h2>
+      <p className="ui-muted">Quanto mais forte a cor, mais provas no lugar.</p>
 
-      <p className="ba-muted" style={{ marginTop: 4 }}>
-        Visualização das corridas por país.
-      </p>
-
-      <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-[#0f1115] p-1">
-        <div className="w-full rounded-xl bg-[#0f1115]">
+      <div style={{ marginTop: 14, overflow: "hidden", borderRadius: 14, border: "1px solid var(--ui-border)", background: "var(--ui-bg)" }}>
+        <div style={{ width: "100%" }}>
           {loadError ? (
             <div
               className="flex h-[460px] items-center justify-center text-sm"
@@ -162,10 +159,7 @@ export default function WorldRaceMap({ counts }: Props) {
         </div>
       </div>
 
-      <div
-        className="mt-4 flex flex-wrap gap-3 text-xs"
-        style={{ color: "var(--text-muted)" }}
-      >
+      <div className="carga-legend" style={{ marginTop: 14 }} aria-label="Legenda: número de provas">
         <Legend color={EMPTY_FILL} label="0" />
         <Legend color="#6b3f12" label="1" />
         <Legend color="#a85a16" label="2-3" />
@@ -174,7 +168,7 @@ export default function WorldRaceMap({ counts }: Props) {
       </div>
 
       {!loadError && !hasHighlights && (
-        <p className="ba-muted" style={{ marginTop: 12 }}>
+        <p className="ui-muted" style={{ marginTop: 12 }}>
           Nenhum país com corrida foi encontrado para destacar no mapa.
         </p>
       )}
