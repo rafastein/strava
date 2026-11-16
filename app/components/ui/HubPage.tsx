@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import Navbar from "../Navbar";
 
 export type HubLink = { href: string; label: string; description: string };
@@ -8,10 +9,13 @@ export default function HubPage({
   title,
   description,
   links,
+  children,
 }: {
   title: string;
   description: string;
   links: HubLink[];
+  /** Conteúdo acima da lista de páginas (resumo da aba). */
+  children?: ReactNode;
 }) {
   return (
     <div className="ui-page">
@@ -23,6 +27,7 @@ export default function HubPage({
             <p className="ui-muted">{description}</p>
           </div>
         </header>
+        {children}
         <nav className="ui-card ui-list" aria-label={title}>
           {links.map((link) => (
             <Link key={link.href} href={link.href} className="ui-row">

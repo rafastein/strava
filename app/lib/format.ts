@@ -80,3 +80,16 @@ export function formatLongDate(dateKey: string): string {
   const dayMonth = formatKeyPart(dateKey, { day: "numeric", month: "long" });
   return weekday && dayMonth ? `${weekday}, ${dayMonth}` : "";
 }
+
+/** "9–15 nov" ou "28 set – 4 out": faixa curta de uma semana. */
+export function formatDateRangeShort(startKey: string, endKey: string): string {
+  const parse = (key: string) => {
+    const [day, month] = formatDayMonth(key).split(" ");
+    return { day: String(Number(day)), month };
+  };
+  const start = parse(startKey);
+  const end = parse(endKey);
+  return start.month === end.month
+    ? `${start.day}–${end.day} ${end.month}`
+    : `${start.day} ${start.month} – ${end.day} ${end.month}`;
+}

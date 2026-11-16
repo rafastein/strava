@@ -1,8 +1,8 @@
-// node download-capitais.mjs
+// node scripts/download-capitais.mjs  (uso único: as fotos já estão em public/capitais)
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 
-const OUT_DIR = "./app/public/capitais";
+const OUT_DIR = "./public/capitais";
 
 // Título do artigo na Wikipedia PT para cada capital
 const WIKIPEDIA_TITLES = {

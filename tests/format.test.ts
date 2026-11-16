@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  formatDateRangeShort,
   formatDayMonth,
   formatDuration,
   formatKm,
@@ -34,4 +35,9 @@ test("datas a partir da chave não dependem do fuso do servidor", () => {
   assert.equal(formatDayMonth("2026-11-12"), "12 nov");
   assert.equal(formatLongDate("2026-11-13"), "sexta, 13 de novembro");
   assert.equal(formatLongDate("2026-11-15"), "domingo, 15 de novembro");
+});
+
+test("faixa curta da semana", () => {
+  assert.equal(formatDateRangeShort("2026-11-09", "2026-11-15"), "9–15 nov");
+  assert.equal(formatDateRangeShort("2026-09-28", "2026-10-04"), "28 set – 4 out");
 });

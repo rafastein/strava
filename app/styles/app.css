@@ -1266,3 +1266,88 @@
   grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
   gap: 12px;
 }
+
+/* ── Treinos: planejado × feito por semana ── */
+.plan-weeks > .plan-week {
+  border-top: 1px solid var(--ui-border);
+}
+
+.plan-week > summary {
+  min-height: 64px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.plan-week__main {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.plan-week__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.plan-week__label {
+  white-space: nowrap;
+}
+
+.plan-week__nums {
+  font-family: var(--ui-font-num);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.plan-week__track {
+  position: relative;
+  height: 10px;
+}
+
+.plan-week__plan,
+.plan-week__done {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  max-width: 100%;
+  border-radius: 999px;
+}
+
+.plan-week__plan {
+  border: 1.5px solid #4a5059;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.plan-week__done {
+  background: var(--ui-accent);
+}
+
+.plan-week__pct {
+  min-width: 44px;
+  text-align: right;
+  font-family: var(--ui-font-num);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.plan-week__pct--good {
+  color: var(--ui-good);
+}
+
+.plan-week__pct--low {
+  color: var(--ui-muted);
+}
+
+.plan-week__pct--none {
+  color: var(--ui-muted);
+  font-weight: 400;
+}
+
+.hoje-week__days--compact .hoje-day__track {
+  height: 48px;
+}
