@@ -1049,3 +1049,44 @@
 .meia-row[aria-pressed="true"] .ui-row__title {
   color: var(--ui-text);
 }
+
+/* ── Buenos Aires: volume semanal ── */
+.ba-weeks {
+  display: grid;
+  gap: 4px;
+  align-items: end;
+}
+
+.ba-weeks__col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ba-weeks__track {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 140px;
+  gap: 2px;
+}
+
+.ba-weeks__bar {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 3px;
+  background: var(--ui-accent);
+}
+
+.ba-weeks__bar--race {
+  background: var(--ui-good);
+}
+
+.ba-weeks__label {
+  height: 16px;
+  font-size: 11px;
+  color: var(--ui-muted);
+  white-space: nowrap;
+  overflow: visible;
+}
