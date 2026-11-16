@@ -1,4 +1,3 @@
-import type { CSSProperties } from "react";
 import Navbar from "../../components/Navbar";
 import CapitalsBrazilMap from "../../components/CapitalsBrazilMap";
 import CapitalMedalGrid from "../../components/CapitalMedalGrid";
@@ -17,10 +16,10 @@ import {
   formatDistance,
   formatPace,
   formatTime,
-  getStatusLabel,
   type CapitalChallengeItem,
   type StravaActivity,
 } from "../../lib/capitals-challenge";
+import { formatKm } from "../../lib/format";
 import { getManagedRaces, type ManagedRace } from "../../lib/race-calendar";
 
 type Athlete = StravaAthlete;
@@ -380,138 +379,6 @@ async function getActivityCoverPhotos(accessToken: string, activityIds: number[]
   }, {});
 }
 
-function getStatusPillStyle(status: CapitalChallengeItem["status"]): CSSProperties {
-  const base: CSSProperties = {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    height: 22,
-    padding: "0 0.68rem",
-    borderRadius: 999,
-    fontSize: 9,
-    fontWeight: 900,
-    lineHeight: 1,
-    letterSpacing: "0.12em",
-    textTransform: "uppercase",
-    whiteSpace: "nowrap",
-    flexShrink: 0,
-  };
-
-  if (status === "completed") {
-    return {
-      ...base,
-      border: "1px solid rgba(16,185,129,0.25)",
-      background: "rgba(16,185,129,0.12)",
-      color: "#34d399",
-    };
-  }
-
-  if (status === "next") {
-    return {
-      ...base,
-      border: "1px solid rgba(245,166,35,0.25)",
-      background: "rgba(245,166,35,0.12)",
-      color: "var(--accent)",
-    };
-  }
-
-  return {
-    ...base,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.055)",
-    color: "rgba(255,255,255,0.46)",
-  };
-}
-
-
-function getTableCellToneStyle(status: CapitalChallengeItem["status"]): CSSProperties {
-  if (status === "completed") {
-    return {
-      background: "linear-gradient(180deg, rgba(16,185,129,0.09), rgba(255,255,255,0.025))",
-      borderBottom: "1px solid rgba(16,185,129,0.14)",
-    };
-  }
-
-  if (status === "next") {
-    return {
-      background: "linear-gradient(180deg, rgba(245,166,35,0.10), rgba(255,255,255,0.03))",
-      borderBottom: "1px solid rgba(245,166,35,0.14)",
-    };
-  }
-
-  return {};
-}
-
-function getMobileCardToneStyle(status: CapitalChallengeItem["status"]): CSSProperties {
-  if (status === "completed") {
-    return {
-      border: "1px solid rgba(16,185,129,0.22)",
-      background: "linear-gradient(180deg, rgba(16,185,129,0.11), rgba(255,255,255,0.025))",
-    };
-  }
-
-  if (status === "next") {
-    return {
-      border: "1px solid rgba(245,166,35,0.22)",
-      background: "linear-gradient(180deg, rgba(245,166,35,0.12), rgba(255,255,255,0.03))",
-    };
-  }
-
-  return {
-    border: "1px solid rgba(255,255,255,0.08)",
-    background: "rgba(255,255,255,0.035)",
-  };
-}
-
-function MetricBox({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone?: "accent" | "green" | "red";
-}) {
-  const color =
-    tone === "accent"
-      ? "var(--accent)"
-      : tone === "green"
-        ? "#34d399"
-        : tone === "red"
-          ? "rgba(239,68,68,0.92)"
-          : "#fff";
-
-  return (
-    <div
-      style={{
-        minWidth: 0,
-        borderRadius: 12,
-        border: "1px solid rgba(255,255,255,0.075)",
-        background: "rgba(0,0,0,0.20)",
-        padding: "0.78rem 0.82rem",
-      }}
-    >
-      <p className="ba-label" style={{ whiteSpace: "nowrap", fontSize: 10 }}>
-        {label}
-      </p>
-      <p
-        style={{
-          marginTop: 5,
-          color,
-          fontSize: 15,
-          fontWeight: 900,
-          lineHeight: 1.05,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
-
 function cleanActivityName(name?: string) {
   if (!name) return "Meia maratona identificada";
 
@@ -520,126 +387,6 @@ function cleanActivityName(name?: string) {
     .replace(/^race:\s*/i, "")
     .trim();
 }
-const styles: Record<string, CSSProperties> = {
-  hero: {
-    position: "relative",
-    overflow: "hidden",
-    padding: "var(--capitals-hero-padding)",
-    borderBottom: "1px solid var(--border)",
-  },
-  heroInner: {
-    maxWidth: 1200,
-    margin: "0 auto",
-    display: "grid",
-    gridTemplateColumns: "var(--capitals-hero-grid)",
-    gap: "var(--capitals-hero-gap)",
-    alignItems: "center",
-    position: "relative",
-    zIndex: 1,
-  },
-  heroTitle: {
-    fontFamily: "var(--font-display)",
-    fontSize: "var(--capitals-title-size)",
-    lineHeight: 0.9,
-    letterSpacing: "0.02em",
-    color: "var(--text)",
-    marginTop: "0.85rem",
-    marginBottom: "1rem",
-  },
-  heroText: {
-    maxWidth: "var(--capitals-text-max-width)",
-    color: "rgba(255,255,255,0.48)",
-    fontSize: 15,
-    lineHeight: 1.7,
-  },
-  heroCards: {
-    display: "grid",
-    gridTemplateColumns: "var(--capitals-cards-grid)",
-    gap: "1rem",
-    alignItems: "stretch",
-  },
-  heroPanel: {
-    borderRadius: 18,
-    border: "1px solid rgba(245,166,35,0.18)",
-    background: "linear-gradient(180deg, rgba(245,166,35,0.08), rgba(255,255,255,0.03))",
-    padding: "1.25rem",
-    boxShadow: "0 18px 60px rgba(0,0,0,0.22)",
-  },
-  nextPanel: {
-    borderRadius: 18,
-    border: "1px solid rgba(245,166,35,0.22)",
-    background: "linear-gradient(180deg, rgba(245,166,35,0.10), rgba(255,255,255,0.03))",
-    padding: "1.25rem",
-    boxShadow: "0 18px 60px rgba(0,0,0,0.22)",
-  },
-  statGrid: {
-    display: "grid",
-    gridTemplateColumns: "var(--capitals-stat-grid)",
-    gap: 10,
-  },
-  statCard: {
-    minWidth: 0,
-    borderRadius: 14,
-    border: "1px solid rgba(255,255,255,0.075)",
-    background: "rgba(0,0,0,0.22)",
-    padding: "var(--capitals-stat-card-padding)",
-  },
-  content: {
-    maxWidth: 1200,
-    margin: "0 auto",
-    padding: "var(--capitals-content-padding)",
-  },
-  sectionHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "end",
-    gap: "1rem",
-    marginBottom: "1rem",
-  },
-  sectionTitle: {
-    marginTop: "0.35rem",
-    color: "#fff",
-    fontSize: "var(--capitals-section-title-size)",
-    lineHeight: 1.02,
-    fontWeight: 900,
-    letterSpacing: "-0.04em",
-  },
-
-  paddedCard: {
-    padding: "1.25rem",
-  },
-  capitalMiniCard: {
-    minWidth: 0,
-    borderRadius: 14,
-    border: "1px solid rgba(255,255,255,0.08)",
-    background: "rgba(255,255,255,0.035)",
-    padding: "0.85rem",
-    minHeight: 82,
-  },
-  nextMissionCard: {
-    minWidth: 0,
-    borderRadius: 14,
-    border: "1px solid rgba(255,255,255,0.08)",
-    background: "rgba(0,0,0,0.22)",
-    padding: "0.9rem",
-  },
-  rule: {
-    borderRadius: 14,
-    background: "rgba(0,0,0,0.20)",
-    border: "1px solid rgba(255,255,255,0.06)",
-    padding: "0.85rem",
-    color: "rgba(255,255,255,0.62)",
-    fontSize: 13,
-    lineHeight: 1.55,
-  },
-  regionGrid: {
-    display: "grid",
-    gridTemplateColumns: "var(--capitals-region-grid)",
-    gap: "0.9rem",
-    marginTop: "1rem",
-  },
-};
-
 export default async function CapitaisPage() {
   const accessToken = await getValidStravaAccessToken();
 
@@ -686,10 +433,6 @@ export default async function CapitaisPage() {
   const capitalRows = [...challenge].sort((a, b) =>
     a.city.localeCompare(b.city, "pt-BR", { sensitivity: "base" }),
   );
-
-  const slowest = [...completed]
-    .filter((c) => c.bestActivity)
-    .sort((a, b) => (b.bestActivity?.moving_time ?? 0) - (a.bestActivity?.moving_time ?? 0))[0];
 
   const totalKm = completed.reduce((acc, c) => acc + (c.bestActivity?.distance ?? 0) / 1000, 0);
 
@@ -742,649 +485,230 @@ export default async function CapitaisPage() {
       : undefined,
   }));
 
+  const statusMeta: Record<CapitalChallengeItem["status"], { label: string; color: string }> = {
+    completed: { label: "Concluída", color: "var(--ui-good)" },
+    next: { label: "Próxima", color: "var(--ui-accent)" },
+    locked: { label: "A definir", color: "var(--ui-muted)" },
+  };
+
   return (
-    <div className="page capitals-page">
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-            .capitals-page {
-              --capitals-hero-padding: 3rem 1.5rem 2.5rem;
-              --capitals-hero-grid: minmax(0, 0.9fr) minmax(460px, 1.1fr);
-              --capitals-hero-gap: 2rem;
-              --capitals-title-size: clamp(3.2rem, 6.5vw, 5.7rem);
-              --capitals-text-max-width: 560px;
-              --capitals-cards-grid: minmax(0, 1.1fr) minmax(260px, 0.9fr);
-              --capitals-top-stat-grid: repeat(3, minmax(0, 1fr));
-              --capitals-stat-grid: repeat(2, minmax(0, 1fr));
-              --capitals-stat-card-padding: 1rem 1.1rem;
-              --capitals-content-padding: 1.75rem 1.5rem 4rem;
-              --capitals-section-title-size: clamp(2rem, 3.2vw, 3rem);
-              --capitals-region-grid: repeat(auto-fit, minmax(170px, 1fr));
-              overflow-x: hidden;
-            }
-
-            .capitals-table-wrap {
-              margin-top: 1rem;
-              overflow-x: auto;
-              -webkit-overflow-scrolling: touch;
-            }
-
-            .capitals-table-wrap table {
-              min-width: 960px;
-            }
-
-            .capitals-mobile-list {
-              display: none;
-            }
-
-            .capitals-mobile-card {
-              min-width: 0;
-              border-radius: 16px;
-              padding: 0.95rem;
-              box-shadow: 0 18px 48px rgba(0,0,0,0.18);
-            }
-
-            .capitals-mobile-metrics {
-              display: grid;
-              grid-template-columns: repeat(2, minmax(0, 1fr));
-              gap: 0.5rem;
-              margin-top: 0.8rem;
-            }
-
-            @media (max-width: 1100px) {
-              .capitals-page {
-                --capitals-hero-grid: 1fr;
-                --capitals-text-max-width: 760px;
-                --capitals-cards-grid: 1fr;
-              }
-            }
-
-            @media (max-width: 760px) {
-              .capitals-page {
-                --capitals-hero-padding: 2rem 0.95rem 1.45rem;
-                --capitals-hero-gap: 1.15rem;
-                --capitals-title-size: clamp(2.55rem, 14vw, 3.55rem);
-                --capitals-top-stat-grid: repeat(2, minmax(0, 1fr));
-                --capitals-stat-grid: repeat(2, minmax(0, 1fr));
-                --capitals-stat-card-padding: 0.82rem;
-                --capitals-content-padding: 1.15rem 0.95rem 3rem;
-                --capitals-section-title-size: clamp(1.8rem, 9vw, 2.35rem);
-                --capitals-region-grid: repeat(2, minmax(0, 1fr));
-              }
-
-              .capitals-hero-text {
-                font-size: 14px !important;
-                line-height: 1.6 !important;
-              }
-
-              .capitals-panel {
-                padding: 1rem !important;
-                border-radius: 16px !important;
-              }
-
-              .capitals-stat-card .ba-value {
-                font-size: 26px !important;
-              }
-
-              .capitals-status-pill {
-                height: 20px !important;
-                padding: 0 0.55rem !important;
-                font-size: 8px !important;
-                letter-spacing: 0.1em !important;
-              }
-
-              .capitals-table-wrap {
-                display: none !important;
-              }
-
-              .capitals-mobile-list {
-                display: grid !important;
-                gap: 0.75rem;
-                margin-top: 1rem;
-              }
-            }
-
-            @media (max-width: 430px) {
-              .capitals-page {
-                --capitals-hero-padding: 1.75rem 0.85rem 1.25rem;
-                --capitals-content-padding: 1rem 0.85rem 2.75rem;
-                --capitals-top-stat-grid: 1fr;
-                --capitals-stat-grid: 1fr;
-                --capitals-region-grid: 1fr;
-              }
-
-              .capitals-mobile-metrics {
-                grid-template-columns: 1fr;
-              }
-            }
-          `,
-        }}
-      />
+    <div className="ui-page">
       <Navbar
         athleteName={athlete?.firstname ?? undefined}
         athleteAvatar={athlete?.profile_medium ?? undefined}
       />
 
-
-      <section className="capitals-hero" style={styles.hero}>
-        <div className="home-hero__glow-1" />
-        <div className="home-hero__glow-2" />
-
-        <div className="capitals-hero-inner" style={styles.heroInner}>
+      <main className="ui-container">
+        <header className="ui-header">
           <div>
-            <p className="ba-eyebrow">Projeto 27 capitais</p>
-
-            <h1 className="capitals-hero-title" style={styles.heroTitle}>Correndo pelas Capitais.</h1>
-
-            <p className="capitals-hero-text" style={styles.heroText}>
-              Um projeto para correr uma meia maratona em cada uma das 27 capitais
-              brasileiras. Os dados concluídos vêm do Strava; as capitais pendentes
-              mostram o mês das principais meias mapeadas.
-            </p>
+            <h1 className="ui-title">27 Capitais</h1>
+            <p className="ui-muted">Uma meia maratona em cada capital brasileira</p>
           </div>
+        </header>
 
-          <div className="capitals-hero-cards" style={styles.heroCards}>
-            <div className="capitals-panel" style={styles.heroPanel}>
-              <p className="ba-eyebrow" style={{ fontSize: 10, marginBottom: 12 }}>
-                Correndo o Brasil
+        <div className="hoje-grid">
+          <div className="hoje-col">
+            {/* ── Progresso ── */}
+            <section className="ui-card ui-card--pad ui-stack" aria-label="Progresso do desafio">
+              <p className="ui-label-accent">Progresso</p>
+              <p className="hoje-week__total">
+                <span className="hoje-week__km">{completed.length} de {capitals.length}</span>
+                <span className="ui-muted" style={{ fontSize: 14 }}>capitais · {progress}%</span>
               </p>
-
-              <div style={{ ...styles.statGrid, gridTemplateColumns: "var(--capitals-top-stat-grid)" }}>
-                <div className="capitals-stat-card" style={styles.statCard}>
-                  <p className="ba-label">Concluídas</p>
-                  <p className="ba-value" style={{ fontSize: 30, marginTop: 6 }}>
-                    {completed.length}/27
-                  </p>
-                </div>
-
-                <div className="capitals-stat-card" style={styles.statCard}>
-                  <p className="ba-label">Progresso</p>
-                  <p className="ba-value ba-value--accent" style={{ fontSize: 30, marginTop: 6 }}>
-                    {progress}%
-                  </p>
-                </div>
-
-                <div className="capitals-stat-card" style={styles.statCard}>
-                  <p className="ba-label">Km acumulado</p>
-                  <p className="ba-value" style={{ fontSize: 30, marginTop: 6 }}>
-                    {totalKm.toFixed(0)} km
-                  </p>
-                </div>
-
-                <div className="capitals-stat-card" style={styles.statCard}>
-                  <p className="ba-label">Melhor meia</p>
-                  <p className="ba-value" style={{ fontSize: 26, marginTop: 6 }}>
-                    {fastest?.bestActivity ? formatTime(fastest.bestActivity.moving_time) : "—"}
-                  </p>
-                  <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
-                    {fastest?.city ?? "—"}
-                  </p>
-                </div>
-
-                <div className="capitals-stat-card" style={styles.statCard}>
-                  <p className="ba-label">Pace médio</p>
-                  <p className="ba-value" style={{ fontSize: 26, marginTop: 6 }}>
-                    {formatAvgPace(avgPaceSeconds)}
-                  </p>
-                  <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>melhor por capital</p>
-                </div>
-
-                <div className="capitals-stat-card" style={styles.statCard}>
-                  <p className="ba-label">Conclusão estimada</p>
-                  <p className="ba-value ba-value--accent" style={{ fontSize: 26, marginTop: 6 }}>
-                    {remaining > 0 ? estimatedYear : "Concluído!"}
-                  </p>
-                  <p className="ba-muted" style={{ marginTop: 5, fontSize: 12 }}>
-                    {remaining > 0 ? `${remaining} restantes · 4/ano` : "🎉"}
-                  </p>
-                </div>
+              <div className="hoje-progress" role="img" aria-label={`${progress}% do desafio concluído`}>
+                <div className="hoje-progress__fill" style={{ width: `${progress}%` }} />
               </div>
+              <dl className="ui-dl">
+                <div><dt>Km nas capitais</dt><dd>{formatKm(totalKm, 0)}</dd></div>
+                <div>
+                  <dt>Melhor meia</dt>
+                  <dd>{fastest?.bestActivity ? formatTime(fastest.bestActivity.moving_time) : "—"}</dd>
+                  {fastest ? <dd className="ui-muted" style={{ fontFamily: "inherit", fontWeight: 400, fontSize: 12 }}>{fastest.city}</dd> : null}
+                </div>
+                <div><dt>Pace médio</dt><dd>{formatAvgPace(avgPaceSeconds)}</dd></div>
+                <div>
+                  <dt>Conclusão estimada</dt>
+                  <dd>{remaining > 0 ? estimatedYear : "Concluído"}</dd>
+                  {remaining > 0 ? (
+                    <dd className="ui-muted" style={{ fontFamily: "inherit", fontWeight: 400, fontSize: 12 }}>
+                      {remaining} restantes, a {capitalsPerYear} por ano
+                    </dd>
+                  ) : null}
+                </div>
+              </dl>
+            </section>
 
-              <div className="ba-progress" style={{ marginTop: 14 }}>
-                <div className="ba-progress-fill" style={{ width: `${progress}%` }} />
-              </div>
-            </div>
-
-            <div className="capitals-panel" style={styles.nextPanel}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem", alignItems: "center", marginBottom: 12 }}>
-                <p className="ba-eyebrow" style={{ fontSize: 10 }}>
-                  Próximas missões
-                </p>
-                <span className="badge badge--muted">
-                  {raceCalendar.source === "upstash" ? `${registeredRaces.length} cadastradas` : "Cadastro vazio"}
+            {/* ── Próximas ── */}
+            <section className="ui-section" aria-label="Próximas capitais">
+              <div className="ui-section__head">
+                <h2 className="ui-h2">Próximas capitais</h2>
+                <span className="ui-muted">
+                  {raceCalendar.source === "upstash" ? `${registeredRaces.length} provas cadastradas` : "sem provas cadastradas"}
                 </span>
               </div>
-
-              <div style={{ display: "grid", gap: 10 }}>
-                {next.length > 0 ? (
-                  nextByDate.map((capital) => {
+              {next.length > 0 ? (
+                <div className="ui-card ui-list">
+                  {nextByDate.map((capital) => {
                     const managedRace = upcomingRaceByState.get(capital.state);
-                    const raceLabel = getRaceLabel(capital, managedRace);
-
                     return (
-                      <div key={capital.city} style={styles.nextMissionCard}>
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            gap: "0.75rem",
-                            alignItems: "start",
-                          }}
-                        >
-                          <div style={{ minWidth: 0 }}>
-                            <h3
-                              style={{
-                                color: "#fff",
-                                fontSize: 19,
-                                fontWeight: 900,
-                                lineHeight: 1.05,
-                              }}
-                            >
-                              {capital.city}{" "}
-                              <span style={{ color: "rgba(255,255,255,0.38)" }}>
-                                {capital.state}
-                              </span>
-                            </h3>
-                            <p className="ba-muted" style={{ fontSize: 12, marginTop: 5 }}>
-                              {getDateLabel(capital, managedRace)}
-                            </p>
-                          </div>
-
-                          <span className="capitals-status-pill" style={getStatusPillStyle(capital.status)}>
-                            {getStatusLabel(capital.status)}
+                      <div key={capital.city} className="ui-row">
+                        <span className="ui-row__main">
+                          <span className="ui-row__title">
+                            {capital.city} <span className="ui-muted">{capital.state}</span>
                           </span>
-                        </div>
-
-                        <p
-                          className="ba-muted"
-                          title={raceLabel}
-                          style={{
-                            marginTop: 10,
-                            fontSize: 12,
-                            lineHeight: 1.45,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            display: "-webkit-box",
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: "vertical",
-                          }}
-                        >
-                          {raceLabel}
-                        </p>
+                          <span className="ui-muted" style={{ whiteSpace: "normal" }}>{getRaceLabel(capital, managedRace)}</span>
+                        </span>
+                        <span className="ui-row__side">
+                          <span className="ui-row__value" style={{ fontSize: 15 }}>{getDateLabel(capital, managedRace)}</span>
+                        </span>
                       </div>
                     );
-                  })
-                ) : (
-                  <p style={styles.rule}>Nenhuma próxima missão encontrada nas provas cadastradas.</p>
-                )}
+                  })}
+                </div>
+              ) : (
+                <p className="ui-card ui-card--pad ui-muted">
+                  Nenhuma capital pendente tem prova cadastrada. Cadastre em Provas para ela aparecer aqui.
+                </p>
+              )}
+            </section>
+
+            {/* ── Regiões ── */}
+            <section className="ui-section" aria-label="Progresso por região">
+              <div className="ui-section__head">
+                <h2 className="ui-h2">Por região</h2>
               </div>
-            </div>
+              <div className="ui-card ui-list">
+                {regions.map((region) => {
+                  const regionCapitals = challenge.filter((capital) => capital.region === region);
+                  const regionCompleted = regionCapitals.filter((capital) => capital.status === "completed");
+                  const regionProgress = regionCapitals.length
+                    ? Math.round((regionCompleted.length / regionCapitals.length) * 100)
+                    : 0;
+                  return (
+                    <div key={region} className="ui-row" style={{ minHeight: 56 }}>
+                      <span className="ui-row__main" style={{ flex: 1, gap: 6 }}>
+                        <span className="ui-row__title">{region}</span>
+                        <span className="tenis-wear" role="img" aria-label={`${regionProgress}% concluído`}>
+                          <span className="tenis-wear__fill" style={{ width: `${regionProgress}%`, background: "var(--ui-accent)" }} />
+                        </span>
+                      </span>
+                      <span className="ui-row__value">{regionCompleted.length} de {regionCapitals.length}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          </div>
+
+          <div className="hoje-col">
+            {/* ── Mapa ── */}
+            <section aria-label="Mapa das capitais" style={{ minWidth: 0 }}>
+              <CapitalsBrazilMap items={mapItems} />
+            </section>
           </div>
         </div>
-      </section>
 
-      <main className="capitals-content" style={styles.content}>
-        <section style={{ marginTop: "2rem" }}>
-          <CapitalsBrazilMap items={mapItems} />
-        </section>
-
-        <section style={{ marginTop: "2rem" }}>
+        {/* ── Medalhas ── */}
+        <section className="ui-section" style={{ marginTop: 12 }} aria-label="Medalhas">
           <CapitalMedalGrid items={challenge} />
         </section>
 
-        {rankedCompleted.length > 0 && (
-          <section className="ba-card" style={{ ...styles.paddedCard, marginTop: "2rem" }}>
-            <p className="ba-eyebrow">Performance</p>
-            <h2 style={styles.sectionTitle}>Ranking das capitais</h2>
-            <p className="ba-muted" style={{ marginTop: ".4rem", marginBottom: "1.25rem" }}>
-              Melhor resultado em cada capital, do mais rápido ao mais lento.
-            </p>
-
-            <div className="capitals-table-wrap">
-              <table className="dark-table" style={{ width: "100%" }}>
-                <thead>
-                  <tr>
-                    <th style={{ width: 36 }}>#</th>
-                    <th>Capital</th>
-                    <th>Prova</th>
-                    <th>Tempo</th>
-                    <th>Pace</th>
-                    <th>FC média</th>
-                    <th style={{ textAlign: "right" }}>Data</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rankedCompleted.map((capital, idx) => {
-                    const act = capital.bestActivity!;
-                    const isFastest = idx === 0;
-                    const isSlowest = capital.city === slowest?.city;
-                    return (
-                      <tr key={capital.city}>
-                        <td>
-                          <strong style={{ color: isFastest ? "var(--accent)" : "rgba(255,255,255,0.35)", fontWeight: 800 }}>
-                            {idx + 1}
-                          </strong>
-                        </td>
-                        <td>
-                          <strong style={{ color: "#fff", fontWeight: 800 }}>
-                            {capital.city}{" "}
-                            <span style={{ color: "rgba(255,255,255,0.38)" }}>{capital.state}</span>
-                          </strong>
-                          {capital.otherHalfMarathons.length > 0 && (
-                            <span className="badge badge--muted" style={{ marginLeft: 6 }}>
-                              +{capital.otherHalfMarathons.length}
-                            </span>
-                          )}
-                        </td>
-                        <td style={{ color: "rgba(255,255,255,0.55)", fontSize: 13 }}>
-                          {cleanActivityName(act.name)}
-                        </td>
-                        <td>
-                          <strong style={{ color: isFastest ? "var(--accent)" : isSlowest ? "rgba(239,68,68,0.85)" : "#fff", fontWeight: 800 }}>
-                            {formatTime(act.moving_time)}
-                          </strong>
-                        </td>
-                        <td>{formatPace(act.distance, act.moving_time)}</td>
-                        <td>{act.average_heartrate ? `${act.average_heartrate.toFixed(0)} bpm` : "—"}</td>
-                        <td style={{ textAlign: "right", color: "rgba(255,255,255,0.45)", fontSize: 13 }}>
-                          {formatDateBR(act.start_date_local)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+        {/* ── Ranking ── */}
+        {rankedCompleted.length > 0 ? (
+          <section className="ui-section" style={{ marginTop: 12 }} aria-label="Ranking das capitais">
+            <div className="ui-section__head">
+              <h2 className="ui-h2">Ranking por tempo</h2>
+              <span className="ui-muted">melhor meia de cada capital</span>
             </div>
-
-            <div className="capitals-mobile-list">
+            <div className="ui-card ui-list">
               {rankedCompleted.map((capital, idx) => {
                 const act = capital.bestActivity!;
-                const isFastest = idx === 0;
-                const isSlowest = capital.city === slowest?.city;
-
                 return (
-                  <article key={capital.city} className="capitals-mobile-card" style={getMobileCardToneStyle("completed")}>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: "0.75rem",
-                        alignItems: "flex-start",
-                      }}
-                    >
-                      <div style={{ minWidth: 0 }}>
-                        <p className="ba-eyebrow" style={{ fontSize: 10 }}>
-                          #{idx + 1}
-                        </p>
-                        <h3
-                          style={{
-                            marginTop: 6,
-                            color: "#fff",
-                            fontSize: 18,
-                            fontWeight: 900,
-                            lineHeight: 1.08,
-                          }}
-                        >
-                          {capital.city}{" "}
-                          <span style={{ color: "rgba(255,255,255,0.38)" }}>
-                            {capital.state}
-                          </span>
-                        </h3>
-                      </div>
-
-                      {capital.otherHalfMarathons.length > 0 && (
-                        <span className="badge badge--muted">
-                          +{capital.otherHalfMarathons.length}
-                        </span>
-                      )}
-                    </div>
-
-                    <p
-                      className="ba-muted"
-                      title={cleanActivityName(act.name)}
-                      style={{
-                        marginTop: 10,
-                        fontSize: 12,
-                        lineHeight: 1.45,
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {cleanActivityName(act.name)}
-                    </p>
-
-                    <div className="capitals-mobile-metrics">
-                      <MetricBox
-                        label="Tempo"
-                        value={formatTime(act.moving_time)}
-                        tone={isFastest ? "accent" : isSlowest ? "red" : undefined}
-                      />
-                      <MetricBox label="Pace" value={formatPace(act.distance, act.moving_time)} />
-                      <MetricBox
-                        label="FC média"
-                        value={act.average_heartrate ? `${act.average_heartrate.toFixed(0)} bpm` : "—"}
-                      />
-                      <MetricBox label="Data" value={formatDateBR(act.start_date_local)} />
-                    </div>
-                  </article>
+                  <a
+                    key={capital.city}
+                    href={`https://www.strava.com/activities/${act.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ui-row ui-row--date"
+                  >
+                    <span className="ui-date">
+                      <span className="ui-date__day" style={idx === 0 ? { color: "var(--ui-accent)" } : undefined}>{idx + 1}º</span>
+                    </span>
+                    <span className="ui-row__main">
+                      <span className="ui-row__title">
+                        {capital.city} <span className="ui-muted">{capital.state}</span>
+                        {capital.otherHalfMarathons.length > 0 ? (
+                          <span className="ui-muted" style={{ fontSize: 12 }}> · +{capital.otherHalfMarathons.length} {capital.otherHalfMarathons.length === 1 ? "meia" : "meias"}</span>
+                        ) : null}
+                      </span>
+                      <span className="ui-muted" style={{ fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {[cleanActivityName(act.name), formatDateBR(act.start_date_local), act.average_heartrate ? `${act.average_heartrate.toFixed(0)} bpm` : null].filter(Boolean).join(" · ")}
+                      </span>
+                    </span>
+                    <span className="ui-row__side">
+                      <span className={`ui-row__value${idx === 0 ? " ui-row__value--accent" : ""}`}>{formatTime(act.moving_time)}</span>
+                      <span className="ui-muted">{formatPace(act.distance, act.moving_time)}</span>
+                    </span>
+                  </a>
                 );
               })}
             </div>
           </section>
-        )}
+        ) : null}
 
-        <section className="ba-card" style={{ ...styles.paddedCard, marginTop: "2rem" }}>
-          <p className="ba-eyebrow">Mapa mental do projeto</p>
-          <h2 style={styles.sectionTitle}>As 27 capitais</h2>
-
-          <div className="capitals-table-wrap">
-            <table className="dark-table" style={{ width: "100%" }}>
-              <thead>
-                <tr>
-                  <th>Capital</th>
-                  <th>Principais meias</th>
-                  <th>Região</th>
-                  <th>Tempo</th>
-                  <th>Pace</th>
-                  <th>Distância</th>
-                  <th>Data</th>
-                  <th style={{ textAlign: "right" }}>Status</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {capitalRows.map((capital) => {
-                  const activity = capital.bestActivity;
-                  const managedRace = upcomingRaceByState.get(capital.state);
-                  const raceLabel = getRaceLabel(capital, managedRace);
-                  const cellToneStyle = getTableCellToneStyle(capital.status);
-
-                  return (
-                    <tr key={capital.city}>
-                      <td style={cellToneStyle}>
-                        <strong style={{ color: "#fff", fontWeight: 800 }}>
-                          {capital.city}{" "}
-                          <span style={{ color: "rgba(255,255,255,0.38)" }}>
-                            {capital.state}
-                          </span>
-                        </strong>
-                        {capital.otherHalfMarathons.length > 0 && (
-                          <span className="badge badge--muted" style={{ marginLeft: 6 }}>
-                            +{capital.otherHalfMarathons.length}
-                          </span>
-                        )}
-                      </td>
-                      <td title={raceLabel} style={cellToneStyle}>
-                        <span
-                          style={{
-                            display: "block",
-                            maxWidth: 440,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {raceLabel}
-                        </span>
-                      </td>
-                      <td style={cellToneStyle}>{capital.region}</td>
-                      <td style={cellToneStyle}>
-                        <strong style={{ color: "#fff", fontWeight: 800 }}>
-                          {activity ? formatTime(activity.moving_time) : "—"}
-                        </strong>
-                      </td>
-                      <td style={cellToneStyle}>{activity ? formatPace(activity.distance, activity.moving_time) : "—"}</td>
-                      <td style={cellToneStyle}>{activity ? formatDistance(activity.distance) : "—"}</td>
-                      <td style={cellToneStyle}>{getDateLabel(capital, managedRace)}</td>
-                      <td
-                        style={{
-                          ...cellToneStyle,
-                          textAlign: "right",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        <span className="capitals-status-pill" style={getStatusPillStyle(capital.status)}>
-                          {getStatusLabel(capital.status)}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="capitals-mobile-list">
+        {/* ── Todas as capitais ── */}
+        <details className="ui-card ui-details" style={{ marginTop: 24 }}>
+          <summary>
+            Todas as 27 capitais, em ordem alfabética
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </summary>
+          <div className="ui-list" style={{ borderTop: "1px solid var(--ui-border)" }}>
             {capitalRows.map((capital) => {
               const activity = capital.bestActivity;
               const managedRace = upcomingRaceByState.get(capital.state);
-              const raceLabel = getRaceLabel(capital, managedRace);
-
+              const meta = statusMeta[capital.status];
               return (
-                <article
-                  key={capital.city}
-                  className="capitals-mobile-card"
-                  style={getMobileCardToneStyle(capital.status)}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      gap: "0.75rem",
-                      alignItems: "flex-start",
-                    }}
-                  >
-                    <div style={{ minWidth: 0 }}>
-                      <h3
-                        style={{
-                          color: "#fff",
-                          fontSize: 17,
-                          fontWeight: 900,
-                          lineHeight: 1.08,
-                        }}
-                      >
-                        {capital.city}{" "}
-                        <span style={{ color: "rgba(255,255,255,0.38)" }}>
-                          {capital.state}
-                        </span>
-                      </h3>
-
-                      <p className="ba-muted" style={{ marginTop: 4, fontSize: 12 }}>
-                        {capital.region}
-                      </p>
-                    </div>
-
-                    <span className="capitals-status-pill" style={getStatusPillStyle(capital.status)}>
-                      {getStatusLabel(capital.status)}
+                <div key={capital.city} className="ui-row" style={{ alignItems: "flex-start", paddingTop: 12, paddingBottom: 12 }}>
+                  <span className="ui-row__main">
+                    <span className="ui-row__title">
+                      {capital.city} <span className="ui-muted">{capital.state} · {capital.region}</span>
                     </span>
-                  </div>
-
-                  <p
-                    className="ba-muted"
-                    title={raceLabel}
-                    style={{
-                      marginTop: 10,
-                      fontSize: 12,
-                      lineHeight: 1.45,
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {raceLabel}
-                  </p>
-
-                  <div className="capitals-mobile-metrics">
-                    <MetricBox label="Data" value={getDateLabel(capital, managedRace)} />
-                    <MetricBox label="Tempo" value={activity ? formatTime(activity.moving_time) : "—"} />
-                    <MetricBox
-                      label="Pace"
-                      value={activity ? formatPace(activity.distance, activity.moving_time) : "—"}
-                    />
-                    <MetricBox
-                      label="Distância"
-                      value={activity ? formatDistance(activity.distance) : "—"}
-                    />
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="ba-card" style={{ ...styles.paddedCard, marginTop: "2rem" }}>
-          <p className="ba-eyebrow">Progresso por região</p>
-
-          <div style={styles.regionGrid}>
-            {regions.map((region) => {
-              const regionCapitals = challenge.filter((capital) => capital.region === region);
-              const regionCompleted = regionCapitals.filter(
-                (capital) => capital.status === "completed",
-              );
-              const regionProgress = Math.round(
-                (regionCompleted.length / regionCapitals.length) * 100,
-              );
-
-              return (
-                <div key={region} style={styles.capitalMiniCard}>
-                  <p className="ba-muted" style={{ fontSize: 13 }}>
-                    {region}
-                  </p>
-
-                  <p className="ba-value" style={{ fontSize: 30, marginTop: 6 }}>
-                    {regionCompleted.length}/{regionCapitals.length}
-                  </p>
-
-                  <div className="ba-progress" style={{ marginTop: 12 }}>
-                    <div className="ba-progress-fill" style={{ width: `${regionProgress}%` }} />
-                  </div>
+                    <span className="ui-muted" style={{ fontSize: 12, whiteSpace: "normal" }}>
+                      {getRaceLabel(capital, managedRace)}
+                    </span>
+                    <span className="ui-muted" style={{ fontSize: 12 }}>
+                      {activity
+                        ? `${getDateLabel(capital, managedRace)} · ${formatDistance(activity.distance)} · ${formatPace(activity.distance, activity.moving_time)}`
+                        : getDateLabel(capital, managedRace)}
+                    </span>
+                  </span>
+                  <span className="ui-row__side">
+                    <span className="ui-row__value" style={activity ? undefined : { color: "var(--ui-muted)", fontWeight: 400 }}>
+                      {activity ? formatTime(activity.moving_time) : "—"}
+                    </span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: meta.color, whiteSpace: "nowrap" }}>{meta.label}</span>
+                  </span>
                 </div>
               );
             })}
           </div>
-        </section>
+        </details>
 
-        <section className="ba-card" style={{ ...styles.paddedCard, marginTop: "2rem" }}>
-          <p className="ba-eyebrow">Regras do desafio</p>
-
-          <div style={{ display: "grid", gap: 10, marginTop: "1rem" }}>
-            <p style={styles.rule}>
-              A capital só entra como concluída se houver uma corrida de meia maratona no
-              Strava próxima à cidade.
-            </p>
-            <p style={styles.rule}>
-              Se houver mais de uma meia na mesma capital, a página exibe automaticamente
-              a mais rápida.
-            </p>
-            <p style={styles.rule}>
-              Na tabela, capitais pendentes mostram apenas o mês das principais meias
-              mapeadas; a próxima missão mostra a data confirmada.
-            </p>
+        <details className="ui-card ui-details" style={{ marginTop: 12 }}>
+          <summary>
+            Regras do desafio
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </summary>
+          <div className="ui-details__body">
+            <p>A capital só entra como concluída se houver uma meia maratona no Strava perto da cidade.</p>
+            <p>Se houver mais de uma meia na mesma capital, vale a mais rápida.</p>
+            <p>Capitais pendentes mostram o mês das principais meias mapeadas; as próximas mostram a data da prova cadastrada.</p>
           </div>
-        </section>
+        </details>
       </main>
     </div>
   );
