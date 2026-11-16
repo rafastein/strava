@@ -542,11 +542,44 @@
 }
 
 .hoje-day__track {
+  position: relative;
   display: flex;
   align-items: flex-end;
   width: 100%;
   max-width: 64px;
-  height: 56px;
+  height: 72px;
+}
+
+/* Planejado: contorno atrás; o feito preenche por cima, na mesma escala. */
+.hoje-day__plan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1.5px solid #4a5059;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.hoje-day__plan--race {
+  border-style: dashed;
+  border-color: #6b727c;
+}
+
+.hoje-day__plan + .hoje-day__bar {
+  position: relative;
+}
+
+.hoje-legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--ui-accent);
+}
+
+.hoje-legend-swatch--plan {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1.5px solid #4a5059;
 }
 
 .hoje-day__bar {

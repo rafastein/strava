@@ -24,7 +24,11 @@ import {
   getPrKeyForRaceDistance,
   type RacePrKey,
 } from "./lib/home-week";
-import { getAllStructuredPlannedWorkouts, getStructuredPlannedWorkout } from "./lib/planned-workout";
+import {
+  getAllStructuredPlannedWorkouts,
+  getStructuredPlannedWorkout,
+  getStructuredWorkoutPlannedDistanceKm,
+} from "./lib/planned-workout";
 import {
   buildStructuredWeeklyComparison,
   getStructuredCurrentWeekSummary,
@@ -118,17 +122,33 @@ export default async function Home() {
   const pr = prKey ? athleteProfile?.prs[prKey] ?? null : null;
 
   // ── Semana ──
-  const weekDays = buildWeekDays(activities, todayKey, raceCalendarData.races.map((race) => race.dateKey));
-  const weekKm = weekDays.reduce((sum, day) => sum + day.km, 0);
-  const weekRuns = weekDays.reduce((sum, day) => sum + day.runs, 0);
-  const weekMaxKm = Math.max(...weekDays.map((day) => day.km), 1);
-
   // Planilha desatualizada devolve a última semana que tem; ela não vale como plano desta semana.
   const lastOrCurrentSisrunWeek = getCurrentWeek(sisrunData) as SisrunWeek | null;
   const sisrunWeek = isSisrunWeekCurrent(lastOrCurrentSisrunWeek) ? lastOrCurrentSisrunWeek : null;
   const structuredWeek = getStructuredCurrentWeekSummary(allStructuredPlannedWorkouts);
   const hasStructuredWeek = structuredWeek.workoutCount > 0;
   const plannedWeekKm = hasStructuredWeek ? structuredWeek.plannedKm : sisrunWeek?.totalPlannedKm ?? 0;
+
+  // Planejado por dia, da mesma fonte do total da semana: COROS quando há treino cadastrado, senão SisRUN.
+  const plannedKmByDate = new Map<string, number>();
+  if (hasStructuredWeek) {
+    for (const result of allStructuredPlannedWorkouts) {
+      const km = getStructuredWorkoutPlannedDistanceKm(result.data);
+      if (typeof km === "number" && km > 0) plannedKmByDate.set(result.date, (plannedKmByDate.get(result.date) ?? 0) + km);
+    }
+  } else if (sisrunWeek) {
+    for (const row of sisrunData?.rows ?? []) {
+      const [day, month, year] = row.date.split("/");
+      if (row.plannedDistanceKm > 0 && year) plannedKmByDate.set(`${year}-${month}-${day}`, row.plannedDistanceKm);
+    }
+  }
+
+  const weekDays = buildWeekDays(activities, todayKey, raceCalendarData.races.map((race) => race.dateKey), plannedKmByDate);
+  const weekKm = weekDays.reduce((sum, day) => sum + day.km, 0);
+  const weekRuns = weekDays.reduce((sum, day) => sum + day.runs, 0);
+  // Mesma escala para feito e planejado, para as barras serem comparáveis.
+  const weekMaxKm = Math.max(...weekDays.map((day) => Math.max(day.km, day.plannedKm)), 1);
+  const weekHasPlanByDay = weekDays.some((day) => day.plannedKm > 0);
   const planSource = hasStructuredWeek ? "COROS" : "SisRUN";
   const plannedLongRunKm = hasStructuredWeek ? structuredWeek.longRunPlannedKm : sisrunWeek?.longRunPlannedKm ?? 0;
   const longestRunKm = getCurrentWeekLongestRunKm(activities);
@@ -256,26 +276,51 @@ export default async function Home() {
               <ul className="hoje-week__days" style={{ listStyle: "none" }}>
                 {weekDays.map((day) => {
                   const upcomingRace = day.isRaceDay && day.km === 0 && day.dateKey >= todayKey;
+                  const doneHeight = day.km > 0 ? Math.max((day.km / weekMaxKm) * 100, 6) : 0;
+                  const plannedHeight = day.plannedKm > 0 ? Math.max((day.plannedKm / weekMaxKm) * 100, 6) : 0;
+                  const valueLabel = day.km > 0
+                    ? formatNumber(day.km, 1)
+                    : day.plannedKm > 0
+                      ? formatNumber(day.plannedKm, day.plannedKm % 1 === 0 ? 0 : 1)
+                      : upcomingRace
+                        ? "prova"
+                        : "";
+                  const srText = [
+                    day.plannedKm > 0 ? `planejado ${formatKm(day.plannedKm)}` : null,
+                    day.km > 0 ? `feito ${formatKm(day.km)}` : day.dateKey <= todayKey && day.plannedKm > 0 ? "nada feito" : null,
+                    upcomingRace ? "dia de prova" : null,
+                  ].filter(Boolean).join(", ");
+
                   return (
                     <li key={day.dateKey} className="hoje-day">
-                      <span className={`hoje-day__value${day.km > 0 ? "" : " hoje-day__value--muted"}`}>
-                        {day.km > 0 ? formatNumber(day.km, 1) : upcomingRace ? "prova" : ""}
+                      <span className={`hoje-day__value${day.km > 0 ? "" : " hoje-day__value--muted"}`} aria-hidden="true">
+                        {valueLabel}
                       </span>
-                      <span className="hoje-day__track">
-                        {day.km > 0 ? (
-                          <span className="hoje-day__bar" style={{ height: `${Math.max((day.km / weekMaxKm) * 100, 8)}%` }} />
-                        ) : (
+                      <span className="hoje-day__track" aria-hidden="true">
+                        {plannedHeight > 0 ? (
+                          <span className={`hoje-day__plan${upcomingRace ? " hoje-day__plan--race" : ""}`} style={{ height: `${plannedHeight}%` }} />
+                        ) : null}
+                        {doneHeight > 0 ? (
+                          <span className="hoje-day__bar" style={{ height: `${doneHeight}%` }} />
+                        ) : plannedHeight === 0 ? (
                           <span className={`hoje-day__bar ${upcomingRace ? "hoje-day__bar--race" : "hoje-day__bar--empty"}`} />
-                        )}
+                        ) : null}
                       </span>
                       <span className={`hoje-day__label${day.isToday ? " hoje-day__label--today" : ""}`}>
                         {day.weekday}
-                        {day.isToday ? <span className="sr-only"> (hoje)</span> : null}
+                        <span className="sr-only">{day.isToday ? " (hoje)" : ""}{srText ? `: ${srText}` : ""}</span>
                       </span>
                     </li>
                   );
                 })}
               </ul>
+
+              {weekHasPlanByDay ? (
+                <div className="carga-legend" style={{ fontSize: 12 }} aria-hidden="true">
+                  <span className="carga-legend__item"><span className="hoje-legend-swatch" />feito</span>
+                  <span className="carga-legend__item"><span className="hoje-legend-swatch hoje-legend-swatch--plan" />planejado</span>
+                </div>
+              ) : null}
 
               {plannedWeekKm > 0 ? (
                 <div className="ui-stack" style={{ gap: 8 }}>

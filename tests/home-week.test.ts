@@ -49,3 +49,12 @@ test("contagem regressiva e recorde por distância", () => {
   assert.equal(getPrKeyForRaceDistance(42.195), "marathon");
   assert.equal(getPrKeyForRaceDistance(15), null);
 });
+
+test("dias da semana trazem o planejado de cada dia", () => {
+  const planned = new Map([["2026-11-17", 10], ["2026-11-19", 8.5], ["2026-11-30", 20]]);
+  const days = buildWeekDays([run("2026-11-17", 9.6)], "2026-11-18", [], planned);
+  assert.deepEqual(days.map((day) => day.plannedKm), [0, 10, 0, 8.5, 0, 0, 0]);
+  assert.equal(days[1].km, 9.6);
+  // Sem mapa de plano, tudo zero.
+  assert.ok(buildWeekDays([], "2026-11-18").every((day) => day.plannedKm === 0));
+});

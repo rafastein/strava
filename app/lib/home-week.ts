@@ -15,6 +15,8 @@ export type WeekDay = {
   /** seg, ter, qua, qui, sex, sáb, dom */
   weekday: string;
   km: number;
+  /** Km planejados para o dia (COROS ou SisRUN); 0 quando não há plano. */
+  plannedKm: number;
   runs: number;
   isToday: boolean;
   isRaceDay: boolean;
@@ -56,6 +58,7 @@ export function buildWeekDays(
   activities: WeekActivity[],
   todayKey: string,
   raceDateKeys: string[] = [],
+  plannedKmByDate: Map<string, number> = new Map(),
 ): WeekDay[] {
   const raceDays = new Set(raceDateKeys);
   const totals = new Map<string, { km: number; runs: number }>();
@@ -74,6 +77,7 @@ export function buildWeekDays(
     dateKey,
     weekday: WEEKDAY_LABELS[index],
     km: totals.get(dateKey)?.km ?? 0,
+    plannedKm: plannedKmByDate.get(dateKey) ?? 0,
     runs: totals.get(dateKey)?.runs ?? 0,
     isToday: dateKey === todayKey,
     isRaceDay: raceDays.has(dateKey),
