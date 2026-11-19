@@ -3,10 +3,12 @@ export const revalidate = 0;
 
 import Link from "next/link";
 import Navbar from "../components/Navbar";
+import CorosConnectionCard from "./CorosConnectionCard";
 import CorosImportScheduleForm from "./CorosImportScheduleForm";
+import { getCorosConnectionInfo } from "../lib/coros-oauth";
+import { readCorosSyncStatus } from "../lib/coros-sync";
 import CorosSavedWorkoutsList from "./CorosSavedWorkoutsList";
 import {
-  buildSisrunFallbackWorkoutSummary,
   formatPlannedWorkoutDateWithWeekdayLabel,
   getAllStructuredPlannedWorkouts,
   getStructuredPlannedWorkout,
@@ -14,7 +16,6 @@ import {
   getTodayIsoDate,
   type StructuredPlannedWorkout,
 } from "../lib/planned-workout";
-import { getSisrunDataWithSource } from "../lib/sisrun-utils";
 import { getStravaActivities, getStravaAthlete, STRAVA_2024_START_EPOCH, isRunActivity, type StravaActivitySummary, type StravaGear } from "../lib/strava-client";
 import { buildGearRecommendationSummaries } from "../lib/equipment-strava-summary";
 import {
@@ -88,18 +89,26 @@ const SAMPLE_JSON = `{
   ]
 }`;
 
-export default async function CorosPage() {
+type PageProps = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+function firstParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] ?? null : value ?? null;
+}
+
+export default async function CorosPage({ searchParams }: PageProps) {
   const todayIso = getTodayIsoDate();
-  const [todayWorkoutResult, nextWorkouts, sisrunResult, activities, athlete, raceCalendar] = await Promise.all([
+  const params = await searchParams;
+  const [corosConnection, corosSync] = await Promise.all([getCorosConnectionInfo(), readCorosSyncStatus()]);
+  const [todayWorkoutResult, nextWorkouts, activities, athlete, raceCalendar] = await Promise.all([
     getStructuredPlannedWorkout(todayIso),
     getAllStructuredPlannedWorkouts(),
-    getSisrunDataWithSource(),
     getStravaActivities({ after: STRAVA_2024_START_EPOCH, maxPages: 20 }),
     getStravaAthlete(),
     getRaceCalendarData(),
   ]);
 
-  const sisrunSummary = buildSisrunFallbackWorkoutSummary(sisrunResult.data);
   const savedWorkouts = nextWorkouts.filter(
     (result): result is typeof result & { data: StructuredPlannedWorkout } => Boolean(result.data),
   );
@@ -176,7 +185,7 @@ export default async function CorosPage() {
               <>
                 <h2 className="hoje-race__title" style={{ fontSize: 22 }}>Nenhum treino estruturado para hoje</h2>
                 <p className="ui-muted" style={{ fontSize: 14 }}>
-                  Sem treino do COROS, a recomendação de tênis usa a planilha do SisRUN.
+                  Sem treino do COROS para hoje, não há recomendação de tênis pelo tipo de treino.
                 </p>
               </>
             )}
@@ -231,12 +240,24 @@ export default async function CorosPage() {
             <Link href="/equipamentos" className="ui-btn ui-btn--ghost">Ver recomendação de tênis</Link>
           </section>
 
+          {/* ── Conexão ── */}
+          <div style={{ marginTop: 12 }}>
+            <CorosConnectionCard
+              connected={corosConnection.connected}
+              connectedAt={corosConnection.connectedAt}
+              lastSync={corosSync}
+              redisConfigured={todayWorkoutResult.redisConfigured}
+              returnStatus={firstParam(params.coros)}
+              returnDetail={firstParam(params.detalhe)}
+            />
+          </div>
+
           {/* ── Manutenção, recolhida ── */}
-          <details className="ui-card ui-details" style={{ marginTop: 12 }}>
-            <summary>Importar agenda do COROS<Chevron /></summary>
+          <details className="ui-card ui-details">
+            <summary>Importar agenda manualmente<Chevron /></summary>
             <div className="ui-details__body">
               <p>
-                Depois de mudar algo no COROS, consulte a agenda pelo MCP, cole o texto aqui e importe. Teste primeiro;
+                Plano B, se a conexão falhar: consulte a agenda pelo MCP, cole o texto aqui e importe. Teste primeiro;
                 depois desmarque para gravar. A senha administrativa é pedida na hora de enviar.
               </p>
               <CorosImportScheduleForm />
@@ -249,23 +270,18 @@ export default async function CorosPage() {
               <dl className="ui-dl">
                 <div>
                   <dt>Treino de hoje vem de</dt>
-                  <dd style={{ fontSize: 15 }}>{todayWorkout ? getStructuredWorkoutSourceLabel(todayWorkout.source) : "SisRUN (reserva)"}</dd>
+                  <dd style={{ fontSize: 15 }}>{todayWorkout ? getStructuredWorkoutSourceLabel(todayWorkout.source) : "Nenhum treino cadastrado"}</dd>
                 </div>
                 <div>
                   <dt>Upstash</dt>
                   <dd style={{ fontSize: 15 }}>{todayWorkoutResult.redisConfigured ? "Configurado" : "Não configurado"}</dd>
                 </div>
-                <div>
-                  <dt>Planilha SisRUN</dt>
-                  <dd style={{ fontSize: 15 }}>{sisrunSummary.weeks} semanas · {sisrunSummary.workouts} treinos</dd>
-                </div>
               </dl>
               <p className="ui-muted">
-                Chave de hoje: {todayWorkoutResult.key}. {todayWorkoutResult.sourceLabel}. SisRUN: {sisrunResult.sourceLabel}.
+                Chave de hoje: {todayWorkoutResult.key}. {todayWorkoutResult.sourceLabel}.
               </p>
               <p>
-                <strong>Prioridade dos dados:</strong> treino estruturado do COROS no Upstash; depois o SisRUN detalhado;
-                depois o SisRUN resumido; por fim, descanso ou treino indefinido.
+                <strong>Fonte dos dados:</strong> treino estruturado do COROS no Upstash; sem ele, o dia fica sem treino.
               </p>
             </div>
           </details>

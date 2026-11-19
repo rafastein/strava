@@ -1,4 +1,16 @@
-# Importação COROS → Upstash
+# COROS → Upstash
+
+## Automático (padrão)
+
+1. Em `/coros`, clique em **Conectar COROS** (pede a senha administrativa) e autorize na conta COROS.
+2. A agenda passa a entrar sozinha: cron diário, abertura da home (se a última tiver mais de 3 h) e o botão **Sincronizar agora**.
+3. O cartão "Conexão com o COROS" mostra a última sincronização e o erro, se houver.
+
+Na Vercel, defina `CRON_SECRET` (valor aleatório) para o cron diário funcionar.
+
+## Manual (plano B)
+
+O fluxo abaixo continua valendo se a conexão falhar.
 
 A página `/coros` e a página `/equipamentos` leem treinos estruturados das chaves:
 
@@ -6,7 +18,7 @@ A página `/coros` e a página `/equipamentos` leem treinos estruturados das cha
 planned-workout:YYYY-MM-DD
 ```
 
-O MCP do COROS ainda não roda dentro da Vercel. Por isso o fluxo seguro é:
+Sem a conexão automática, o caminho é:
 
 ```txt
 COROS MCP → agenda normalizada → /api/coros/import-schedule → Upstash → /coros e /equipamentos

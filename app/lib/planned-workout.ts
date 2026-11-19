@@ -1,5 +1,4 @@
 import { getRedisClient } from "./redis-client";
-import type { SisrunParsedData } from "./sisrun-utils";
 
 export const PLANNED_WORKOUT_KEY_PREFIX = "planned-workout:";
 
@@ -436,16 +435,6 @@ export function getStructuredWorkoutPlannedDistanceKm(workout: StructuredPlanned
 export function isStructuredRunningWorkout(workout: StructuredPlannedWorkout | null | undefined) {
   if (!workout) return false;
   return workout.type !== "descanso" && workout.type !== "forca" && workout.type !== "indefinido";
-}
-
-export function buildSisrunFallbackWorkoutSummary(data: SisrunParsedData | null) {
-  const weeks = data?.weeks ?? [];
-  const rows = data?.rows ?? [];
-  return {
-    weeks: weeks.length,
-    rows: rows.length,
-    workouts: weeks.reduce((sum, week) => sum + (week.workoutCount ?? 0), 0),
-  };
 }
 
 export function getStructuredWorkoutSourceLabel(source: PlannedWorkoutSource) {

@@ -17,7 +17,7 @@ type WeeklyItem = {
   adherencePct?: number | null;
   adherence?: number | null;
 
-  // Vem do buildWeeklyComparison(), em app/lib/sisrun-utils.ts
+  // Vem do buildStructuredWeeklyComparison(), em app/lib/planned-weekly-comparison.ts
   isCurrentWeek?: boolean;
 
   // Mantidos por compatibilidade com usos antigos.
@@ -80,8 +80,8 @@ function isCurrentWeekLabel(label: string) {
 export default function WeeklyComparisonChart({
   items,
   title = "Planejado x executado por semana",
-  subtitle = "Volume planejado no SisRUN comparado com o executado no Strava.",
-  orderLabel = "Da semana mais recente para a mais antiga",
+  subtitle = "Volume planejado no COROS comparado com o executado no Strava.",
+  orderLabel = "Da semana atual para as próximas",
 }: Props) {
   return (
     <section className="ui-section" aria-label={title}>

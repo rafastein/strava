@@ -77,7 +77,7 @@ const TERMS = [
     group: "Planejamento",
     short: "Planejado x feito",
     definition:
-      "Comparação entre o que estava previsto no SisRUN e o que foi executado no Strava. Pode ser medida por volume, longão e tipo de estímulo.",
+      "Comparação entre o que estava previsto no COROS e o que foi executado no Strava. Pode ser medida por volume, longão e tipo de estímulo.",
   },
   {
     term: "Longão",
@@ -115,8 +115,8 @@ const GROUP_DESCRIPTIONS: Record<string, string> = {
   Projeções: "Modelos usados para estimar paces e cenários de prova.",
   Prova: "Conceitos ligados à execução da competição.",
   Métricas: "Números usados para ler evolução e custo do treino.",
-  Planejamento: "Comparação entre o plano do SisRUN e a execução real.",
-  "Tipos de treino": "Estímulos que aparecem na planilha e no histórico.",
+  Planejamento: "Comparação entre o plano do COROS e a execução real.",
+  "Tipos de treino": "Estímulos que aparecem no plano e no histórico.",
 };
 
 export const metadata = { title: "Glossário · Rafael Cabral" };

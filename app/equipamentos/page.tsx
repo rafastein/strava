@@ -26,14 +26,13 @@ import { getBRDateKey } from "../lib/date-utils";
 import { formatDayMonth, formatKm, formatNumber } from "../lib/format";
 import { sortEquipmentByName } from "../lib/equipment-sort";
 import { formatLongRunPace } from "../lib/strava-long-runs";
-import { getSisrunDataWithSource } from "../lib/sisrun-utils";
 import { getStructuredPlannedWorkout } from "../lib/planned-workout";
 import {
   EQUIPMENT_RECOMMENDATION_TYPES,
   KNOWN_GEAR_NAME_FALLBACKS,
   getEquipmentWorkoutFromStructuredWorkout,
   getShoeMaxKm,
-  getTodayEquipmentWorkout,
+  getEmptyEquipmentWorkout,
   getWorkoutLabel,
   inferBrand,
   pickRecommendedShoeForWorkout,
@@ -165,17 +164,16 @@ function getRecommendationAlternatives(
 }
 
 export default async function EquipamentosPage() {
-  const [activities, athleteGear, sisrunResult, structuredWorkoutResult] = await Promise.all([
+  const [activities, athleteGear, structuredWorkoutResult] = await Promise.all([
     getActivities(),
     getAthleteGear(),
-    getSisrunDataWithSource(),
     getStructuredPlannedWorkout(),
   ]);
 
   const grouped = buildGearSummaries(activities, athleteGear);
   const todayWorkout = structuredWorkoutResult.data
     ? getEquipmentWorkoutFromStructuredWorkout(structuredWorkoutResult.data)
-    : getTodayEquipmentWorkout(sisrunResult.data);
+    : getEmptyEquipmentWorkout();
   const todayShoe = pickRecommendedShoeForWorkout(grouped, todayWorkout);
   const todayAlternatives = getRecommendationAlternatives(
     grouped,
@@ -201,7 +199,7 @@ export default async function EquipamentosPage() {
             workout={todayWorkout}
             shoe={todayShoe}
             alternatives={todayAlternatives}
-            workoutSource={structuredWorkoutResult.data ? structuredWorkoutResult.sourceLabel : sisrunResult.sourceLabel}
+            workoutSource={structuredWorkoutResult.sourceLabel}
           />
 
           {grouped.length === 0 ? (
@@ -351,7 +349,7 @@ function TodayShoeCard({
           {isRest
             ? "Nenhum tênis recomendado hoje; o rodízio descansa."
             : isUnknown
-              ? "Não há treino do COROS nem do SisRUN para hoje."
+              ? "Não há treino do COROS para hoje."
               : [planned, `fonte: ${workoutSource}`].filter(Boolean).join(" · ")}
         </p>
       </div>

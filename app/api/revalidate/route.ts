@@ -12,7 +12,6 @@ const PATHS = [
   "/27-capitais",
   "/equipamentos",
   "/carga",
-  "/sisrun",
   "/longoes",
   "/meias",
   "/corridas-brasil",

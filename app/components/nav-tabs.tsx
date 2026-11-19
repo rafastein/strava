@@ -14,7 +14,7 @@ export const NAV_TABS: NavTab[] = [
   {
     href: "/treinos",
     label: "Treinos",
-    paths: ["/treinos", "/longoes", "/treinos-qualidade", "/coros", "/sisrun"],
+    paths: ["/treinos", "/longoes", "/treinos-qualidade", "/coros"],
     icon: <path d="M3 12h4l3-7 4 14 3-7h4" />,
   },
   {

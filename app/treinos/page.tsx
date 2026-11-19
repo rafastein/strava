@@ -6,13 +6,11 @@ import {
   getCorosPlannedKmByDate,
   getHistoryStartKey,
   getPlannedKmUntil,
-  getSisrunPlannedKmByDate,
   summarizePlanHistory,
   type PlanWeek,
 } from "../lib/plan-history";
 import { getAllStructuredPlannedWorkouts } from "../lib/planned-workout";
 import { getRaceCalendarTodayKey } from "../lib/race-calendar";
-import { getSisrunData } from "../lib/sisrun-utils";
 import { getStravaActivities } from "../lib/strava-client";
 
 export const revalidate = 0;
@@ -78,7 +76,6 @@ function WeekRow({ week, todayKey, scaleKm }: { week: PlanWeek; todayKey: string
         <WeekDayBars days={week.days} todayKey={todayKey} maxKm={weekMax} compact />
         <p className="ui-muted" style={{ fontSize: 13 }}>
           {week.runs === 0 ? "Nenhuma corrida" : week.runs === 1 ? "1 corrida" : `${week.runs} corridas`}
-          {week.source ? ` · plano do ${week.source}` : ""}
           {week.isCurrent && week.plannedKm > 0
             ? ` · ${formatKm(plannedSoFar)} previstos até agora, ${formatKm(week.plannedKm)} na semana`
             : ""}
@@ -94,16 +91,14 @@ export default async function TreinosPage() {
   // Meia-noite em São Paulo (UTC-3); um dia a mais de margem não muda nada, a semana filtra pela data local.
   const after = Math.floor(Date.parse(`${startKey}T03:00:00Z`) / 1000) - 86_400;
 
-  const [activities, structured, sisrunData] = await Promise.all([
+  const [activities, structured] = await Promise.all([
     getStravaActivities({ after, maxPages: 5 }),
     getAllStructuredPlannedWorkouts(),
-    getSisrunData(),
   ]);
 
   const history = buildPlanHistory({
     activities,
     corosByDate: getCorosPlannedKmByDate(structured),
-    sisrunByDate: getSisrunPlannedKmByDate(sisrunData?.rows ?? []),
     todayKey,
     weeks: HISTORY_WEEKS,
   });
@@ -120,7 +115,6 @@ export default async function TreinosPage() {
         { href: "/longoes", label: "Longões", description: "Pace, eficiência e evolução dos treinos longos." },
         { href: "/treinos-qualidade", label: "Treinos de qualidade", description: "Intervalados, fartleks e progressivos." },
         { href: "/coros", label: "Plano COROS", description: "Treinos estruturados e calendário planejado." },
-        { href: "/sisrun", label: "SisRUN", description: "Planilha da assessoria: planejado × executado." },
       ]}
     >
       <section className="ui-section" aria-labelledby="plan-history-title" style={{ marginBottom: 12 }}>
@@ -142,7 +136,7 @@ export default async function TreinosPage() {
               <p className="ui-muted" style={{ fontSize: 14 }}>
                 {hasAnyPlan
                   ? "Ainda não há semana encerrada com plano; a semana atual aparece abaixo."
-                  : "Nenhum plano do COROS ou do SisRUN nessas semanas. Abaixo, só o volume feito."}
+                  : "Nenhum plano do COROS nessas semanas. Abaixo, só o volume feito."}
               </p>
             )}
             {hasAnyPlan ? (

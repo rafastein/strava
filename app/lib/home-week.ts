@@ -15,7 +15,7 @@ export type WeekDay = {
   /** seg, ter, qua, qui, sex, sáb, dom */
   weekday: string;
   km: number;
-  /** Km planejados para o dia (COROS ou SisRUN); 0 quando não há plano. */
+  /** Km planejados para o dia (COROS); 0 quando não há plano. */
   plannedKm: number;
   runs: number;
   isToday: boolean;

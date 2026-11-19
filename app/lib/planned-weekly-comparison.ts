@@ -5,7 +5,7 @@ import {
   isStructuredRunningWorkout,
   type StructuredPlannedWorkoutRangeResult,
 } from "./planned-workout";
-import { formatWeekLabel, getWeekStart, type WeeklyComparisonItem, type WeeklyPlannedSegment } from "./sisrun-utils";
+import { formatWeekLabel, getWeekStart, type WeeklyComparisonItem, type WeeklyPlannedSegment } from "./week-utils";
 
 function getDateFromIso(dateIso: string) {
   const match = dateIso.match(/^(\d{4})-(\d{2})-(\d{2})$/);

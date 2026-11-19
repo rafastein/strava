@@ -2,6 +2,8 @@
 export const revalidate = 0;
 
 import Link from "next/link";
+import { after } from "next/server";
+import { syncCorosIfStale } from "./lib/coros-sync";
 import Navbar from "./components/Navbar";
 import RevalidateButton from "./components/RevalidateButton";
 import TodayWorkoutCard from "./components/TodayWorkoutCard";
@@ -26,7 +28,7 @@ import {
   type RacePrKey,
 } from "./lib/home-week";
 import { getAllStructuredPlannedWorkouts, getStructuredPlannedWorkout } from "./lib/planned-workout";
-import { getCorosPlannedKmByDate, getSisrunPlannedKmByDate } from "./lib/plan-history";
+import { getCorosPlannedKmByDate } from "./lib/plan-history";
 import {
   buildStructuredWeeklyComparison,
   getStructuredCurrentWeekSummary,
@@ -37,16 +39,6 @@ import {
   getUpcomingManagedRaces,
 } from "./lib/race-calendar";
 import { getSeasonEpochRange, getYearFromDateKey } from "./lib/season";
-import {
-  buildWeeklyComparison,
-  getCurrentWeek,
-  getCurrentWeekLongestRunKm,
-  getSisrunData,
-  getTodaySisrunRow,
-  getTodayStravaKm,
-  isSisrunWeekCurrent,
-  type SisrunWeek,
-} from "./lib/sisrun-utils";
 import { getValidStravaAccessToken } from "./lib/strava-auth";
 import {
   getStravaActivities,
@@ -88,12 +80,13 @@ function getLocalDateKey(activity: StravaActivitySummary) {
 export default async function Home() {
   const accessToken = await getValidStravaAccessToken();
   const todayKey = getRaceCalendarTodayKey();
+  // Agenda do COROS em dia sem atrasar a página: roda depois da resposta, se a última tiver mais de 3 h.
+  after(() => syncCorosIfStale(todayKey));
   const seasonYear = getYearFromDateKey(todayKey) ?? new Date().getFullYear();
 
   const [
     athlete,
     activities,
-    sisrunData,
     athleteProfile,
     structuredWorkoutResult,
     allStructuredPlannedWorkouts,
@@ -102,7 +95,6 @@ export default async function Home() {
   ] = await Promise.all([
     getStravaAthlete(),
     getActivities(seasonYear),
-    getSisrunData(),
     accessToken ? getDynamicAthleteProfile(accessToken) : Promise.resolve(null),
     getStructuredPlannedWorkout(),
     getAllStructuredPlannedWorkouts(),
@@ -120,19 +112,9 @@ export default async function Home() {
   const pr = prKey ? athleteProfile?.prs[prKey] ?? null : null;
 
   // ── Semana ──
-  // Planilha desatualizada devolve a última semana que tem; ela não vale como plano desta semana.
-  const lastOrCurrentSisrunWeek = getCurrentWeek(sisrunData) as SisrunWeek | null;
-  const sisrunWeek = isSisrunWeekCurrent(lastOrCurrentSisrunWeek) ? lastOrCurrentSisrunWeek : null;
   const structuredWeek = getStructuredCurrentWeekSummary(allStructuredPlannedWorkouts);
-  const hasStructuredWeek = structuredWeek.workoutCount > 0;
-  const plannedWeekKm = hasStructuredWeek ? structuredWeek.plannedKm : sisrunWeek?.totalPlannedKm ?? 0;
-
-  // Planejado por dia, da mesma fonte do total da semana: COROS quando há treino cadastrado, senão SisRUN.
-  const plannedKmByDate = hasStructuredWeek
-    ? getCorosPlannedKmByDate(allStructuredPlannedWorkouts)
-    : sisrunWeek
-      ? getSisrunPlannedKmByDate(sisrunData?.rows ?? [])
-      : new Map<string, number>();
+  const plannedWeekKm = structuredWeek.plannedKm;
+  const plannedKmByDate = getCorosPlannedKmByDate(allStructuredPlannedWorkouts);
 
   const weekDays = buildWeekDays(activities, todayKey, raceCalendarData.races.map((race) => race.dateKey), plannedKmByDate);
   const weekKm = weekDays.reduce((sum, day) => sum + day.km, 0);
@@ -140,14 +122,16 @@ export default async function Home() {
   // Mesma escala para feito e planejado, para as barras serem comparáveis.
   const weekMaxKm = Math.max(...weekDays.map((day) => Math.max(day.km, day.plannedKm)), 1);
   const weekHasPlanByDay = weekDays.some((day) => day.plannedKm > 0);
-  const planSource = hasStructuredWeek ? "COROS" : "SisRUN";
-  const plannedLongRunKm = hasStructuredWeek ? structuredWeek.longRunPlannedKm : sisrunWeek?.longRunPlannedKm ?? 0;
-  const longestRunKm = getCurrentWeekLongestRunKm(activities);
+  const plannedLongRunKm = structuredWeek.longRunPlannedKm;
+  const weekKeys = new Set(weekDays.map((day) => day.dateKey));
+  const longestRunKm = activities
+    .filter((activity) => isRunActivity(activity) && weekKeys.has(getLocalDateKey(activity)))
+    .reduce((max, activity) => Math.max(max, activity.distance / 1000), 0);
   const adherencePct = plannedWeekKm > 0 ? Math.min((weekKm / plannedWeekKm) * 100, 100) : 0;
 
   // ── Treino de hoje ──
-  const todaySisrunRow = getTodaySisrunRow(sisrunData);
-  const hasWorkoutToday = Boolean(structuredWorkoutResult.data || todaySisrunRow);
+  const hasWorkoutToday = Boolean(structuredWorkoutResult.data);
+  const todayKm = weekDays.find((day) => day.isToday)?.km ?? 0;
 
   // ── Carga ──
   const load = loadSnapshot ? getCurrentLoad(loadSnapshot.days) : null;
@@ -175,12 +159,8 @@ export default async function Home() {
   ];
 
   // ── Planejado × executado ──
-  const structuredComparison = buildStructuredWeeklyComparison(allStructuredPlannedWorkouts, activities, 6);
-  // O plano estruturado só é a fonte quando tem algum volume planejado.
-  const hasStructuredPlan = structuredComparison.some((week) => week.plannedKm > 0);
-  const weeklyComparison = hasStructuredPlan ? structuredComparison : buildWeeklyComparison(sisrunData, activities, 6);
+  const weeklyComparison = buildStructuredWeeklyComparison(allStructuredPlannedWorkouts, activities, 6);
   const hasAnyPlan = weeklyComparison.some((week) => week.plannedKm > 0);
-  const comparisonSource = hasStructuredPlan ? "COROS" : "SisRUN";
 
   // ── Atividades recentes ──
   const recentRuns = [...runs]
@@ -273,7 +253,7 @@ export default async function Home() {
                       {formatNumber(adherencePct)}% do plano
                     </span>
                     <span className="ui-muted">
-                      {formatKm(plannedWeekKm)} planejados · {planSource}
+                      {formatKm(plannedWeekKm)} planejados · COROS
                     </span>
                   </div>
                   <div className="hoje-progress" role="img" aria-label={`${formatNumber(adherencePct)}% do volume planejado`}>
@@ -299,8 +279,7 @@ export default async function Home() {
 
             {hasWorkoutToday ? (
               <TodayWorkoutCard
-                todaySisrunRow={todaySisrunRow}
-                todayStravaKm={getTodayStravaKm(activities)}
+                todayStravaKm={todayKm}
                 structuredWorkout={structuredWorkoutResult.data}
                 structuredWorkoutSourceLabel={structuredWorkoutResult.sourceLabel}
               />
@@ -393,15 +372,15 @@ export default async function Home() {
             <WeeklyComparisonChart
               items={weeklyComparison}
               title="Planejado × executado por semana"
-              subtitle={`Volume planejado no ${comparisonSource} comparado com o executado no Strava.`}
-              orderLabel={hasStructuredPlan ? "Da semana atual para as próximas" : "Da semana mais recente para a mais antiga"}
+              subtitle="Volume planejado no COROS comparado com o executado no Strava."
+              orderLabel="Da semana atual para as próximas"
               dark
             />
           </section>
         ) : null}
       </main>
 
-      <footer className="ui-footer">Strava × SisRUN · {firstName} Cabral · {seasonYear}</footer>
+      <footer className="ui-footer">Strava × COROS · {firstName} Cabral · {seasonYear}</footer>
     </div>
   );
 }
