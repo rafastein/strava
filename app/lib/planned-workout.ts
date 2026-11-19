@@ -26,6 +26,8 @@ export type PlannedWorkoutStep = {
   intensity?: string | null;
   target?: string | null;
   kind?: "aquecimento" | "bloco" | "recuperacao" | "desaquecimento" | "outro";
+  /** Etapas de um bloco repetido ("Repetir 3x"): o bloco tem `repeat` e as etapas ficam aqui. */
+  children?: PlannedWorkoutStep[];
 };
 
 export type StructuredPlannedWorkout = {
@@ -38,6 +40,8 @@ export type StructuredPlannedWorkout = {
   estimatedTime?: string | null;
   loadTl?: number | null;
   description?: string | null;
+  /** Percurso indicado pela assessoria ("Plano", "Ligeira inclinação", "Cross"). */
+  route?: string | null;
   steps: PlannedWorkoutStep[];
   externalId?: string | null;
   importedAt: string;
@@ -238,6 +242,9 @@ function normalizeStep(rawStep: unknown): PlannedWorkoutStep | null {
     intensity: typeof step.intensity === "string" ? step.intensity : null,
     target: typeof step.target === "string" ? step.target : null,
     kind: allowedKinds.has(kind ?? "") ? kind : "outro",
+    ...(Array.isArray(step.children)
+      ? { children: step.children.map(normalizeStep).filter((child): child is PlannedWorkoutStep => Boolean(child)) }
+      : {}),
   };
 }
 
@@ -305,6 +312,7 @@ export function normalizeStructuredWorkout(
     estimatedTime,
     loadTl,
     description,
+    route: typeof input.route === "string" && input.route.trim() ? input.route.trim() : null,
     steps,
     externalId: typeof input.externalId === "string" ? input.externalId : null,
     importedAt: typeof input.importedAt === "string" ? input.importedAt : new Date().toISOString(),

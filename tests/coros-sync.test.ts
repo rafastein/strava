@@ -58,7 +58,7 @@ test("sincronização grava a agenda, apaga o que sumiu do COROS e preserva o re
   const result = await syncCorosSchedule("2026-11-19", {
     callTool: async (name, args) => {
       calls.push([name, args]);
-      return SCHEDULE;
+      return name === "queryTrainingSchedule" ? SCHEDULE : "Training Plan Detail\n";
     },
     save: async (workout) => savedWorkouts.push(workout),
     listSaved: async () => [
@@ -70,7 +70,12 @@ test("sincronização grava a agenda, apaga o que sumiu do COROS e preserva o re
     remove: async (date) => removed.push(date),
   });
 
-  assert.deepEqual(calls, [["queryTrainingSchedule", { startDate: "20261102", endDate: "20261224" }]]);
+  assert.deepEqual(calls, [
+    ["queryTrainingSchedule", { startDate: "20261102", endDate: "20261224" }],
+    // Detalhes do plano em janelas de até 28 dias.
+    ["queryTrainingPlanDetails", { planId: "1", startDay: "20261102", endDay: "20261129" }],
+    ["queryTrainingPlanDetails", { planId: "1", startDay: "20261130", endDay: "20261224" }],
+  ]);
   assert.deepEqual(savedWorkouts.map((w) => [w.date, w.distanceKm, w.source]), [
     ["2026-11-17", 8.5, "coros"],
     ["2026-11-19", 9.97, "coros"],
@@ -78,7 +83,7 @@ test("sincronização grava a agenda, apaga o que sumiu do COROS e preserva o re
   ]);
   assert.equal(savedWorkouts[2].durationMin, 80);
   assert.deepEqual(removed, ["2026-11-18"]);
-  assert.deepEqual(result, { range: { start: "2026-11-02", end: "2026-12-24" }, saved: 3, removed: 1 });
+  assert.deepEqual(result, { range: { start: "2026-11-02", end: "2026-12-24" }, saved: 3, removed: 1, detailed: 0, detailErrors: 0 });
 });
 
 test("resposta estranha do COROS não apaga nada", async () => {
@@ -117,7 +122,7 @@ test("resposta do COROS em string JSON (entre aspas, com \\n escrito) é lida", 
 
   const saved: string[] = [];
   const result = await syncCorosSchedule("2026-11-19", {
-    callTool: async () => JSON.stringify(SCHEDULE),
+    callTool: async (name) => (name === "queryTrainingSchedule" ? JSON.stringify(SCHEDULE) : ""),
     save: async (workout) => saved.push(workout.date),
     listSaved: async () => [],
     remove: async () => undefined,

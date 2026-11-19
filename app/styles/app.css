@@ -1351,3 +1351,108 @@
 .hoje-week__days--compact .hoje-day__track {
   height: 48px;
 }
+
+/* ── Etapas do treino ── */
+.wk-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wk-step {
+  display: grid;
+  grid-template-columns: 4px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 12px 8px 0;
+  border-radius: 10px;
+  background: var(--ui-surface-2);
+}
+
+.wk-step__bar {
+  align-self: stretch;
+  border-radius: 10px 0 0 10px;
+  background: var(--ui-border-strong);
+}
+
+.wk-step--aquecimento .wk-step__bar,
+.wk-step--desaquecimento .wk-step__bar {
+  background: var(--ui-blue);
+}
+
+.wk-step--bloco .wk-step__bar {
+  background: var(--ui-accent);
+}
+
+.wk-step--recuperacao .wk-step__bar {
+  background: #5d646d;
+}
+
+.wk-step__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.wk-step__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.wk-step__zone {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ui-text-2);
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--ui-border-strong);
+}
+
+.wk-step__target {
+  font-size: 12px;
+  font-family: var(--ui-font-num);
+}
+
+.wk-step__amount {
+  font-family: var(--ui-font-num);
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.wk-group {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.wk-group__head {
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  border: 1.5px solid var(--ui-accent);
+  color: var(--ui-accent);
+  font-family: var(--ui-font-num);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.wk-notes {
+  font-size: 14px;
+  color: var(--ui-text-2);
+  white-space: pre-line;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border-left: 3px solid var(--ui-border-strong);
+  background: var(--ui-surface-2);
+}

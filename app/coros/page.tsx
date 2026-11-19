@@ -3,6 +3,7 @@ export const revalidate = 0;
 
 import Link from "next/link";
 import Navbar from "../components/Navbar";
+import WorkoutSteps from "../components/WorkoutSteps";
 import CorosConnectionCard from "./CorosConnectionCard";
 import CorosImportScheduleForm from "./CorosImportScheduleForm";
 import { getCorosConnectionInfo } from "../lib/coros-oauth";
@@ -339,6 +340,7 @@ function WorkoutPreview({ workout, actualKm }: { workout: StructuredPlannedWorko
     workout.distanceKm ? formatKm(workout.distanceKm) : null,
     workout.estimatedTime ? workout.estimatedTime : workout.durationMin ? `${workout.durationMin} min` : null,
     workout.loadTl ? `${Math.round(workout.loadTl)} TL` : null,
+    workout.route ? `percurso: ${workout.route.toLowerCase()}` : null,
   ].filter(Boolean).join(" · ");
 
   return (
@@ -348,27 +350,8 @@ function WorkoutPreview({ workout, actualKm }: { workout: StructuredPlannedWorko
         <p className="ui-muted" style={{ fontSize: 14, marginTop: 4 }}>{summary}</p>
         {actualKm > 0 ? <p className="ui-muted" style={{ fontSize: 14 }}>Feito hoje: {formatKm(actualKm)}</p> : null}
       </div>
-      {workout.description ? <p style={{ fontSize: 14, color: "var(--ui-text-2)" }}>{workout.description}</p> : null}
-      {workout.steps.length > 0 ? (
-        <ol className="ui-list" style={{ listStyle: "none", margin: "0 -20px", borderTop: "1px solid var(--ui-border)" }}>
-          {workout.steps.map((step, index) => (
-            <li key={`${step.label}-${index}`} className="ui-row" style={{ minHeight: 52 }}>
-              <span className="ui-row__main">
-                <span className="ui-row__title" style={{ whiteSpace: "normal" }}>
-                  {step.repeat ? `${step.repeat}× ` : ""}{step.label}
-                </span>
-              </span>
-              <span className="ui-muted" style={{ flexShrink: 0, textAlign: "right" }}>
-                {[
-                  step.distanceKm ? formatKm(step.distanceKm, step.distanceKm < 1 ? 2 : 1) : null,
-                  step.durationMin ? `${step.durationMin} min` : null,
-                  step.intensity,
-                ].filter(Boolean).join(" · ") || "sem alvo"}
-              </span>
-            </li>
-          ))}
-        </ol>
-      ) : null}
+      <WorkoutSteps steps={workout.steps} />
+      {workout.description ? <p className="wk-notes">{workout.description}</p> : null}
     </>
   );
 }

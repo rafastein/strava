@@ -1,5 +1,13 @@
 import { buildCorosScheduleWorkouts } from "./coros-planned-workouts";
 import {
+  extractCorosCourses,
+  findCourseForWorkout,
+  parseCorosCourseDescription,
+  splitIntoWindows,
+  type CorosCourseDetail,
+} from "./coros-workout-details";
+import {
+  classifyStructuredWorkout,
   deleteStructuredPlannedWorkout,
   getAllStructuredPlannedWorkouts,
   saveStructuredPlannedWorkout,
@@ -25,6 +33,10 @@ export type CorosSyncStatus = {
   range?: { start: string; end: string };
   saved?: number;
   removed?: number;
+  /** Treinos que vieram com as etapas detalhadas. */
+  detailed?: number;
+  /** Consultas de detalhe que falharam (o treino fica só com o resumo). */
+  detailErrors?: number;
   error?: string;
 };
 
@@ -80,6 +92,91 @@ export function decodeCorosToolText(text: string) {
   return decoded;
 }
 
+// ── Detalhes de cada treino ──
+
+function getScheduleIds(workout: StructuredPlannedWorkout) {
+  const raw = workout.raw as { block?: unknown } | undefined;
+  const lines = Array.isArray(raw?.block) ? raw.block.map(String) : [];
+  const find = (pattern: RegExp) => lines.map((line) => pattern.exec(line)?.[1]).find(Boolean) ?? null;
+  return { planId: find(/^plan id:\s*(\d+)/i), idInPlan: find(/^idinplan:\s*(\d+)/i) };
+}
+
+async function loadCourseDetails(
+  workouts: StructuredPlannedWorkout[],
+  range: { start: string; end: string },
+  callTool: CorosSyncDeps["callTool"],
+) {
+  const courses: CorosCourseDetail[] = [];
+  let errors = 0;
+  const planIds = new Set<string>();
+  const standalone: Array<{ date: string; idInPlan: string }> = [];
+
+  for (const workout of workouts) {
+    const { planId, idInPlan } = getScheduleIds(workout);
+    if (planId) planIds.add(planId);
+    else if (idInPlan) standalone.push({ date: workout.date, idInPlan });
+  }
+
+  // Treinos de plano: uma consulta por plano a cada 28 dias.
+  for (const planId of planIds) {
+    for (const window of splitIntoWindows(range.start, range.end)) {
+      try {
+        const text = decodeCorosToolText(
+          await callTool("queryTrainingPlanDetails", {
+            planId,
+            startDay: toCorosDate(window.start),
+            endDay: toCorosDate(window.end),
+          }),
+        );
+        courses.push(...extractCorosCourses(text));
+      } catch {
+        errors += 1;
+      }
+    }
+  }
+
+  // Treinos avulsos da biblioteca: uma consulta por treino.
+  for (const item of standalone) {
+    try {
+      const text = decodeCorosToolText(
+        await callTool("queryScheduledWorkoutDetails", { date: toCorosDate(item.date), idInPlan: item.idInPlan }),
+      );
+      courses.push(...extractCorosCourses(text, item.date));
+    } catch {
+      errors += 1;
+    }
+  }
+
+  return { courses, errors };
+}
+
+/**
+ * Junta etapas, observações e percurso ao treino da agenda.
+ * O tipo sai só do título e da distância: a observação da assessoria ("leve em razão da prova")
+ * não pode transformar um fartlek em prova.
+ */
+export function applyCourseDetail(workout: StructuredPlannedWorkout, course: CorosCourseDetail | null) {
+  const type = classifyStructuredWorkout({
+    title: workout.title,
+    distanceKm: workout.distanceKm,
+    durationMin: workout.durationMin,
+  });
+  if (!course) return { ...workout, type };
+
+  const detail = parseCorosCourseDescription(course.description);
+  return {
+    ...workout,
+    type,
+    steps: detail.steps.length ? detail.steps : workout.steps,
+    description: detail.notes,
+    route: detail.route,
+    raw: {
+      ...((workout.raw && typeof workout.raw === "object") ? workout.raw : {}),
+      corosCourse: { name: course.name, description: course.description },
+    },
+  };
+}
+
 /** A resposta tem cara de agenda do COROS? Sem isso, nada é apagado. */
 export function looksLikeCorosSchedule(text: string) {
   return /training schedule/i.test(text);
@@ -109,7 +206,13 @@ export async function syncCorosSchedule(todayKey: string, deps: CorosSyncDeps) {
   }
   const newDates = new Set(workouts.map((workout) => workout.date));
 
-  for (const workout of workouts) await deps.save(workout);
+  const { courses, errors: detailErrors } = await loadCourseDetails(workouts, range, deps.callTool);
+  let detailed = 0;
+  for (const workout of workouts) {
+    const course = findCourseForWorkout(courses, workout.date, workout.title);
+    if (course) detailed += 1;
+    await deps.save(applyCourseDetail(workout, course));
+  }
 
   // Treino apagado ou movido no COROS: some daqui também. Só mexe no que veio do COROS, dentro da janela.
   const stale = (await deps.listSaved()).filter(
@@ -121,7 +224,7 @@ export async function syncCorosSchedule(todayKey: string, deps: CorosSyncDeps) {
   );
   for (const result of stale) await deps.remove(result.date);
 
-  return { range, saved: workouts.length, removed: stale.length };
+  return { range, saved: workouts.length, removed: stale.length, detailed, detailErrors };
 }
 
 // ── Execução real (Redis + MCP) ──

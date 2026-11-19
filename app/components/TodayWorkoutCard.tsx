@@ -1,4 +1,5 @@
 import { formatKm } from "../lib/format";
+import WorkoutSteps from "./WorkoutSteps";
 import {
   getStructuredWorkoutPlannedDistanceKm,
   getStructuredWorkoutSourceLabel,
@@ -38,12 +39,6 @@ export default function TodayWorkoutCard({
   const sourceLabel = structuredWorkout
     ? structuredWorkoutSourceLabel ?? getStructuredWorkoutSourceLabel(structuredWorkout.source)
     : null;
-  const evidence = structuredWorkout?.steps.slice(0, 3).map((step) => {
-    const repeat = step.repeat ? `${step.repeat}x ` : "";
-    const distance = step.distanceKm ? ` · ${formatKm(step.distanceKm, step.distanceKm < 1 ? 2 : 1)}` : "";
-    const intensity = step.intensity ? ` · ${step.intensity}` : "";
-    return `${repeat}${step.label}${distance}${intensity}`;
-  }) ?? [];
 
   const statusColor = todayOk ? "var(--ui-good)" : todayStatus === "Sem treino" ? "var(--ui-muted)" : "var(--ui-accent)";
 
@@ -58,7 +53,10 @@ export default function TodayWorkoutCard({
         <>
           <div>
             <h2 className="ui-h2" style={{ fontSize: 20 }}>{structuredWorkout.title}</h2>
-            <p className="ui-muted" style={{ marginTop: 4 }}>fonte: {sourceLabel}</p>
+            <p className="ui-muted" style={{ marginTop: 4 }}>
+              fonte: {sourceLabel}
+              {structuredWorkout.route ? ` · percurso: ${structuredWorkout.route.toLowerCase()}` : ""}
+            </p>
           </div>
           <dl className="ui-dl">
             <div>
@@ -70,13 +68,8 @@ export default function TodayWorkoutCard({
               <dd>{formatKm(todayStravaKm)}</dd>
             </div>
           </dl>
-          {evidence.length > 0 ? (
-            <ul className="ui-list" style={{ listStyle: "none", margin: "0 -20px -20px", borderTop: "1px solid var(--ui-border)" }}>
-              {evidence.map((item) => (
-                <li key={item} className="ui-row" style={{ minHeight: 44, fontSize: 14, color: "var(--ui-text-2)" }}>{item}</li>
-              ))}
-            </ul>
-          ) : null}
+          <WorkoutSteps steps={structuredWorkout.steps} />
+          {structuredWorkout.description ? <p className="wk-notes">{structuredWorkout.description}</p> : null}
         </>
       ) : (
         <p className="ui-muted" style={{ fontSize: 14 }}>Nenhum treino previsto para hoje.</p>
