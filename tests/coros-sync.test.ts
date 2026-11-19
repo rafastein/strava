@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getCorosSyncRange, looksLikeCorosSchedule, syncCorosSchedule } from "../app/lib/coros-sync";
+import { decodeCorosToolText, getCorosSyncRange, looksLikeCorosSchedule, syncCorosSchedule } from "../app/lib/coros-sync";
 import type { StructuredPlannedWorkout, StructuredPlannedWorkoutRangeResult } from "../app/lib/planned-workout";
 
 // Formato da resposta de queryTrainingSchedule (IDs trocados).
@@ -108,4 +108,38 @@ test("agenda vazia apaga os treinos do COROS da janela", async () => {
   });
   assert.deepEqual(removed, ["2026-11-20"]);
   assert.equal(result.saved, 0);
+});
+
+test("resposta do COROS em string JSON (entre aspas, com \\n escrito) é lida", async () => {
+  assert.equal(decodeCorosToolText(JSON.stringify(SCHEDULE)), SCHEDULE);
+  assert.equal(decodeCorosToolText(SCHEDULE.replaceAll("\n", "\\n")), SCHEDULE);
+  assert.equal(decodeCorosToolText(SCHEDULE), SCHEDULE);
+
+  const saved: string[] = [];
+  const result = await syncCorosSchedule("2026-11-19", {
+    callTool: async () => JSON.stringify(SCHEDULE),
+    save: async (workout) => saved.push(workout.date),
+    listSaved: async () => [],
+    remove: async () => undefined,
+  });
+  assert.deepEqual(saved, ["2026-11-17", "2026-11-19", "2026-11-22"]);
+  assert.equal(result.saved, 3);
+});
+
+test("agenda com treinos que o leitor não entende não grava nem apaga nada", async () => {
+  let touched = false;
+  await assert.rejects(
+    syncCorosSchedule("2026-11-19", {
+      callTool: async () => "Training Schedule || 2026-11-20 | Distance: 5 km",
+      save: async () => {
+        touched = true;
+      },
+      listSaved: async () => [saved("2026-11-20", "coros")],
+      remove: async () => {
+        touched = true;
+      },
+    }),
+    /nenhum foi lido/,
+  );
+  assert.equal(touched, false);
 });

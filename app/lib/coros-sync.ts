@@ -58,6 +58,28 @@ function toCorosDate(dateKey: string) {
   return dateKey.replaceAll("-", "");
 }
 
+/**
+ * O MCP do COROS devolve a agenda como string JSON: entre aspas e com "\n" escrito.
+ * Desembrulha para texto com quebras de linha de verdade.
+ */
+export function decodeCorosToolText(text: string) {
+  let decoded = text.trim();
+  for (let i = 0; i < 2 && decoded.startsWith('"') && decoded.endsWith('"'); i += 1) {
+    try {
+      const parsed: unknown = JSON.parse(decoded);
+      if (typeof parsed !== "string") break;
+      decoded = parsed.trim();
+    } catch {
+      break;
+    }
+  }
+  // Ainda com "\n" escrito e nenhuma quebra real: troca pelas quebras.
+  if (!/\r?\n/.test(decoded) && decoded.includes("\\n")) {
+    decoded = decoded.replaceAll("\\r\\n", "\n").replaceAll("\\n", "\n").replaceAll('\\"', '"');
+  }
+  return decoded;
+}
+
 /** A resposta tem cara de agenda do COROS? Sem isso, nada é apagado. */
 export function looksLikeCorosSchedule(text: string) {
   return /training schedule/i.test(text);
@@ -65,10 +87,12 @@ export function looksLikeCorosSchedule(text: string) {
 
 export async function syncCorosSchedule(todayKey: string, deps: CorosSyncDeps) {
   const range = getCorosSyncRange(todayKey);
-  const text = await deps.callTool("queryTrainingSchedule", {
-    startDate: toCorosDate(range.start),
-    endDate: toCorosDate(range.end),
-  });
+  const text = decodeCorosToolText(
+    await deps.callTool("queryTrainingSchedule", {
+      startDate: toCorosDate(range.start),
+      endDate: toCorosDate(range.end),
+    }),
+  );
 
   if (!looksLikeCorosSchedule(text)) {
     throw new Error(`Resposta inesperada do COROS: ${text.slice(0, 160) || "vazia"}`);
@@ -77,6 +101,12 @@ export async function syncCorosSchedule(todayKey: string, deps: CorosSyncDeps) {
   const workouts = buildCorosScheduleWorkouts({ text }).filter(
     (workout) => workout.date >= range.start && workout.date <= range.end,
   );
+
+  // Datas na resposta, mas nenhum treino lido: formato mudou. Não grava nem apaga nada.
+  const datesInText = text.match(/^\d{4}-\d{2}-\d{2}$/gm)?.length ?? 0;
+  if (workouts.length === 0 && (datesInText > 0 || /Distance:/i.test(text))) {
+    throw new Error(`O COROS mandou ${datesInText} dias com treino, mas nenhum foi lido. O formato da resposta mudou.`);
+  }
   const newDates = new Set(workouts.map((workout) => workout.date));
 
   for (const workout of workouts) await deps.save(workout);
