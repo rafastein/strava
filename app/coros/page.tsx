@@ -229,6 +229,9 @@ export default async function CorosPage({ searchParams }: PageProps) {
                 distanceKm: result.data.distanceKm ?? null,
                 estimatedTime: result.data.estimatedTime ?? null,
                 loadTl: result.data.loadTl ?? null,
+                steps: result.data.steps,
+                notes: result.data.description ?? null,
+                route: result.data.route ?? null,
                 actualKm: actualRunKmByDate.get(result.data.date) ?? 0,
                 status: getWorkoutCompletionStatus({
                   date: result.data.date,

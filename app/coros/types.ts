@@ -1,3 +1,5 @@
+import type { PlannedWorkoutStep } from "../lib/planned-workout";
+
 export type WorkoutCompletionStatus = "done" | "off_target" | "today" | "missed" | "future";
 
 export type SavedRaceCard = {
@@ -28,6 +30,10 @@ export type SavedWorkoutCard = {
   loadTl?: number | null;
   actualKm?: number | null;
   status: WorkoutCompletionStatus;
+  /** Estrutura do treino (aquecimento, blocos, desaquecimento), observação e percurso. */
+  steps?: PlannedWorkoutStep[];
+  notes?: string | null;
+  route?: string | null;
 };
 
 export type CalendarCell = {

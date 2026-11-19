@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import WorkoutSteps from "../components/WorkoutSteps";
 import { fetchWithAdminRetry } from "../lib/admin-client";
 import { formatDayMonth, formatWeekdayShort } from "../lib/format";
 import type { CalendarCell, SavedRaceCard, SavedWorkoutCard, WorkoutCompletionStatus } from "./types";
@@ -44,6 +45,7 @@ export default function CorosSavedWorkoutsList({ workouts, races, todayDate }: {
   const [items, setItems] = useState(workouts);
   const [editing, setEditing] = useState(false);
   const [deletingDate, setDeletingDate] = useState<string | null>(null);
+  const [openDate, setOpenDate] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const monthOptions = useMemo(() => buildMonthOptions([...items, ...races]), [items, races]);
@@ -179,8 +181,13 @@ export default function CorosSavedWorkoutsList({ workouts, races, todayDate }: {
               cell.shoeName ? `Tênis: ${cell.shoeName}` : null,
             ].filter(Boolean);
 
-            return (
-              <div key={cell.isoDate} className="ui-row ui-row--date" style={{ alignItems: "flex-start", paddingTop: 12, paddingBottom: 12 }}>
+            const hasDetail = Boolean(workout && ((workout.steps?.length ?? 0) > 0 || workout.notes));
+            const expandable = hasDetail && !editing;
+            const isOpen = expandable && openDate === cell.isoDate;
+            const detailId = `agenda-detail-${cell.isoDate}`;
+
+            const rowContent = (
+              <>
                 <span className="ui-date">
                   <span className="ui-date__day">{day}</span>
                   <span className="ui-muted" style={{ fontSize: 12 }}>{formatWeekdayShort(cell.isoDate)}</span>
@@ -199,6 +206,14 @@ export default function CorosSavedWorkoutsList({ workouts, races, todayDate }: {
                 </span>
                 <span className="ui-row__side" style={{ gap: 8 }}>
                   <span style={{ fontSize: 12, fontWeight: 600, color: meta.color, whiteSpace: "nowrap" }}>{meta.label}</span>
+                  {expandable ? (
+                    <span className="agenda-item__toggle" aria-hidden="true">
+                      {isOpen ? "Fechar" : "Ver treino"}
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isOpen ? "rotate(180deg)" : undefined }}>
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
+                    </span>
+                  ) : null}
                   {editing && workout ? (
                     <button
                       type="button"
@@ -211,6 +226,34 @@ export default function CorosSavedWorkoutsList({ workouts, races, todayDate }: {
                     </button>
                   ) : null}
                 </span>
+              </>
+            );
+
+            const rowStyle = { alignItems: "flex-start", paddingTop: 12, paddingBottom: 12 } as const;
+
+            return (
+              <div key={cell.isoDate} className={`agenda-item${isOpen ? " agenda-item--open" : ""}`}>
+                {expandable ? (
+                  <button
+                    type="button"
+                    className="ui-row ui-row--date ui-row--btn"
+                    style={rowStyle}
+                    aria-expanded={isOpen}
+                    aria-controls={detailId}
+                    onClick={() => setOpenDate(isOpen ? null : cell.isoDate)}
+                  >
+                    {rowContent}
+                  </button>
+                ) : (
+                  <div className="ui-row ui-row--date" style={rowStyle}>{rowContent}</div>
+                )}
+                {isOpen && workout ? (
+                  <div id={detailId} className="agenda-item__detail">
+                    {workout.route ? <p className="ui-muted" style={{ fontSize: 13 }}>Percurso: {workout.route.toLowerCase()}</p> : null}
+                    <WorkoutSteps steps={workout.steps ?? []} />
+                    {workout.notes ? <p className="wk-notes">{workout.notes}</p> : null}
+                  </div>
+                ) : null}
               </div>
             );
           })}

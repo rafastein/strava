@@ -1456,3 +1456,35 @@
   border-left: 3px solid var(--ui-border-strong);
   background: var(--ui-surface-2);
 }
+
+/* ── Agenda do COROS: treino que abre ── */
+.agenda-item + .agenda-item {
+  border-top: 1px solid var(--ui-border);
+}
+
+.agenda-item__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ui-accent);
+  white-space: nowrap;
+}
+
+.agenda-item--open > .ui-row {
+  background: var(--ui-surface-2);
+}
+
+.agenda-item__detail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 20px 18px;
+  background: var(--ui-surface-2);
+}
+
+.agenda-item__detail .wk-step,
+.agenda-item__detail .wk-notes {
+  background: var(--ui-surface);
+}
