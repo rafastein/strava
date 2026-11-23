@@ -7,6 +7,7 @@ const DISPLAY_DAYS = 90;
 const WARMUP_DAYS = 90;
 const FETCH_DAYS = 180;
 const TIME_ZONE = "America/Sao_Paulo";
+const THRESHOLD_VO2_FRACTION = 0.88;
 
 export type TrainingLoadSnapshot = {
   days: DayLoad[];
@@ -15,6 +16,7 @@ export type TrainingLoadSnapshot = {
   totalActivities: number;
   hrMax: number;
   hrRest: number;
+  lthr: number;
   displayedDays: number;
   warmupDays: number;
   fetchDays: number;
@@ -39,14 +41,15 @@ export async function getTrainingLoadSnapshot(accessToken: string): Promise<Trai
 
   const hrMax = safeNumber(athleteConfig.hrMax, 185);
   const hrRest = safeNumber(athleteConfig.hrRest, 50);
+  // FC de limiar do atleta; sem ela, 85% da reserva de FC.
+  const lthr = safeNumber(athleteConfig.lactateThreshold, Math.round(hrRest + 0.85 * (hrMax - hrRest)));
 
-  // Extrai T-pace do VDOT dinâmico do atleta.
-  // A faixa clássica usada no projeto é ~83–88% do VDOT; aqui usamos o meio da faixa
-  // para o fallback por pace não ficar agressivo demais.
-  // Se não disponível, usa 259s/km (4:19/km) como fallback.
+  // T-pace (limiar) a partir do VDOT, só para corridas sem FC.
+  // 88% do VDOT reproduz a tabela de Daniels (VDOT 50 → 4:15/km).
+  // Sem VDOT, usa 259 s/km (4:19/km).
   let thresholdPaceSecPerKm = 259;
   if (profile.vdot) {
-    const targetVO2 = 0.855 * profile.vdot;
+    const targetVO2 = THRESHOLD_VO2_FRACTION * profile.vdot;
     const a = 0.000104;
     const b = 0.182258;
     const c = -(4.60 + targetVO2);
@@ -71,6 +74,7 @@ export async function getTrainingLoadSnapshot(accessToken: string): Promise<Trai
     thresholdPaceSecPerKm,
     hrMax,
     hrRest,
+    lthr,
     displayDays: DISPLAY_DAYS,
     warmupDays: WARMUP_DAYS,
     timeZone: TIME_ZONE,
@@ -83,6 +87,7 @@ export async function getTrainingLoadSnapshot(accessToken: string): Promise<Trai
     totalActivities: runActivities.length,
     hrMax,
     hrRest,
+    lthr,
     displayedDays: DISPLAY_DAYS,
     warmupDays: WARMUP_DAYS,
     fetchDays: FETCH_DAYS,

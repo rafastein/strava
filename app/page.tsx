@@ -47,7 +47,7 @@ import {
   type StravaActivitySummary,
 } from "./lib/strava-client";
 import { formatPrTime, getDynamicAthleteProfile } from "./lib/strava-prs";
-import { STATUS_META, getCurrentLoad } from "./lib/training-load";
+import { STATUS_META, describeTsb, getCurrentLoad } from "./lib/training-load";
 import { getTrainingLoadSnapshot } from "./lib/training-load-snapshot";
 
 // Semanas recentes que a home compara (planejado × executado, atividades recentes).
@@ -293,7 +293,9 @@ export default async function Home() {
                 <span className="ui-row__main">
                   <span className="ui-muted">Carga de treino</span>
                   <span className="hoje-load__status" style={{ color: loadMeta.color }}>{loadMeta.label}</span>
-                  <span className="ui-muted">Ratio ATL/CTL {formatNumber(load.ratio, 2)}</span>
+                  <span className="ui-muted">
+                    Aguda/crônica {formatNumber(load.ratio, 2)} · {describeTsb(load.tsb).label.toLowerCase()}
+                  </span>
                 </span>
                 <span className="hoje-load__nums">
                   {[

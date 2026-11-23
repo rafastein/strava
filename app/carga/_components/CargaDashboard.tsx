@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Navbar from "../../components/Navbar";
 import { formatNumber, formatPace, formatWeekdayShort } from "../../lib/format";
-import { STATUS_META, type DayLoad } from "../../lib/training-load";
+import { STATUS_META, describeTsb, type DayLoad } from "../../lib/training-load";
 import { applyChartTheme } from "../../lib/chart-theme";
 
 type ApiResponse = {
@@ -13,6 +13,7 @@ type ApiResponse = {
   totalActivities: number;
   hrMax?: number;
   hrRest?: number;
+  lthr?: number;
   displayedDays?: number;
   warmupDays?: number;
   fetchDays?: number;
@@ -31,7 +32,7 @@ type RatioZone = {
   hint: string;
 };
 
-const RATIO_MAX = 1.5;
+const RATIO_MAX = 2;
 const LIST_DAYS = 14;
 const WINDOWS = [30, 60, 90] as const;
 
@@ -40,41 +41,35 @@ const COLOR_CTL = "#6aa8ff";
 const COLOR_ATL = "#f5a623";
 const COLOR_TSB = "#c9cdd3";
 
+// Faixas de Gabbett (2016) para o ratio de carga aguda/crônica.
 const RATIO_ZONES: RatioZone[] = [
   {
-    key: "recovery",
-    label: "Recuperação",
+    key: "low",
+    label: "Carga baixa",
     from: 0,
-    to: 0.7,
-    hint: "Carga recente bem abaixo da sua base. Bom para descansar, mas longo demais pode sinalizar perda de estímulo.",
-  },
-  {
-    key: "performance",
-    label: "Performance",
-    from: 0.7,
     to: 0.8,
-    hint: "Fadiga baixa. Janela boa para competir, testar pace ou chegar mais leve em treino-chave.",
+    hint: "Carga recente abaixo da base. Esperado em descanso e polimento; por muitas semanas, a forma começa a cair.",
   },
   {
-    key: "optimal",
-    label: "Ótimo",
+    key: "productive",
+    label: "Produtiva",
     from: 0.8,
-    to: 1.0,
-    hint: "Carga bem encaixada. A fadiga recente acompanha a forma sem exagerar.",
-  },
-  {
-    key: "maintaining",
-    label: "Manutenção",
-    from: 1.0,
     to: 1.3,
-    hint: "Carga recente acima da base. Pode ser produtivo em bloco forte, mas exige atenção à recuperação.",
+    hint: "Carga recente acompanhando a base, com folga para subir. É a faixa associada a evoluir com menos risco.",
   },
   {
-    key: "overreaching",
-    label: "Sobrecarga",
+    key: "caution",
+    label: "Atenção",
     from: 1.3,
+    to: 1.5,
+    hint: "Carga recente bem acima da base. Aceitável em bloco curto e planejado, com recuperação em seguida.",
+  },
+  {
+    key: "spike",
+    label: "Pico",
+    from: 1.5,
     to: RATIO_MAX,
-    hint: "Fadiga muito acima da base. Zona para usar com cuidado e por pouco tempo.",
+    hint: "Salto de carga. É a faixa que os estudos de Gabbett associam a mais lesões; vale aliviar os próximos dias.",
   },
 ];
 
@@ -92,33 +87,19 @@ function ratioToPercent(value: number): number {
 }
 
 function getRatioInsight(day: DayLoad): string {
-  const pct = Math.abs(day.ratio - 1) * 100;
+  const pct = Math.round(Math.abs(day.ratio - 1) * 100);
+  const relation = day.ratio >= 1 ? `${pct}% acima` : `${pct}% abaixo`;
 
-  if (day.ratio < 0.7) {
-    return `Sua fadiga recente está ${pct.toFixed(0)}% abaixo da sua forma. Ótimo para recuperar, mas não é a zona principal de construção.`;
+  if (day.status === "low") {
+    return `A carga dos últimos dias está ${relation} da sua base. Bom para recuperar ou polir; por muito tempo, a forma começa a cair.`;
   }
-
-  if (day.ratio < 0.8) {
-    return `Sua fadiga recente está ${pct.toFixed(0)}% abaixo da forma. É uma zona boa para render melhor em prova ou treino-chave.`;
+  if (day.status === "productive") {
+    return `A carga dos últimos dias está ${pct <= 5 ? "alinhada à" : `${relation} da`} sua base. Faixa para evoluir sem salto de carga.`;
   }
-
-  if (day.ratio <= 1.0) {
-    return `Sua fadiga recente está praticamente alinhada à sua forma. É a zona mais limpa para evoluir sem acumular peso demais.`;
+  if (day.status === "caution") {
+    return `A carga dos últimos dias está ${relation} da sua base. Bloco forte: funciona se vier recuperação logo depois.`;
   }
-
-  if (day.ratio <= 1.3) {
-    return `Sua fadiga recente está ${pct.toFixed(0)}% acima da forma. Isso indica bloco forte: produtivo, mas precisa ser absorvido.`;
-  }
-
-  return `Sua fadiga recente está ${pct.toFixed(0)}% acima da forma. É sinal de sobrecarga recente e pede cautela nos próximos treinos.`;
-}
-
-function getTsbInsight(tsb: number): string {
-  if (tsb >= 10) return "TSB bem positivo: carga recente baixa em relação à base. Bom para prova, mas longo demais pode reduzir estímulo.";
-  if (tsb >= 0) return "TSB positivo: a fadiga recente está menor que a sua base. Bom sinal para chegar mais leve.";
-  if (tsb >= -10) return "TSB levemente negativo: normal em semanas de treino. Você está carregado, mas ainda controlado.";
-  if (tsb >= -25) return "TSB negativo: fadiga acumulada. Funciona em bloco específico, mas a recuperação vira prioridade.";
-  return "TSB muito negativo: sinal forte de peso acumulado. Vale olhar sono, pernas, FC e sensação antes de forçar.";
+  return `A carga dos últimos dias está ${relation} da sua base. É um salto de carga: alivie e observe sono, pernas e FC.`;
 }
 
 function Chevron() {
@@ -221,7 +202,8 @@ export default function CargaPage() {
   const today = data?.days[data.days.length - 1] ?? null;
   const meta = today ? STATUS_META[today.status] : null;
   const recentDays = data ? data.days.slice(-LIST_DAYS).reverse() : [];
-  const maxLoad = Math.max(...recentDays.map((d) => d.trimp), 1);
+  const maxLoad = Math.max(...recentDays.map((d) => d.load), 1);
+  const tsbReading = today ? describeTsb(today.tsb) : null;
 
   return (
     <div className="ui-page">
@@ -243,7 +225,7 @@ export default function CargaPage() {
           <p className="ui-card ui-card--pad" role="alert" style={{ color: "#ff8a7a" }}>{error}</p>
         ) : null}
 
-        {data && today && meta ? (
+        {data && today && meta && tsbReading ? (
           <>
             <div className="carga-grid">
               <div className="hoje-col">
@@ -251,11 +233,11 @@ export default function CargaPage() {
                 <section className="ui-card ui-card--pad ui-stack" aria-label="Status de hoje">
                   <div className="carga-status">
                     <div>
-                      <p className="ui-muted">Status de hoje</p>
+                      <p className="ui-muted">Carga recente</p>
                       <p className="carga-status__label" style={{ color: meta.color, marginTop: 4 }}>{meta.label}</p>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <p className="ui-muted" style={{ whiteSpace: "nowrap" }}>Ratio ATL/CTL</p>
+                      <p className="ui-muted" style={{ whiteSpace: "nowrap" }}>Aguda/crônica</p>
                       <p className="carga-status__ratio" style={{ marginTop: 4 }}>{formatNumber(today.ratio, 2)}</p>
                     </div>
                   </div>
@@ -265,7 +247,7 @@ export default function CargaPage() {
                   <div
                     className="carga-gauge"
                     role="img"
-                    aria-label={`Ratio ${formatNumber(today.ratio, 2)}, na faixa ${meta.label}`}
+                    aria-label={`Ratio de carga ${formatNumber(today.ratio, 2)}, na faixa ${meta.label}`}
                   >
                     <div className="carga-gauge__marker-track">
                       <span className="carga-gauge__marker" style={{ left: `${ratioToPercent(today.ratio)}%` }} />
@@ -289,7 +271,7 @@ export default function CargaPage() {
                   {[
                     { color: COLOR_CTL, label: "Forma", value: formatNumber(today.ctl, 1), sub: "CTL · 42 dias" },
                     { color: COLOR_ATL, label: "Fadiga", value: formatNumber(today.atl, 1), sub: "ATL · 7 dias" },
-                    { color: COLOR_TSB, label: "Frescor", value: formatSigned(today.tsb), sub: "TSB" },
+                    { color: COLOR_TSB, label: "Frescor", value: formatSigned(today.tsb), sub: tsbReading.label },
                   ].map((tile) => (
                     <div key={tile.label} className="ui-stat" style={{ padding: "14px 12px" }}>
                       <span className="carga-tile__head">
@@ -346,7 +328,7 @@ export default function CargaPage() {
                   <div className="ui-card">
                     {recentDays.map((day) => {
                       const dayMeta = STATUS_META[day.status];
-                      const rested = day.trimp <= 0;
+                      const rested = day.load <= 0;
                       return (
                         <div key={day.date} className="carga-day">
                           <span className="carga-day__date">
@@ -354,10 +336,10 @@ export default function CargaPage() {
                           </span>
                           <span className="carga-day__load">
                             <span className="carga-day__track">
-                              <span className="carga-day__fill" style={{ display: "block", width: `${rested ? 0 : Math.max((day.trimp / maxLoad) * 100, 3)}%` }} />
+                              <span className="carga-day__fill" style={{ display: "block", width: `${rested ? 0 : Math.max((day.load / maxLoad) * 100, 3)}%` }} />
                             </span>
                             <span className="carga-day__value" style={rested ? { color: "var(--ui-muted)" } : undefined}>
-                              {rested ? "descanso" : formatNumber(day.trimp)}
+                              {rested ? "descanso" : formatNumber(day.load)}
                             </span>
                           </span>
                           <span className="carga-day__status">
@@ -378,37 +360,37 @@ export default function CargaPage() {
                 <summary>Como ler estes números<Chevron /></summary>
                 <div className="ui-details__body">
                   <p>
-                    Primeiro olhe o <strong>status</strong> e o <strong>ratio ATL/CTL</strong>. Depois confira se o gráfico mostra a
-                    fadiga subindo mais rápido que a forma. Se o TSB ficar muito negativo por muitos dias, o corpo está pagando a
-                    conta. O ratio é um semáforo de tendência, não um diagnóstico fechado de overtraining.
+                    <strong>Hoje:</strong> {meta.description}. Frescor em <strong>{tsbReading.label.toLowerCase()}</strong>: {tsbReading.text}
                   </p>
-                  <p><strong>Hoje:</strong> {meta.description}. {getTsbInsight(today.tsb)}</p>
-                  <p><strong>Forma (CTL).</strong> Base aeróbica acumulada. Sobe devagar e mostra o quanto seu corpo vem sustentando treino nas últimas semanas.</p>
-                  <p><strong>Fadiga (ATL).</strong> Peso dos treinos recentes. Sobe rápido depois de longões e treinos fortes; cai rápido quando você descansa.</p>
-                  <p><strong>Frescor (TSB).</strong> Diferença entre forma e fadiga no estado calculado. Se o treino de hoje já entrou, leia como pós-carga registrada.</p>
-                  <p><strong>Ratio ATL/CTL.</strong> Abaixo de 1, fadiga menor que a base. Acima de 1, fadiga recente maior que a base. Use como alerta, não como diagnóstico.</p>
-                  <p><strong>Carga do dia.</strong> Esforço calculado do treino. Com FC, usa TRIMP; sem FC, usa estimativa por pace.</p>
+                  <p><strong>Carga do dia.</strong> Pontos na escala do TSS: 1 hora no seu limiar vale 100. Com FC, é o TRIMP de Banister convertido pela sua FC de limiar (hrTSS); sem FC, é o rTSS pelo pace.</p>
+                  <p><strong>Forma (CTL).</strong> Média da carga diária com peso de 42 dias. Sobe devagar e mostra quanto treino seu corpo vem sustentando.</p>
+                  <p><strong>Fadiga (ATL).</strong> A mesma média com peso de 7 dias. Sobe rápido depois de longões e treinos fortes e cai rápido no descanso.</p>
+                  <p><strong>Frescor (TSB).</strong> Forma menos fadiga ao fim do dia anterior, ou seja, como você acordou hoje. O treino de hoje só entra no frescor de amanhã.</p>
+                  <p><strong>Aguda/crônica.</strong> Fadiga dividida pela forma. Mostra se a carga recente saltou em relação à sua base. Os estudos discordam sobre o quanto isso prevê lesão: use como alerta de tendência, nunca como diagnóstico.</p>
                 </div>
               </details>
 
               <details className="ui-card ui-details">
-                <summary>Faixas do ratio<Chevron /></summary>
+                <summary>Faixas da carga aguda/crônica<Chevron /></summary>
                 <div className="ui-details__body">
                   {RATIO_ZONES.map((zone) => (
                     <p key={zone.key}>
                       <strong style={{ color: STATUS_META[zone.key].color }}>{zone.label}</strong>{" "}
-                      {formatNumber(zone.from, 1)}–{formatNumber(zone.to, 1)}{zone.to === RATIO_MAX ? "+" : ""} · {zone.hint}
+                      {zone.to === RATIO_MAX ? `${formatNumber(zone.from, 1)} ou mais` : `${formatNumber(zone.from, 1)}–${formatNumber(zone.to, 1)}`} · {zone.hint}
                     </p>
                   ))}
                 </div>
               </details>
 
               <details className="ui-card ui-details">
-                <summary>Regra prática do Jaja<Chevron /></summary>
+                <summary>Faixas do frescor<Chevron /></summary>
                 <div className="ui-details__body">
-                  <p><strong>Para evoluir.</strong> CTL subindo aos poucos, ATL controlado e ratio entre 0,8 e 1,3.</p>
-                  <p><strong>Para performar.</strong> TSB indo para perto de zero ou positivo, com ATL caindo antes da prova ou treino-chave.</p>
-                  <p><strong>Para não quebrar.</strong> Evitar ratio acima de 1,3 por vários dias e TSB muito negativo sem recuperação planejada. É alerta de gestão de carga, não diagnóstico médico.</p>
+                  <p><strong>+25 ou mais · Muito descansado.</strong> Bom na véspera de prova; por muitos dias, a forma cai.</p>
+                  <p><strong>+5 a +25 · Pronto para prova.</strong> Janela típica de prova ou teste depois do polimento.</p>
+                  <p><strong>−10 a +5 · Transição.</strong> De passagem, subindo para prova ou voltando de descanso. Muito tempo aqui é treino sem progressão.</p>
+                  <p><strong>−30 a −10 · Em bloco de treino.</strong> Normal em semanas de construção; cansado demais para render em prova.</p>
+                  <p><strong>Abaixo de −30 · Fadiga alta.</strong> Hora de olhar sono, pernas e FC de repouso antes de forçar.</p>
+                  <p className="ui-muted">Para evoluir: forma subindo aos poucos e carga aguda/crônica entre 0,8 e 1,3. Para a prova: frescor subindo para +5 a +25 com a fadiga caindo nos dias anteriores.</p>
                 </div>
               </details>
 
@@ -420,6 +402,7 @@ export default function CargaPage() {
                     <div><dt>VDOT dinâmico</dt><dd>{data.vdot ? formatNumber(data.vdot, 1) : "—"}</dd></div>
                     <div><dt>Atividades analisadas</dt><dd>{formatNumber(data.totalActivities)}</dd></div>
                     <div><dt>FC máx / repouso</dt><dd>{data.hrMax ?? "—"}/{data.hrRest ?? "—"} bpm</dd></div>
+                    <div><dt>FC de limiar</dt><dd>{data.lthr ?? "—"} bpm</dd></div>
                     <div><dt>Aquecimento do CTL</dt><dd>{data.warmupDays ?? "—"} dias</dd></div>
                     <div><dt>Janela calculada</dt><dd>{data.displayedDays ?? "—"} dias</dd></div>
                     <div><dt>Fuso dos dias</dt><dd>{data.timeZone?.split("/").pop()?.replace("_", " ") ?? "—"}</dd></div>
@@ -427,14 +410,15 @@ export default function CargaPage() {
                       <dt>Método</dt>
                       <dd>
                         {data.loadMethod
-                          ? `FC em ${formatNumber(data.loadMethod.withHeartRate)}, pace em ${formatNumber(data.loadMethod.fallbackPace)}`
-                          : "TRIMP / pace"}
+                          ? `hrTSS em ${formatNumber(data.loadMethod.withHeartRate)}, rTSS em ${formatNumber(data.loadMethod.fallbackPace)}`
+                          : "hrTSS / rTSS"}
                       </dd>
                     </div>
                   </dl>
                   <p className="ui-muted">
-                    O T-pace vem do VDOT e só é usado quando a corrida não tem FC confiável. O aquecimento é calculado antes
-                    dos dias exibidos para o CTL não começar artificialmente baixo.
+                    Com FC, a carga é o TRIMP de Banister dividido pelo TRIMP de 1 hora na FC de limiar (× 100). Sem FC, é o
+                    rTSS com o T-pace do VDOT (88%, como na tabela de Daniels). Constantes de 42 e 7 dias; o aquecimento é
+                    calculado antes dos dias exibidos para a forma não começar artificialmente baixa.
                   </p>
                 </div>
               </details>

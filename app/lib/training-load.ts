@@ -3,22 +3,28 @@ import { isRunActivity } from "./strava-activity";
 /**
  * Cálculo de Carga de Treino — ATL / CTL / TSB
  *
- * Modelo baseado em Performance Management Chart (Banister et al.)
- * - CTL (Chronic Training Load)  = carga crônica, média exp. ~42 dias = "forma"
- * - ATL (Acute Training Load)    = carga recente, média exp. ~7 dias = "fadiga"
- * - TSB (Training Stress Balance) = CTL − ATL = "frescor"
+ * Modelo do Performance Management Chart (Banister; Coggan):
+ * - CTL (Chronic Training Load)  = média exponencial de 42 dias = "forma"
+ * - ATL (Acute Training Load)    = média exponencial de 7 dias  = "fadiga"
+ * - TSB (Training Stress Balance) = CTL de ontem − ATL de ontem  = "frescor para hoje"
+ *   (convenção da TrainingPeaks: o treino de hoje só pesa no frescor de amanhã)
  *
- * Métrica de esforço por treino:
- * - Com FC: TRIMP de Banister — tempo × FC normalizada × fator exponencial
- * - Sem FC: rTSS estimado por pace relativo ao limiar (T-pace do VDOT)
+ * Carga por treino, sempre na escala do TSS (1 h no limiar = 100):
+ * - Com FC: hrTSS = TRIMP de Banister ÷ TRIMP de 1 h na FC de limiar × 100
+ * - Sem FC: rTSS  = horas × IF² × 100, com IF = pace de limiar ÷ pace médio
+ * Assim as duas fontes ficam comparáveis e as faixas de TSB (−10, −30, +25…) valem como na literatura.
  *
- * Observação importante:
- * CTL precisa de uma janela de aquecimento para não começar artificialmente em zero.
- * Por isso a função calcula dias extras antes da janela exibida e só depois corta a série.
+ * Ratio ATL/CTL nas faixas de Gabbett (2016): 0,8–1,3 produtiva; ≥ 1,5 pico de carga.
+ * É tendência, não diagnóstico (Impellizzeri et al., 2020).
+ *
+ * O CTL precisa de aquecimento para não começar em zero: a função calcula dias extras
+ * antes da janela exibida e só depois corta a série.
  *
  * Referências:
  *   Banister EW (1991) — Modeling elite athletic performance
- *   Coggan A (2003)    — rTSS derivation
+ *   Coggan A (2003)    — TSS/rTSS
+ *   Gabbett TJ (2016)  — The training-injury prevention paradox (BJSM)
+ *   Impellizzeri FM et al. (2020) — ACWR: conceptual issues and fundamental pitfalls (IJSPP)
  */
 
 export type StravaActivityForLoad = {
@@ -32,20 +38,24 @@ export type StravaActivityForLoad = {
   suffer_score?: number | null;
 };
 
+export type LoadStatus = "low" | "productive" | "caution" | "spike";
+
 export type DayLoad = {
   date: string;   // YYYY-MM-DD
-  trimp: number;  // esforço do dia (0 se dia de descanso)
-  atl: number;    // Acute Training Load
-  ctl: number;    // Chronic Training Load
-  tsb: number;    // Training Stress Balance = CTL - ATL
-  status: "performance" | "optimal" | "maintaining" | "overreaching" | "recovery";
-  ratio: number;  // ATL / CTL
+  load: number;   // carga do dia em pontos de TSS (0 se descanso)
+  atl: number;    // Acute Training Load, ao fim do dia
+  ctl: number;    // Chronic Training Load, ao fim do dia
+  tsb: number;    // frescor para o dia = CTL − ATL do fim do dia anterior
+  status: LoadStatus;
+  ratio: number;  // ATL / CTL ao fim do dia
 };
 
 export type TrainingLoadOptions = {
   thresholdPaceSecPerKm?: number;
   hrMax?: number;
   hrRest?: number;
+  /** FC de limiar (LTHR). Sem ela, estima-se 85% da reserva de FC. */
+  lthr?: number;
   displayDays?: number;
   warmupDays?: number;
   timeZone?: string;
@@ -117,10 +127,17 @@ function normalizeOptions(options: TrainingLoadOptions = {}) {
       ? options.hrRest!
       : DEFAULT_HR_REST;
 
+  // Sem LTHR medida: repouso + 85% da reserva (aproximação clássica do limiar).
+  const lthr =
+    Number.isFinite(options.lthr) && options.lthr! > hrRest && options.lthr! <= hrMax
+      ? options.lthr!
+      : Math.round(hrRest + 0.85 * (hrMax - hrRest));
+
   return {
     thresholdPaceSecPerKm,
     hrMax,
     hrRest,
+    lthr,
     displayDays:
       Number.isFinite(options.displayDays) && options.displayDays! > 0
         ? Math.round(options.displayDays!)
@@ -184,24 +201,34 @@ function rTSSFromPace(
 }
 
 /**
- * Calcula a carga de uma atividade.
- * Usa TRIMP por FC quando disponível; se não houver FC confiável, usa rTSS por pace.
+ * hrTSS: o TRIMP do treino em relação ao TRIMP de 1 hora na FC de limiar, × 100.
+ * Mesma escala do rTSS e do TSS (1 h no limiar = 100).
  */
-export function calcActivityTRIMP(
+export function hrTSSFromHR(movingTimeSec: number, avgHR: number, hrMax: number, hrRest: number, lthr: number): number {
+  const reference = trimpFromHR(3600, lthr, hrMax, hrRest);
+  if (reference <= 0) return 0;
+  return (trimpFromHR(movingTimeSec, avgHR, hrMax, hrRest) / reference) * 100;
+}
+
+/**
+ * Calcula a carga de uma atividade em pontos de TSS.
+ * Usa hrTSS quando há FC; sem FC confiável, usa rTSS por pace.
+ */
+export function calcActivityLoad(
   activity: StravaActivityForLoad,
   options: TrainingLoadOptions = {}
 ): number {
   if (!isRunActivity(activity)) return 0;
   if (activity.moving_time <= 0) return 0;
 
-  const { thresholdPaceSecPerKm, hrMax, hrRest } = normalizeOptions(options);
+  const { thresholdPaceSecPerKm, hrMax, hrRest, lthr } = normalizeOptions(options);
 
   if (
     typeof activity.average_heartrate === "number" &&
     Number.isFinite(activity.average_heartrate) &&
     activity.average_heartrate > hrRest + 10
   ) {
-    return trimpFromHR(activity.moving_time, activity.average_heartrate, hrMax, hrRest);
+    return hrTSSFromHR(activity.moving_time, activity.average_heartrate, hrMax, hrRest, lthr);
   }
 
   return rTSSFromPace(
@@ -212,14 +239,13 @@ export function calcActivityTRIMP(
 }
 
 /**
- * Classifica o status do atleta com base no ratio ATL/CTL.
+ * Status pelo ratio ATL/CTL, nas faixas de Gabbett (2016).
  */
-function classifyStatus(ratio: number): DayLoad["status"] {
-  if (ratio < 0.7)  return "recovery";
-  if (ratio < 0.8)  return "performance";
-  if (ratio <= 1.0) return "optimal";
-  if (ratio <= 1.3) return "maintaining";
-  return "overreaching";
+export function classifyStatus(ratio: number): LoadStatus {
+  if (ratio < 0.8) return "low";
+  if (ratio <= 1.3) return "productive";
+  if (ratio < 1.5) return "caution";
+  return "spike";
 }
 
 /**
@@ -248,7 +274,7 @@ export function calcTrainingLoad(
     if (!act.start_date_local) continue;
 
     const date = act.start_date_local.slice(0, 10);
-    const load = calcActivityTRIMP(act, normalized);
+    const load = calcActivityLoad(act, normalized);
     loadByDate[date] = (loadByDate[date] ?? 0) + load;
   }
 
@@ -261,20 +287,23 @@ export function calcTrainingLoad(
 
   for (let offset = 0; offset < totalDays; offset++) {
     const dateStr = addDaysToDateKey(startStr, offset);
-    const trimp = loadByDate[dateStr] ?? 0;
+    const load = loadByDate[dateStr] ?? 0;
+
+    // Frescor do dia: como você acordou, antes do treino de hoje.
+    const tsb = ctl - atl;
 
     // Atualiza ATL e CTL com média exponencial.
-    atl = atl + (trimp - atl) * ATL_DECAY;
-    ctl = ctl + (trimp - ctl) * CTL_DECAY;
+    atl = atl + (load - atl) * ATL_DECAY;
+    ctl = ctl + (load - ctl) * CTL_DECAY;
 
     const ratio = ctl > 0 ? atl / ctl : 0;
 
     allDays.push({
       date: dateStr,
-      trimp: round1(trimp),
+      load: round1(load),
       atl: round1(atl),
       ctl: round1(ctl),
-      tsb: round1(ctl - atl),
+      tsb: round1(tsb),
       ratio: round2(ratio),
       status: classifyStatus(ratio),
     });
@@ -294,13 +323,29 @@ export function getCurrentLoad(days: DayLoad[]): DayLoad | null {
 /**
  * Labels e cores para cada status.
  */
-export const STATUS_META: Record<
-  DayLoad["status"],
-  { label: string; color: string; description: string }
-> = {
-  performance:  { label: "Performance",   color: "#60a5fa", description: "Fadiga baixa em relação à base — bom para competir ou testar" },
-  optimal:      { label: "Ótimo",         color: "#10b981", description: "Carga bem encaixada para desenvolvimento" },
-  maintaining:  { label: "Manutenção",    color: "#f5a623", description: "Carga recente alta — bloco produtivo, mas precisa ser absorvido" },
-  overreaching: { label: "Sobrecarga",    color: "#ef4444", description: "Carga recente muito acima da base — sinal de cautela, não diagnóstico" },
-  recovery:     { label: "Recuperação",   color: "#a78bfa", description: "Carga baixa — descanso, polimento ou pouco estímulo recente" },
+export const STATUS_META: Record<LoadStatus, { label: string; color: string; description: string }> = {
+  low:        { label: "Carga baixa", color: "#a78bfa", description: "Carga recente abaixo da base: descanso, polimento ou pouco estímulo" },
+  productive: { label: "Produtiva",   color: "#10b981", description: "Carga recente acompanhando a base: faixa para evoluir" },
+  caution:    { label: "Atenção",     color: "#f5a623", description: "Carga recente bem acima da base: bloco forte, precisa ser absorvido" },
+  spike:      { label: "Pico",        color: "#ef4444", description: "Salto de carga em relação à base: cautela nos próximos dias, não é diagnóstico" },
 };
+
+/**
+ * Leitura do frescor (TSB, escala do TSS), nas faixas de uso corrente
+ * (TrainingPeaks/Friel): abaixo de −10 cansado para competir; −10 a +10 transição; positivo, pronto.
+ */
+export function describeTsb(tsb: number): { label: string; text: string } {
+  if (tsb > 25) {
+    return { label: "Muito descansado", text: "Frescor alto por vários dias tende a custar forma. Bom para a véspera de prova, não como rotina." };
+  }
+  if (tsb >= 5) {
+    return { label: "Pronto para prova", text: "Fadiga abaixo da base: a janela típica de prova ou de teste." };
+  }
+  if (tsb >= -10) {
+    return { label: "Transição", text: "Nem carregado nem descansado. Normal de passagem: subindo para prova ou voltando de descanso." };
+  }
+  if (tsb >= -30) {
+    return { label: "Em bloco de treino", text: "Fadiga acima da base, como esperado em semanas de construção. Cansado demais para render em prova." };
+  }
+  return { label: "Fadiga alta", text: "Fadiga muito acima da base. Vale olhar sono, pernas e FC de repouso antes de forçar." };
+}
